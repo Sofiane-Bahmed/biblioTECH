@@ -1,7 +1,5 @@
 import mongoose from "mongoose"
 
-export const livreEmprunteModel = ()=>{}
-
 const Schema = mongoose.Schema
 
 const livreEmprunteSchema = new Schema (

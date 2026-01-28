@@ -1,8 +1,6 @@
 import express from "express"
 import mongoose from "mongoose"
-import bcrypt from "bcrypt"
 import * as  dotenv from "dotenv"
-
 
 import {userRouter} from "./routers/userRouter.js"
 import {livreRouter} from "./routers/livreRouter.js"

@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-export const livreModel =()=>{}
-
 const Schema = mongoose.Schema
 
 const livreSchema = new Schema(

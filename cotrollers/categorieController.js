@@ -1,40 +1,34 @@
-import express from "express"
-import mongoose from "mongoose"
-
-import {Categorie} from "../models/categorieModel.js"
-
-
-export const categorieController = ()=>{}
+import { Categorie } from "../models/categorieModel.js"
 
 // create livre categorie
 
 export const createBookCategory = async (req, res) => {
-    try {
-      const { titre } = req.body;
+  try {
+    const { titre } = req.body;
 
-  
-      const newCategory = new Categorie({ titre });
-  
-      await newCategory.save();
-  
-      res.status(201).json(newCategory);
-    } catch (error) {
-      res.status(500).json({ message: 'Something went wrong' });
-    }
-  };
 
-  // read a book categorie
+    const newCategory = new Categorie({ titre });
 
-  export const showBookCategorie = async (req, res) => {
-    try {
-      const id = req.params.id;
-      const categorie = await Categorie.findById(id);
-  
-      res.send( categorie);
-    } catch (err) {
-      res.send("something went wrong");
-    }
-  };
+    await newCategory.save();
+
+    res.status(201).json(newCategory);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+// read a book categorie
+
+export const showBookCategorie = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const categorie = await Categorie.findById(id);
+
+    res.send(categorie);
+  } catch (err) {
+    res.send("something went wrong");
+  }
+};
 
 // update a book categorie
 

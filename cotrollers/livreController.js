@@ -1,12 +1,9 @@
-import express from "express"
-import mongoose from "mongoose"
-import nodemailer from "nodemailer"
-import {Livre} from "../models/livreModel.js"
+import { Livre } from "../models/livreModel.js"
 import { Categorie } from "../models/categorieModel.js";
 import { Comment } from "../models/livreModel.js"
 import { User } from "../models/userModel.js"
-import {  LivreEmprunte } from "../models/livreEmprunteModel.js"
-import { sendEmailNotification  } from "../cotrollers/userController.js"
+import { LivreEmprunte } from "../models/livreEmprunteModel.js"
+import { sendEmailNotification } from "../cotrollers/userController.js"
 
 
 
@@ -15,35 +12,35 @@ import { sendEmailNotification  } from "../cotrollers/userController.js"
 
 export const addBook = async (req, res) => {
   try {
-      const { titre, auteur, copies_disponibles, categorie } = req.body;
+    const { titre, auteur, copies_disponibles, categorie } = req.body;
 
-      // Check if category exists
-      const existingCategory = await Categorie.findOne({ titre: categorie });
-      if (!existingCategory) {
-          return res.status(400).json({ message: 'Category does not exist' });
-      }
+    // Check if category exists
+    const existingCategory = await Categorie.findOne({ titre: categorie });
+    if (!existingCategory) {
+      return res.status(400).json({ message: 'Category does not exist' });
+    }
 
-      // Create new book
-      const newBook = new Livre({ titre, auteur, copies_disponibles, categorie: existingCategory._id });
-      await newBook.save();
+    // Create new book
+    const newBook = new Livre({ titre, auteur, copies_disponibles, categorie: existingCategory._id });
+    await newBook.save();
 
-      // Send email notification to subscribers
-      const subscribers = await User.find({ subscribed: true });
+    // Send email notification to subscribers
+    const subscribers = await User.find({ subscribed: true });
 
-      for (const subscriber of subscribers) {
-          const subject = 'New Book Added';
-          const text = `A new book titled "${titre}" by ${auteur} has been added to the library. Check it out now!`;
-          sendEmailNotification(subscriber.email, subject, text);
-      }
+    for (const subscriber of subscribers) {
+      const subject = 'New Book Added';
+      const text = `A new book titled "${titre}" by ${auteur} has been added to the library. Check it out now!`;
+      sendEmailNotification(subscriber.email, subject, text);
+    }
 
-      res.status(201).json(newBook);
+    res.status(201).json(newBook);
   } catch (error) {
-      res.status(500).json({ message: 'Something went wrong' });
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
-  
- 
+
+
 // reserch books by filtring : 
 
 export const searchBooks = async (req, res) => {
@@ -94,35 +91,35 @@ export const addComment = async (req, res) => {
 
     let parentComment = null;
     if (parentCommentaireId) {
-    
+
       // If parent comment ID is provided, check if the parent comment exists
       parentComment = await Comment.findById(parentCommentaireId);
       if (!parentComment) {
         return res.status(404).json({ message: "Commentaire parent introuvable" });
       }
-        // Create new comment reply
-        const newComment = new Comment({
-          utilisateur: utilisateurId,
-          livre: livreId,
-          commentaire,
-          parentCommentaire: parentCommentaireId
-        });
-  
-        await newComment.save();
+      // Create new comment reply
+      const newComment = new Comment({
+        utilisateur: utilisateurId,
+        livre: livreId,
+        commentaire,
+        parentCommentaire: parentCommentaireId
+      });
 
-        // Add comment to book or parent comment
-          parentComment.replies.push(newComment._id);
-          await parentComment.save();
+      await newComment.save();
 
-           livre.commentaire.push(newComment._id);
-          await livre.save();
+      // Add comment to book or parent comment
+      parentComment.replies.push(newComment._id);
+      await parentComment.save();
+
+      livre.commentaire.push(newComment._id);
+      await livre.save();
 
 
-        res.status(201).json(newComment);
-        return
+      res.status(201).json(newComment);
+      return
     }
-   
-  
+
+
     // Create new comment
     const newComment = new Comment({
       utilisateur: utilisateurId,
@@ -133,9 +130,9 @@ export const addComment = async (req, res) => {
     await newComment.save();
 
     // Add comment to book 
-       livre.commentaire.push(newComment._id);
-      await livre.save();
-    
+    livre.commentaire.push(newComment._id);
+    await livre.save();
+
 
     res.status(201).json(newComment);
   } catch (error) {
@@ -187,7 +184,7 @@ export const deleteComment = async (req, res) => {
     const livre = await Livre.findById(comment.livre);
     livre.comments = livre.comments.filter(id => id.toString() !== req.params.commentId);
     await livre.save();
- 
+
     res.status(200).json({ message: 'comment deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'something went wrong' });

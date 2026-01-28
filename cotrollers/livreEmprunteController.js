@@ -1,13 +1,8 @@
-import express from "express"
-import mongoose from "mongoose"
-import bcrypt from "bcrypt"
-import { LivreEmprunte,EmprunteHistory } from "../models/livreEmprunteModel.js"
+import { LivreEmprunte, EmprunteHistory } from "../models/livreEmprunteModel.js"
 import { Livre } from "../models/livreModel.js"
 import { User } from "../models/userModel.js"
 
-
-
-export const livreEmprunteController = ()=>{}
+export const livreEmprunteController = () => { }
 
 // borrow a book : 
 
@@ -55,7 +50,7 @@ export const borrowBook = async (req, res) => {
     await book.save();
 
     // Check if the book is returned late
-    
+
     const currentDate = new Date();
     if (currentDate > newBorrow.date_echeance) {
       // Calculate the number of days late
@@ -81,7 +76,7 @@ export const borrowBook = async (req, res) => {
 //     try {
 //       const { userId, bookId } = req.body;
 
-  
+
 //       // Check if user has already borrowed 3 books this month
 
 //       const date = new Date();
@@ -103,7 +98,7 @@ export const borrowBook = async (req, res) => {
 //           if (!book) {
 //             return res.status(400).json({ message: 'Livre non trouvé' });
 //         }else{
-            
+
 //             if (book.copies_disponibles <= 0) {
 //               return res.status(400).json({ message: 'Le livre n\'est pas disponible' });
 //             }else{
@@ -114,25 +109,25 @@ export const borrowBook = async (req, res) => {
 //                 const newBorrow = new LivreEmprunte({ utilisateur: userId, livre: bookId, date_emprunt, date_echeance });
 
 //                 await newBorrow.save();
-            
+
 //                 // Update book availability
 
 //                 book.copies_disponibles--;
 //                 await book.save();
-            
+
 //                 res.status(201).json(newBorrow);
 //             }
-        
+
 //         }
 //       }
-  
+
 //     } catch (error) {
 //       res.status(500).json({ message: 'Something went wrong' });
 //     }
 //   };
 
 
-  
+
 // return book :  
 
 
@@ -180,22 +175,21 @@ export const returnBook = async (req, res) => {
   }
 };
 
-  // Get borrowing history for a user
+// Get borrowing history for a user
 
-  export const getBorrowingHistory = async (req,res) =>{
-     try{
-         const {userId} = req.params;
+export const getBorrowingHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
-         const borrowingHistory = await LivreEmprunte.find({utilisateur:userId});
-         
-         res.status(200).json(borrowingHistory);
-     }catch(error){
-        res.status(500).json({message:"something went wrong"})
-     }
+    const borrowingHistory = await LivreEmprunte.find({ utilisateur: userId });
+
+    res.status(200).json(borrowingHistory);
+  } catch (error) {
+    res.status(500).json({ message: "something went wrong" })
   }
+}
 
-  // Renew borrowed book
-
+// Renew borrowed book
 
 export const renewBorrowedBook = async (req, res) => {
   try {

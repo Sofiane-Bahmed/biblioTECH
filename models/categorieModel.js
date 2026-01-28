@@ -1,7 +1,5 @@
 import mongoose from "mongoose"
 
-export const categorieModel = ()=>{}
-
 const Schema = mongoose.Schema
 
 const categorieSchema = new Schema(
