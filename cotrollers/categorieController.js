@@ -6,7 +6,6 @@ export const createBookCategory = async (req, res) => {
   try {
     const { titre } = req.body;
 
-
     const newCategory = new Categorie({ titre });
 
     await newCategory.save();

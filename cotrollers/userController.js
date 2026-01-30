@@ -7,10 +7,6 @@ import { Livre } from "../models/livreModel.js"
 
 const { sign, verify } = Jwt
 
-
-export const userController = () => { }
-
-
 // register : 
 
 export const register = async (req, res) => {

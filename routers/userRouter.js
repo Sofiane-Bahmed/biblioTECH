@@ -9,7 +9,6 @@ import {
     sendEmailNotification
 } from "../cotrollers/userController.js"
 
-
 export const userRouter = express.Router()
 
 userRouter.post("/register", register)

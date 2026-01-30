@@ -9,9 +9,7 @@ import {
        getLibraryStatistics
 } from "../cotrollers/livreController.js"
 
-
 export const livreRouter = express.Router()
-
 
 livreRouter.post("/book", addBook);
 livreRouter.get("/filtre", searchBooks);

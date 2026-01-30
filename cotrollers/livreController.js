@@ -5,9 +5,6 @@ import { User } from "../models/userModel.js"
 import { LivreEmprunte } from "../models/livreEmprunteModel.js"
 import { sendEmailNotification } from "../cotrollers/userController.js"
 
-
-
-
 // add books :
 
 export const addBook = async (req, res) => {
@@ -38,8 +35,6 @@ export const addBook = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
-
 
 // reserch books by filtring : 
 
