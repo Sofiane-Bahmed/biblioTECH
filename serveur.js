@@ -10,13 +10,14 @@ import { categorieRouter } from "./routers/categorieRouter.js"
 const app = express()
 app.use(express.json())
 dotenv.config();
+
 const dburi = process.env.DBURI
 const port = process.env.PORT
 
 mongoose.set("strictQuery", true)
 mongoose
   .connect(dburi)
-  .then((result) => {
+  .then(() => {
     app.listen(port, () => {
       console.log(`this app is running in port http://localhost:${port}`);
     });

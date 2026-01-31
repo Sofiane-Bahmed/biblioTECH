@@ -36,7 +36,7 @@ export const addBook = async (req, res) => {
   }
 };
 
-// reserch books by filtring : 
+// search books by filtring : 
 
 export const searchBooks = async (req, res) => {
   try {
@@ -138,7 +138,9 @@ export const addComment = async (req, res) => {
 
 export const getCommentById = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.commentaireId);
+    const { commentId } = await req.params
+
+    const comment = await Comment.findById(commentId);
 
     if (!comment) {
       return res.status(404).json({ message: 'comment not found' });
@@ -153,13 +155,17 @@ export const getCommentById = async (req, res) => {
 
 export const updateComment = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.commentaireId);
+    const { commentId } = await req.params
+
+    const comment = await Comment.findById(commentId);
     if (!comment) {
       return res.status(404).json({ message: 'comment not found' });
     }
+
     comment.commentaire = req.body.commentaire;
     await comment.save();
     res.status(200).json(comment);
+
   } catch (error) {
     res.status(500).json({ message: 'something went wrong' });
   }
@@ -169,7 +175,9 @@ export const updateComment = async (req, res) => {
 
 export const deleteComment = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.commentId);
+    const { commentId } = await req.params
+
+    const comment = await Comment.findById(commentId);
     if (!comment) {
       return res.status(404).json({ message: 'comment not found' });
     }

@@ -65,7 +65,9 @@ export const roleValidation = (requiredRole) => async (req, res, next) => {
     const role = req.cookies["token"].role;
     if (role === requiredRole) {
       verify(req.cookies["token"].token, 'RESTFULAPIs')
+
       return next();
+
     } else {
       res.status(401).json({ message: "Unauthorized user!!" });
     }
