@@ -1,4 +1,4 @@
-import { Categorie } from "../models/categorieModel.js"
+import { Categorie } from "../models/categorie.js"
 
 // create livre categorie
 

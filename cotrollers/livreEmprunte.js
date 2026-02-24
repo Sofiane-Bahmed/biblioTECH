@@ -1,6 +1,6 @@
-import { LivreEmprunte, EmprunteHistory } from "../models/livreEmprunteModel.js"
-import { Livre } from "../models/livreModel.js"
-import { User } from "../models/userModel.js"
+import { LivreEmprunte } from "../models/livreEmprunte.js"
+import { Livre } from "../models/livre.js"
+import { User } from "../models/user.js"
 
 // borrow a book : 
 
@@ -12,6 +12,7 @@ export const borrowBook = async (req, res) => {
     const date = new Date();
     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
     const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    
     const count = await LivreEmprunte.countDocuments({
       utilisateur: userId,
       date_emprunt: { $gte: firstDayOfMonth, $lte: lastDayOfMonth },

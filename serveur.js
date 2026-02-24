@@ -2,10 +2,10 @@ import express from "express"
 import mongoose from "mongoose"
 import * as  dotenv from "dotenv"
 
-import { userRouter } from "./routers/userRouter.js"
-import { livreRouter } from "./routers/livreRouter.js"
-import { livreEmprunteRouter } from "./routers/livreEmprunteRouter.js"
-import { categorieRouter } from "./routers/categorieRouter.js"
+import { userRouter } from "./routers/user.js"
+import { livreRouter } from "./routers/livre.js"
+import { livreEmprunteRouter } from "./routers/livreEmprunte.js"
+import { categorieRouter } from "./routers/categorie.js"
 
 const app = express()
 app.use(express.json())

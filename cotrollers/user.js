@@ -2,8 +2,8 @@ import bcrypt from "bcrypt"
 import nodemailer from "nodemailer"
 import Jwt from "jsonwebtoken"
 
-import { User } from "../models/userModel.js"
-import { Livre } from "../models/livreModel.js"
+import { User } from "../models/user.js"
+import { Livre } from "../models/livre.js"
 
 const { sign, verify } = Jwt
 

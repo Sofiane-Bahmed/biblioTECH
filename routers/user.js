@@ -7,7 +7,7 @@ import {
     getAllBooks,
     roleValidation,
     sendEmailNotification
-} from "../cotrollers/userController.js"
+} from "../cotrollers/user.js"
 
 export const userRouter = express.Router()
 
