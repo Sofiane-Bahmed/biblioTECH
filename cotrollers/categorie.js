@@ -1,6 +1,6 @@
 import { Categorie } from "../models/categorie.js"
 
-// create livre categorie
+// create book categorry
 
 export const createBookCategory = async (req, res) => {
   try {
@@ -16,7 +16,7 @@ export const createBookCategory = async (req, res) => {
   }
 };
 
-// read a book categorie
+// read a book category
 
 export const showBookCategorie = async (req, res) => {
   try {
@@ -29,7 +29,7 @@ export const showBookCategorie = async (req, res) => {
   }
 };
 
-// update a book categorie
+// update a book category
 
 export const updateBookCategory = async (req, res) => {
   try {
@@ -39,7 +39,7 @@ export const updateBookCategory = async (req, res) => {
     const category = await Categorie.findById(id);
 
     if (!category) {
-      return res.status(404).json({ message: 'Categorie non trouvée' });
+      return res.status(404).json({ message: 'Category not found' });
     }
 
     category.titre = titre;
@@ -51,7 +51,7 @@ export const updateBookCategory = async (req, res) => {
   }
 };
 
-// delete a book categorie
+// delete a book category
 
 export const deleteBookCategory = async (req, res) => {
   try {
@@ -60,10 +60,10 @@ export const deleteBookCategory = async (req, res) => {
     const category = await Categorie.findByIdAndDelete(id);
 
     if (!category) {
-      return res.status(404).json({ message: 'Categorie non trouvée' });
+      return res.status(404).json({ message: 'Category not found' });
     }
 
-    res.status(200).json({ message: 'Categorie supprimée avec succès' });
+    res.status(200).json({ message: 'Category successfully deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });
   }

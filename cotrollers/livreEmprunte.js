@@ -21,16 +21,16 @@ export const borrowBook = async (req, res) => {
     if (count >= 3) {
       return res
         .status(400)
-        .json({ message: "Vous avez déjà emprunté 3 livres ce mois-ci" });
+        .json({ message: "You have already borrowed 3 books this month" });
     }
 
     // Check if book is available
     const book = await Livre.findById(bookId);
     if (!book) {
-      return res.status(400).json({ message: "Livre non trouvé" });
+      return res.status(400).json({ message: "book not found" });
     }
     if (book.copies_disponibles <= 0) {
-      return res.status(400).json({ message: "Le livre n'est pas disponible" });
+      return res.status(400).json({ message: "The book is not available" });
     }
 
     // Create new borrow
@@ -60,7 +60,7 @@ export const borrowBook = async (req, res) => {
         if (user) {
           user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); // Suspension date is 10 days from now
           await user.save();
-          return res.status(400).json({ message: "Vous avez été suspendu pour 10 jours en raison du retard de retour du livre" });
+          return res.status(400).json({ message: "You have been suspended for 10 days due to the late return of the book" });
         }
       }
     }
@@ -80,7 +80,7 @@ export const returnBook = async (req, res) => {
     // Check if borrow exists
     const borrow = await LivreEmprunte.findOne({ utilisateur: borrowId, livre: bookId });
     if (!borrow) {
-      return res.status(400).json({ message: 'Emprunt non trouvé' });
+      return res.status(400).json({ message: 'Loan not found' });
     }
 
     // Update book availability
@@ -104,12 +104,12 @@ export const returnBook = async (req, res) => {
         if (user) {
           user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); // Suspension date is 10 days from now
           await user.save();
-          return res.status(400).json({ message: "Vous avez été suspendu pour 10 jours en raison du retard de retour du livre" });
+          return res.status(400).json({ message: "You have been suspended for 10 days due to the late return of the book" });
         }
       }
     }
 
-    res.status(200).json({ message: 'Le livre a été rendu avec succès' });
+    res.status(200).json({ message: 'The book was successfully returned' });
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });
   }
