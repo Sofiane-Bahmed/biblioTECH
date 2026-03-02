@@ -5,7 +5,7 @@ import {
     showBookCategorie,
     updateBookCategory,
     deleteBookCategory
-} from "../cotrollers/categorie.js"
+} from "../cotrollers/category.js"
 
 
 export const categorieRouter = express.Router()

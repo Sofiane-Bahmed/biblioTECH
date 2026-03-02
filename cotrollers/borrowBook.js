@@ -1,5 +1,5 @@
-import { LivreEmprunte } from "../models/livreEmprunte.js"
-import { Livre } from "../models/livre.js"
+import { LivreEmprunte } from "../models/borrowBook.js"
+import { Livre } from "../models/book.js"
 import { User } from "../models/user.js"
 
 // borrow a book : 

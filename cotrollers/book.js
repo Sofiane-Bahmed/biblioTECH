@@ -1,8 +1,8 @@
-import { Livre } from "../models/livre.js"
-import { Categorie } from "../models/categorie.js";
-import { Comment } from "../models/livre.js"
+import { Livre } from "../models/book.js"
+import { Categorie } from "../models/category.js";
+import { Comment } from "../models/book.js"
 import { User } from "../models/user.js"
-import { LivreEmprunte } from "../models/livreEmprunte.js"
+import { LivreEmprunte } from "../models/borrowBook.js"
 import { sendEmailNotification } from "./user.js"
 
 // add books :

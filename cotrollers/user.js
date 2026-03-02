@@ -3,7 +3,7 @@ import nodemailer from "nodemailer"
 import Jwt from "jsonwebtoken"
 
 import { User } from "../models/user.js"
-import { Livre } from "../models/livre.js"
+import { Livre } from "../models/book.js"
 
 const { sign, verify } = Jwt
 

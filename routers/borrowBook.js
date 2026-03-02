@@ -5,7 +5,7 @@ import {
         returnBook,
         getBorrowingHistory,
         renewBorrowedBook
-} from "../cotrollers/livreEmprunte.js"
+} from "../cotrollers/borrowBook.js"
 
 export const livreEmprunteRouter = express.Router()
 

@@ -3,9 +3,9 @@ import mongoose from "mongoose"
 import * as  dotenv from "dotenv"
 
 import { userRouter } from "./routers/user.js"
-import { livreRouter } from "./routers/livre.js"
-import { livreEmprunteRouter } from "./routers/livreEmprunte.js"
-import { categorieRouter } from "./routers/categorie.js"
+import { livreRouter } from "./routers/book.js"
+import { livreEmprunteRouter } from "./routers/borrowBook.js"
+import { categorieRouter } from "./routers/category.js"
 
 const app = express()
 app.use(express.json())
