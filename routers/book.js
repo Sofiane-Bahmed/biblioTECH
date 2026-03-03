@@ -10,15 +10,15 @@ import {
        getLibraryStatistics
 } from "../cotrollers/book.js"
 
-export const livreRouter = express.Router()
+export const bookRouter = express.Router()
 
 livreRouter.post("/book", addBook);
-livreRouter.get("/filtre", searchBooks);
+livreRouter.get("/filter", searchBooks);
 livreRouter.post("/comment", addComment);
 livreRouter.get("/comment/:id", getCommentById);
 livreRouter.put("/comment/:id", updateComment);
 livreRouter.delete("/comment/:id", deleteComment);
-livreRouter.get("/statistiques", getLibraryStatistics);
+livreRouter.get("/statistics", getLibraryStatistics);
 
 
 

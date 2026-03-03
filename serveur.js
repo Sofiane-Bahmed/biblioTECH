@@ -3,8 +3,8 @@ import mongoose from "mongoose"
 import * as  dotenv from "dotenv"
 
 import { userRouter } from "./routers/user.js"
-import { livreRouter } from "./routers/book.js"
-import { livreEmprunteRouter } from "./routers/borrowBook.js"
+import { bookRouter } from "./routers/book.js"
+import { borrowBookRouter } from "./routers/borrowBook.js"
 import { categorieRouter } from "./routers/category.js"
 
 const app = express()
@@ -29,8 +29,8 @@ mongoose
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/users", userRouter)
-app.use("/livres", livreRouter)
-app.use("/livresEmprunte", livreEmprunteRouter)
+app.use("/books", bookRouter)
+app.use("/borrowBooks", borrowBookRouter)
 app.use("/categories", categorieRouter)
 
 

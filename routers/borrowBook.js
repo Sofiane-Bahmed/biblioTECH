@@ -7,9 +7,9 @@ import {
         renewBorrowedBook
 } from "../cotrollers/borrowBook.js"
 
-export const livreEmprunteRouter = express.Router()
+export const borrowBookRouter = express.Router()
 
-livreEmprunteRouter.post("/emprunte", borrowBook)
-livreEmprunteRouter.post("/emprunte/return", returnBook)
-livreEmprunteRouter.get("/emprunte/history/:userId", getBorrowingHistory)
-livreEmprunteRouter.post("/emprunte/renew/:borrowId", renewBorrowedBook)
+livreEmprunteRouter.post("/borrow", borrowBook)
+livreEmprunteRouter.post("/borrow/return", returnBook)
+livreEmprunteRouter.get("/borrow/history/:userId", getBorrowingHistory)
+livreEmprunteRouter.post("/borrow/renew/:borrowId", renewBorrowedBook)
