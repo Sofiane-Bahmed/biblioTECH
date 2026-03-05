@@ -2,34 +2,34 @@ import mongoose from "mongoose";
 
 const Schema = mongoose.Schema
 
-const livreSchema = new Schema(
+const bookSchema = new Schema(
     {
      
-       categorie : {
+       category : {
              type : Schema.Types.ObjectId,
              ref : "categorie" 
        },               
 
-        titre : {
+        title : {
             type : String,
             required :true
         },
-        auteur :{
+        author :{
             type : String,
             required :true
         },
-        copies_disponibles:{
+        copies_available:{
             type: Number,
             required : true
         },
-        emprunts: [{
+        borrows: [{
             type : Schema.Types.ObjectId,
             ref : 'livreEmpruntre'
         }],
 
-        commentaire : [{
+        comment : [{
             type : Schema.Types.ObjectId,
-            ref : 'commentaire'
+            ref : 'comment'
         }]
         
     }
@@ -37,24 +37,24 @@ const livreSchema = new Schema(
 
 const commentSchema = new Schema({
 
-    utilisateur  : {
+    user  : {
         type : String,
         ref : 'user',
         required : true
     },
 
-    livre : {
+    book : {
         type: String,
-        ref : 'livre',
+        ref : 'book',
         required : true
     },
-    commentaire : {
+    comment : {
         type : String,
         required : true
     },
-    parentCommentaire : {
+    parentComment : {
         type : Schema.Types.ObjectId,
-        ref : 'commentaire'
+        ref : 'comment'
     },
     date : {
         type : Date,
@@ -62,12 +62,12 @@ const commentSchema = new Schema({
     },
     replies : [{
        type : String,
-       ref : 'commentaire'
+       ref : 'comment'
     }],
 })
 
-export const Livre = mongoose.model("livre",livreSchema)
-export const Comment = mongoose.model("commentaire",commentSchema)
+export const Book = mongoose.model("book",bookSchema)
+export const Comment = mongoose.model("comment",commentSchema)
 
 
 

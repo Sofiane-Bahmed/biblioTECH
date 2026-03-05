@@ -1,4 +1,4 @@
-import { Livre } from "../models/book.js"
+import { Book } from "../models/book.js"
 import { Categorie } from "../models/category.js";
 import { Comment } from "../models/book.js"
 import { User } from "../models/user.js"
@@ -9,7 +9,7 @@ import { sendEmailNotification } from "./user.js"
 
 export const addBook = async (req, res) => {
   try {
-    const { titre, auteur, copies_disponibles, categorie } = req.body;
+    const { title, author, copies_available, categorie } = req.body;
 
     // Check if category exists
     const existingCategory = await Categorie.findOne({ titre: categorie });
@@ -18,7 +18,7 @@ export const addBook = async (req, res) => {
     }
 
     // Create new book
-    const newBook = new Livre({ titre, auteur, copies_disponibles, categorie: existingCategory._id });
+    const newBook = new Book({ title, author, copies_available, category: existingCategory._id });
     await newBook.save();
 
     // Send email notification to subscribers
@@ -40,17 +40,17 @@ export const addBook = async (req, res) => {
 
 export const searchBooks = async (req, res) => {
   try {
-    const { titre, author, category, availableCopies } = req.query;
+    const { title, author, category, availableCopies } = req.query;
 
     let filters = {};
-    if (titre) {
-      filters.titre = { $regex: titre, $options: 'i' };
+    if (title) {
+      filters.titre = { $regex: title, $options: 'i' };
     }
     if (author) {
       filters.auteur = { $regex: author, $options: 'i' };
     }
     if (category) {
-      const categoryId = await Categorie.findOne({ titre: category });
+      const categoryId = await Categorie.findOne({ title: category });
       if (categoryId) {
         filters.category = categoryId._id;
       } else {
@@ -58,10 +58,10 @@ export const searchBooks = async (req, res) => {
       }
     }
     if (availableCopies) {
-      filters.copies_disponibles = { $gte: availableCopies };
+      filters.available_copies = { $gte: availableCopies };
     }
 
-    const books = await Livre.find(filters).populate('categorie', 'titre');
+    const books = await Book.find(filters).populate('category', 'title');
 
     res.status(200).json(books);
   } catch (error) {
@@ -75,39 +75,39 @@ export const searchBooks = async (req, res) => {
 
 export const addComment = async (req, res) => {
   try {
-    const { utilisateurId, livreId, commentaire, parentCommentaireId } = req.body;
+    const { userId, bookId, comment, parentCommentId } = req.body;
 
     // Check if user and book exist
-    const user = await User.findById(utilisateurId);
-    const livre = await Livre.findById(livreId);
-    if (!user || !livre) {
-      return res.status(404).json({ message: "Utilisateur ou livre introuvable" });
+    const user = await User.findById(userId);
+    const book = await Book.findById(bookId);
+    if (!user || !book) {
+      return res.status(404).json({ message: "user or book not found" });
     }
 
     let parentComment = null;
-    if (parentCommentaireId) {
+    if (parentCommentId) {
 
       // If parent comment ID is provided, check if the parent comment exists
-      parentComment = await Comment.findById(parentCommentaireId);
+      parentComment = await Comment.findById(parentCommentId);
       if (!parentComment) {
-        return res.status(404).json({ message: "Commentaire parent introuvable" });
+        return res.status(404).json({ message: "Parent comment not found" });
       }
       // Create new comment reply
-      const newComment = new Comment({
-        utilisateur: utilisateurId,
-        livre: livreId,
-        commentaire,
-        parentCommentaire: parentCommentaireId
+      const newCommentReply = new Comment({
+        user: userId,
+        book: bookId,
+        parentComment: parentCommentId,
+        comment,
       });
 
-      await newComment.save();
+      await newCommentReply.save();
 
       // Add comment to book or parent comment
       parentComment.replies.push(newComment._id);
       await parentComment.save();
 
-      livre.commentaire.push(newComment._id);
-      await livre.save();
+      book.comment.push(newComment._id);
+      await book.save();
 
 
       res.status(201).json(newComment);
@@ -117,21 +117,21 @@ export const addComment = async (req, res) => {
 
     // Create new comment
     const newComment = new Comment({
-      utilisateur: utilisateurId,
-      livre: livreId,
-      commentaire,
+      user: userId,
+      book: bookId,
+      comment,
 
     });
     await newComment.save();
 
     // Add comment to book 
-    livre.commentaire.push(newComment._id);
-    await livre.save();
+    book.comment.push(newComment._id);
+    await book.save();
 
 
     res.status(201).json(newComment);
   } catch (error) {
-    res.status(500).json({ message: "Une erreur est survenue" });
+    res.status(500).json({ message: "something went wrong" });
   }
 }
 // get specific comment
@@ -155,14 +155,15 @@ export const getCommentById = async (req, res) => {
 
 export const updateComment = async (req, res) => {
   try {
-    const { commentId } = await req.params
+    const { commentId } = await req.params;
+    const { commentUpdate } = req.body;
 
     const comment = await Comment.findById(commentId);
     if (!comment) {
       return res.status(404).json({ message: 'comment not found' });
     }
 
-    comment.commentaire = req.body.commentaire;
+    comment.comment = commentUpdate;
     await comment.save();
     res.status(200).json(comment);
 
@@ -183,10 +184,10 @@ export const deleteComment = async (req, res) => {
     }
     await comment.remove();
 
-    // remove comment id from livre's comments array
-    const livre = await Livre.findById(comment.livre);
-    livre.comments = livre.comments.filter(id => id.toString() !== req.params.commentId);
-    await livre.save();
+    // remove comment id from book's comments array
+    const book = await Book.findById(comment.book);
+    book.comment = book.comment.filter(id => id.toString() !== commentId);
+    await book.save();
 
     res.status(200).json({ message: 'comment deleted successfully' });
   } catch (error) {
@@ -198,17 +199,17 @@ export const deleteComment = async (req, res) => {
 
 export const getLibraryStatistics = async (req, res) => {
   try {
-    const loans = await LivreEmprunte.find();
-    const books = await Livre.find();
+    const borrows = await LivreEmprunte.find();
+    const books = await Book.find();
 
-    const loanCount = loans.length;
+    const borrowCount = borrows.length;
     const bookCount = books.length;
 
     let mostBorrowedBook = { id: null, count: 0 };
     const bookCounts = {};
 
-    for (const loan of loans) {
-      const bookId = loan.livre;
+    for (const borrow of borrows) {
+      const bookId = borrow.book;
       if (bookId in bookCounts) {
         bookCounts[bookId]++;
       } else {
@@ -221,7 +222,7 @@ export const getLibraryStatistics = async (req, res) => {
     }
 
     const statistics = {
-      loanCount,
+      borrowCount,
       bookCount,
       mostBorrowedBook,
       bookCounts
