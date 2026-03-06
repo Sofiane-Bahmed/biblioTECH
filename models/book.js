@@ -4,70 +4,69 @@ const Schema = mongoose.Schema
 
 const bookSchema = new Schema(
     {
-     
-       category : {
-             type : Schema.Types.ObjectId,
-             ref : "categorie" 
-       },               
+        category: {
+            type: Schema.Types.ObjectId,
+            ref: "categorie"
+        },
 
-        title : {
-            type : String,
-            required :true
+        title: {
+            type: String,
+            required: true
         },
-        author :{
-            type : String,
-            required :true
+        author: {
+            type: String,
+            required: true
         },
-        copies_available:{
+        copies_available: {
             type: Number,
-            required : true
+            required: true
         },
         borrows: [{
-            type : Schema.Types.ObjectId,
-            ref : 'livreEmpruntre'
+            type: Schema.Types.ObjectId,
+            ref: 'borrowBook'
         }],
 
-        comment : [{
-            type : Schema.Types.ObjectId,
-            ref : 'comment'
+        comment: [{
+            type: Schema.Types.ObjectId,
+            ref: 'comment'
         }]
-        
+
     }
 )
 
 const commentSchema = new Schema({
 
-    user  : {
-        type : String,
-        ref : 'user',
-        required : true
+    user: {
+        type: String,
+        ref: 'user',
+        required: true
     },
 
-    book : {
+    book: {
         type: String,
-        ref : 'book',
-        required : true
+        ref: 'book',
+        required: true
     },
-    comment : {
-        type : String,
-        required : true
+    comment: {
+        type: String,
+        required: true
     },
-    parentComment : {
-        type : Schema.Types.ObjectId,
-        ref : 'comment'
+    parentComment: {
+        type: Schema.Types.ObjectId,
+        ref: 'comment'
     },
-    date : {
-        type : Date,
-        default : Date.now 
+    date: {
+        type: Date,
+        default: Date.now
     },
-    replies : [{
-       type : String,
-       ref : 'comment'
+    replies: [{
+        type: String,
+        ref: 'comment'
     }],
 })
 
-export const Book = mongoose.model("book",bookSchema)
-export const Comment = mongoose.model("comment",commentSchema)
+export const Book = mongoose.model("book", bookSchema)
+export const Comment = mongoose.model("comment", commentSchema)
 
 
 

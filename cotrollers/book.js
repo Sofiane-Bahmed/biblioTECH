@@ -2,7 +2,7 @@ import { Book } from "../models/book.js"
 import { Categorie } from "../models/category.js";
 import { Comment } from "../models/book.js"
 import { User } from "../models/user.js"
-import { LivreEmprunte } from "../models/borrowBook.js"
+import { BorrowBook } from "../models/borrowBook.js"
 import { sendEmailNotification } from "./user.js"
 
 // add books :
@@ -199,7 +199,7 @@ export const deleteComment = async (req, res) => {
 
 export const getLibraryStatistics = async (req, res) => {
   try {
-    const borrows = await LivreEmprunte.find();
+    const borrows = await BorrowBook.find();
     const books = await Book.find();
 
     const borrowCount = borrows.length;
