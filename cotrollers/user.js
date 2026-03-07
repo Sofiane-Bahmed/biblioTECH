@@ -3,64 +3,75 @@ import nodemailer from "nodemailer"
 import Jwt from "jsonwebtoken"
 
 import { User } from "../models/user.js"
-import { Livre } from "../models/book.js"
+import { Book } from "../models/book.js"
 
 const { sign, verify } = Jwt
 
 // register : 
 
 export const register = async (req, res) => {
+
+  const { fullName, password, email, role } = req.body;
+
   try {
-    const newUser = new User(req.body);
-    newUser.password = await bcrypt.hash(req.body.password, 10);
-    newUser.subscribed = true;
-    const user = await newUser.save();
+    hashedPassword = password.bcrypt.hash(10);
+
+    const user = new User({
+      fullName,
+      password: hashedPassword,
+      email,
+      role,
+      subscribed: true
+    });
+
+    await user.save()
     res.json(user);
+
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 
-
 // log in :
-
 export const sign_in = async (req, res) => {
-  try {
-    const user = await User.findOne({ email: req.body.email });
 
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne(email);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const passwordMatch = await bcrypt.compare(req.body.password, user.password);
-
+    const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid password' });
     }
 
     const token = sign({ email: user.email, fullName: user.fullName, _id: user._id, role: user.role }, 'RESTFULAPIs');
     res.cookie('token', token, { maxAge: 60 * 60 * 24 * 1000 }); // maxAge: 30 days
     res.json({ message: 'Logged in successfully' });
+
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });
   }
 
   try {
     // send welcome email to new user
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne(email);
     const subject = 'Welcome to the Library';
     const text = `Dear ${user.fullName},\n\nWelcome to the library! We hope you enjoy our collection of books.\n\nSincerely,\nThe Library Team`;
     sendEmailNotification(user.email, subject, text);
+
   } catch (error) {
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne(email);
     console.log(`Error sending welcome email to ${user.email}: ${error}`);
   }
 };
 
-
 //verify role of the user :
-
 export const roleValidation = (requiredRole) => async (req, res, next) => {
+
   try {
     const role = req.cookies["token"].role;
     if (role === requiredRole) {
@@ -76,10 +87,8 @@ export const roleValidation = (requiredRole) => async (req, res, next) => {
   }
 };
 
-
 // log_out : 
-
-export const log_out = (req, res) => {
+export const log_out = (res) => {
   try {
     res.clearCookie('token');
     res.json({ message: 'User logged out successfully' });
@@ -88,13 +97,13 @@ export const log_out = (req, res) => {
   }
 };
 
-
 // voir tous les livres disponibles : 
 
-export const getAllBooks = async (req, res) => {
+export const getAllBooks = async (res) => {
   try {
-    const books = await Livre.find({ copies_disponibles: { $gt: 0 } }).populate('categorie', 'titre');
+    const books = await Book.find({ copies_available: { $gt: 0 } }).populate('category', 'title');
     res.status(200).json(books);
+
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });
   }
@@ -102,8 +111,6 @@ export const getAllBooks = async (req, res) => {
 
 
 // send emails
-
-
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {

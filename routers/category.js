@@ -2,15 +2,15 @@ import express from "express"
 
 import {
     createBookCategory,
-    showBookCategorie,
+    showBookCategory,
     updateBookCategory,
     deleteBookCategory
 } from "../cotrollers/category.js"
 
 
-export const categorieRouter = express.Router()
+export const categoryRouter = express.Router()
 
-categorieRouter.post("/category", createBookCategory)
-categorieRouter.get("/category/:id", showBookCategorie)
-categorieRouter.patch("/category/:id", updateBookCategory)
-categorieRouter.delete("/category/:id", deleteBookCategory)
+categoryRouter.post("/category", createBookCategory)
+categoryRouter.get("/category/:id", showBookCategory)
+categoryRouter.patch("/category/:id", updateBookCategory)
+categoryRouter.delete("/category/:id", deleteBookCategory)

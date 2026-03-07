@@ -1,5 +1,5 @@
 import { Book } from "../models/book.js"
-import { Categorie } from "../models/category.js";
+import { Category } from "../models/category.js";
 import { Comment } from "../models/book.js"
 import { User } from "../models/user.js"
 import { BorrowBook } from "../models/borrowBook.js"
@@ -9,10 +9,10 @@ import { sendEmailNotification } from "./user.js"
 
 export const addBook = async (req, res) => {
   try {
-    const { title, author, copies_available, categorie } = req.body;
+    const { title, author, copies_available, category } = req.body;
 
     // Check if category exists
-    const existingCategory = await Categorie.findOne({ titre: categorie });
+    const existingCategory = await Category.findOne({ title: category });
     if (!existingCategory) {
       return res.status(400).json({ message: 'Category does not exist' });
     }
@@ -26,11 +26,11 @@ export const addBook = async (req, res) => {
 
     for (const subscriber of subscribers) {
       const subject = 'New Book Added';
-      const text = `A new book titled "${titre}" by ${auteur} has been added to the library. Check it out now!`;
+      const text = `A new book titled "${title}" by ${author} has been added to the library. Check it out now!`;
       sendEmailNotification(subscriber.email, subject, text);
     }
-
     res.status(201).json(newBook);
+
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });
   }
@@ -44,13 +44,13 @@ export const searchBooks = async (req, res) => {
 
     let filters = {};
     if (title) {
-      filters.titre = { $regex: title, $options: 'i' };
+      filters.title = { $regex: title, $options: 'i' };
     }
     if (author) {
       filters.auteur = { $regex: author, $options: 'i' };
     }
     if (category) {
-      const categoryId = await Categorie.findOne({ title: category });
+      const categoryId = await Category.findOne({ title: category });
       if (categoryId) {
         filters.category = categoryId._id;
       } else {
@@ -62,8 +62,8 @@ export const searchBooks = async (req, res) => {
     }
 
     const books = await Book.find(filters).populate('category', 'title');
-
     res.status(200).json(books);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Something went wrong' });
@@ -72,7 +72,6 @@ export const searchBooks = async (req, res) => {
 
 
 //add comment and the reply of the comment : 
-
 export const addComment = async (req, res) => {
   try {
     const { userId, bookId, comment, parentCommentId } = req.body;

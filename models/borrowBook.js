@@ -6,7 +6,7 @@ const borrowBookSchema = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: "utilisateur"
+      ref: "user"
     },
     book: {
       type: Schema.Types.ObjectId,

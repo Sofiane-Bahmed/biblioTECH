@@ -23,11 +23,12 @@ const userShema = new Schema(
       },
       role: {
          type: String,
-         enum: ["utilisateur", "employe"],
+         enum: ["user", "employee"],
          required: true
       },
       subscribed: {
          type: Boolean,
+         default:false
       },
       suspension_date: {
          type: Number,

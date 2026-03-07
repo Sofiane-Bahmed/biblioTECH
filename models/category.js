@@ -2,9 +2,9 @@ import mongoose from "mongoose"
 
 const Schema = mongoose.Schema
 
-const categorieSchema = new Schema(
+const categorySchema = new Schema(
     {
-       titre : {
+       title : {
         type : String,
         required : true,
         unique : true
@@ -12,5 +12,5 @@ const categorieSchema = new Schema(
     }
 )
 
-export const Categorie = mongoose.model("categorie",categorieSchema)
+export const Category = mongoose.model("category",categorySchema)
 

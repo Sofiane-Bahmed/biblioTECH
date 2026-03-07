@@ -5,7 +5,7 @@ import * as  dotenv from "dotenv"
 import { userRouter } from "./routers/user.js"
 import { bookRouter } from "./routers/book.js"
 import { borrowBookRouter } from "./routers/borrowBook.js"
-import { categorieRouter } from "./routers/category.js"
+import { categoryRouter } from "./routers/category.js"
 
 const app = express()
 app.use(express.json())
@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/users", userRouter)
 app.use("/books", bookRouter)
 app.use("/borrowBooks", borrowBookRouter)
-app.use("/categories", categorieRouter)
+app.use("/categories", categoryRouter)
 
 
 
