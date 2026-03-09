@@ -3,7 +3,6 @@ import nodemailer from "nodemailer"
 import Jwt from "jsonwebtoken"
 
 import { User } from "../models/user.js"
-import { Book } from "../models/book.js"
 
 const { sign, verify } = Jwt
 
@@ -97,17 +96,6 @@ export const log_out = (res) => {
   }
 };
 
-// voir tous les livres disponibles : 
-
-export const getAllBooks = async (res) => {
-  try {
-    const books = await Book.find({ copies_available: { $gt: 0 } }).populate('category', 'title');
-    res.status(200).json(books);
-
-  } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
-  }
-};
 
 
 // send emails

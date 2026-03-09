@@ -18,7 +18,12 @@ export const addBook = async (req, res) => {
     }
 
     // Create new book
-    const newBook = new Book({ title, author, copies_available, category: existingCategory._id });
+    const newBook = new Book({
+      title,
+      author,
+      copies_available,
+      category: existingCategory._id
+    });
     await newBook.save();
 
     // Send email notification to subscribers
@@ -35,6 +40,67 @@ export const addBook = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
+// read all books : 
+
+export const getAllBooks = async (res) => {
+  try {
+    const books = await Book.find({ copies_available: { $gt: 0 } }).populate('category', 'title');
+    res.status(200).json(books);
+
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+// update a book 
+export const updateBook = async (req, res) => {
+
+  const { id } = req.params;
+  const { title, author, copies_available, category } = req.body
+  try {
+    //chek if book exists
+    const book = await Book.findById(id);
+    if (!book) {
+      return res.status(404).json({ message: "book not found" })
+    }
+    // Check if category exists
+    const existingCategory = await Category.findOne({ title: category });
+    if (!existingCategory) {
+      return res.status(400).json({ message: 'Category does not exist' });
+    }
+
+    const updatedBook = new Book({
+      title,
+      author,
+      copies_available,
+      category: existingCategory._id
+    })
+
+    await updatedBook.save()
+    res.status(201).json({ message: "book updated successfully", updatedBook })
+
+  } catch (error) {
+    res.status(500).json({ message: "something went wrong" })
+  }
+}
+
+// delete a book 
+export const deleteBook = async (req, res) => {
+
+  const { id } = req.params;
+  try {
+    const book = await Book.findByIdAndDelete(id);
+    if (!book) {
+      return res.status(404).json({ message: "book not found" })
+    }
+
+    res.status(201).json({ message: "book deleted successfully" })
+
+  } catch (error) {
+    res.status(500).json({ message: "something went wrong" })
+  }
+}
 
 // search books by filtring : 
 
