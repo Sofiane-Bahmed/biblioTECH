@@ -35,39 +35,7 @@ const bookSchema = new Schema(
     }
 )
 
-const commentSchema = new Schema({
-
-    user: {
-        type: String,
-        ref: 'user',
-        required: true
-    },
-
-    book: {
-        type: String,
-        ref: 'book',
-        required: true
-    },
-    comment: {
-        type: String,
-        required: true
-    },
-    parentComment: {
-        type: Schema.Types.ObjectId,
-        ref: 'comment'
-    },
-    date: {
-        type: Date,
-        default: Date.now
-    },
-    replies: [{
-        type: String,
-        ref: 'comment'
-    }],
-})
-
 export const Book = mongoose.model("book", bookSchema)
-export const Comment = mongoose.model("comment", commentSchema)
 
 
 

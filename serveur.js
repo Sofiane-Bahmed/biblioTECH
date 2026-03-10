@@ -6,6 +6,7 @@ import { userRouter } from "./routers/user.js"
 import { bookRouter } from "./routers/book.js"
 import { borrowBookRouter } from "./routers/borrowBook.js"
 import { categoryRouter } from "./routers/category.js"
+import { commentRouter } from "./routers/comment.js"
 
 const app = express()
 app.use(express.json())
@@ -32,6 +33,7 @@ app.use("/users", userRouter)
 app.use("/books", bookRouter)
 app.use("/borrowBooks", borrowBookRouter)
 app.use("/categories", categoryRouter)
+app.use("/comments", commentRouter)
 
 
 
