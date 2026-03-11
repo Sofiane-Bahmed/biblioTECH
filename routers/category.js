@@ -7,7 +7,6 @@ import {
     deleteBookCategory
 } from "../cotrollers/category.js"
 
-
 export const categoryRouter = express.Router()
 
 categoryRouter.post("/category", createBookCategory)

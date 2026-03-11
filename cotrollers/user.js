@@ -1,13 +1,12 @@
 import bcrypt from "bcrypt"
-import nodemailer from "nodemailer"
 import Jwt from "jsonwebtoken"
 
 import { User } from "../models/user.js"
+import { sendEmailNotification } from "../utils/mailer.js";
 
 const { sign, verify } = Jwt
 
 // register : 
-
 export const register = async (req, res) => {
 
   const { fullName, password, email, role } = req.body;
@@ -98,27 +97,3 @@ export const log_out = (res) => {
 
 
 
-// send emails
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'sofiane.bahmed.fabrikademy@gmail.com',
-    pass: 'ipygyjylsehkeqsh'
-  }
-});
-
-export const sendEmailNotification = async (toEmail, subject, text) => {
-  try {
-    const mailOptions = {
-      from: 'sofiane.bahmed.fabrikademy@gmail.com',
-      to: toEmail,
-      subject: subject,
-      text: text
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${toEmail}`);
-  } catch (error) {
-    console.log(`Error sending email to ${toEmail}: ${error.message}`);
-  }
-};

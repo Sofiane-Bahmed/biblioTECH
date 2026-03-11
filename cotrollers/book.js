@@ -2,7 +2,7 @@ import { Book } from "../models/book.js"
 import { Category } from "../models/category.js";
 import { User } from "../models/user.js"
 import { BorrowBook } from "../models/borrowBook.js"
-import { sendEmailNotification } from "./user.js"
+import { sendEmailNotification } from "../utils/mailer.js";
 
 // add books :
 export const addBook = async (req, res) => {
