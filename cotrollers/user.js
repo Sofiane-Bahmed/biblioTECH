@@ -12,7 +12,7 @@ export const register = async (req, res) => {
   const { fullName, password, email, role } = req.body;
 
   try {
-    hashedPassword = password.bcrypt.hash(10);
+    hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
       fullName,
