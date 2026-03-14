@@ -9,7 +9,7 @@ import {
 
 export const borrowBookRouter = express.Router()
 
-borrowBookRouter.post("/borrow", borrowBook)
-borrowBookRouter.post("/borrow/return", returnBook)
-borrowBookRouter.get("/borrow/history/:userId", getBorrowingHistory)
-borrowBookRouter.post("/borrow/renew/:borrowId", renewBorrowedBook)
+borrowBookRouter.post("/", borrowBook)
+borrowBookRouter.patch("/:id/return", returnBook)
+borrowBookRouter.patch("/:id/renew", renewBorrowedBook)
+borrowBookRouter.get("/history/:userId", getBorrowingHistory)

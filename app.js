@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/users", userRouter)
 app.use("/books", bookRouter)
-app.use("/borrowBooks", borrowBookRouter)
+app.use("/borrows", borrowBookRouter)
 app.use("/categories", categoryRouter)
 app.use("/comments", commentRouter)
 

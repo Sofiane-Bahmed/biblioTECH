@@ -111,17 +111,17 @@ export const deleteBook = async (req, res) => {
 }
 
 // search books by filtring : 
-
 export const searchBooks = async (req, res) => {
   try {
     const { title, author, category, availableCopies } = req.query;
 
     let filters = {};
+    
     if (title) {
       filters.title = { $regex: title, $options: 'i' };
     }
     if (author) {
-      filters.auteur = { $regex: author, $options: 'i' };
+      filters.author = { $regex: author, $options: 'i' };
     }
     if (category) {
       const categoryId = await Category.findOne({ title: category });

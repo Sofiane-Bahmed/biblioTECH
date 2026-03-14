@@ -12,13 +12,13 @@ import {
 
 export const bookRouter = express.Router()
 
-bookRouter.post("/book", addBook);
-bookRouter.get("/getBooks", getAllBooks)
-bookRouter.get("/getBook/:id", getBook)
-bookRouter.put("/updateBook/:id", updateBook)
-bookRouter.delete("/deleteBook/:id", deleteBook)
-bookRouter.get("/filter", searchBooks);
-bookRouter.get("/statistics", getLibraryStatistics);
+bookRouter.post("/", addBook);
+bookRouter.get("/", getAllBooks)
+bookRouter.get("/:id", getBook)
+bookRouter.put("/:id", updateBook)
+bookRouter.delete("/:id", deleteBook)
+bookRouter.get("/search", searchBooks);
+bookRouter.get("/stats", getLibraryStatistics);
 
 
 
