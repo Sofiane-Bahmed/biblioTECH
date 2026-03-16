@@ -145,7 +145,7 @@ export const searchBooks = async (req, res) => {
 };
 
 // view libary statistics
-export const getLibraryStatistics = async (req, res) => {
+export const getLibraryStatistics = async (res) => {
   try {
     const borrows = await BorrowBook.find();
     const books = await Book.find();

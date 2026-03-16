@@ -40,7 +40,6 @@ export const addComment = async (req, res) => {
             book.comment.push(newComment._id);
             await book.save();
 
-
             res.status(201).json(newComment);
             return
         };
