@@ -31,7 +31,7 @@ export const register = async (req, res) => {
 };
 
 // log in :
-export const sign_in = async (req, res) => {
+export const login = async (req, res) => {
 
   const { email, password } = req.body;
 
@@ -86,7 +86,7 @@ export const roleValidation = (requiredRole) => async (req, res, next) => {
 };
 
 // log_out : 
-export const log_out = (res) => {
+export const logout = (res) => {
   try {
     res.clearCookie('token');
     res.json({ message: 'User logged out successfully' });
