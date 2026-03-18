@@ -3,7 +3,7 @@ import mongoose from "mongoose"
 
 const Schema = mongoose.Schema;
 
-const userShema = new Schema(
+const userSchema = new Schema(
    {
       fullName: {
          type: String,
@@ -36,5 +36,5 @@ const userShema = new Schema(
    }
 )
 
-export const User = mongoose.model("user", userShema);
+export const User = mongoose.model("user", userSchema);
 
