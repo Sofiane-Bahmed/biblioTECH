@@ -9,16 +9,17 @@ import {
        searchBooks,
        getLibraryStatistics,
 } from "../cotrollers/book.js"
+import { authorize } from "../middleware/authMiddleware.js";
 
 export const bookRouter = express.Router()
 
-bookRouter.post("/", addBook);
+bookRouter.post("/", authorize("admin"), addBook);
 bookRouter.get("/", getAllBooks)
 bookRouter.get("/:id", getBook)
-bookRouter.put("/:id", updateBook)
-bookRouter.delete("/:id", deleteBook)
+bookRouter.put("/:id", authorize("admin"), updateBook)
+bookRouter.delete("/:id", authorize("admin"), deleteBook)
 bookRouter.get("/search", searchBooks);
-bookRouter.get("/stats", getLibraryStatistics);
+bookRouter.get("/stats", authorize("admin"), getLibraryStatistics);
 
 
 

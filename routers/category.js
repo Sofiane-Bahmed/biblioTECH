@@ -6,10 +6,11 @@ import {
     updateBookCategory,
     deleteBookCategory
 } from "../cotrollers/category.js"
+import { authorize } from "../middleware/authMiddleware.js"
 
 export const categoryRouter = express.Router()
 
-categoryRouter.post("/", createBookCategory)
+categoryRouter.post("/", authorize("admin"), createBookCategory)
 categoryRouter.get("/:id", showBookCategory)
-categoryRouter.patch("/:id", updateBookCategory)
-categoryRouter.delete("/:id", deleteBookCategory)
+categoryRouter.patch("/:id", authorize("admin"), updateBookCategory)
+categoryRouter.delete("/:id", authorize("admin"), deleteBookCategory)

@@ -4,7 +4,7 @@ import Jwt from "jsonwebtoken"
 import { User } from "../models/user.js"
 import { sendEmailNotification } from "../utils/mailer.js";
 
-const { sign, verify } = Jwt
+const { sign } = Jwt
 
 // register : 
 export const register = async (req, res) => {
@@ -64,24 +64,6 @@ export const login = async (req, res) => {
   } catch (error) {
     const user = await User.findOne(email);
     console.log(`Error sending welcome email to ${user.email}: ${error}`);
-  }
-};
-
-//verify role of the user :
-export const roleValidation = (requiredRole) => async (req, res, next) => {
-
-  try {
-    const role = req.cookies["token"].role;
-    if (role === requiredRole) {
-      verify(req.cookies["token"].token, 'RESTFULAPIs')
-
-      return next();
-
-    } else {
-      res.status(401).json({ message: "Unauthorized user!!" });
-    }
-  } catch (err) {
-    res.json(err);
   }
 };
 
