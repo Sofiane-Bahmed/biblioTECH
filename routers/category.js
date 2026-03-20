@@ -5,7 +5,7 @@ import {
     showBookCategory,
     updateBookCategory,
     deleteBookCategory
-} from "../cotrollers/category.js"
+} from "../controllers/category.js"
 import { authorize } from "../middleware/authMiddleware.js"
 
 export const categoryRouter = express.Router()

@@ -8,18 +8,18 @@ import {
        deleteBook,
        searchBooks,
        getLibraryStatistics,
-} from "../cotrollers/book.js"
+} from "../controllers/book.js"
 import { authorize } from "../middleware/authMiddleware.js";
 
 export const bookRouter = express.Router()
 
 bookRouter.post("/", authorize("admin"), addBook);
 bookRouter.get("/", getAllBooks)
-bookRouter.get("/:id", getBook)
-bookRouter.put("/:id", authorize("admin"), updateBook)
-bookRouter.delete("/:id", authorize("admin"), deleteBook)
 bookRouter.get("/search", searchBooks);
 bookRouter.get("/stats", authorize("admin"), getLibraryStatistics);
+bookRouter.get("/:id", getBook)
+bookRouter.patch("/:id", authorize("admin"), updateBook)
+bookRouter.delete("/:id", authorize("admin"), deleteBook)
 
 
 

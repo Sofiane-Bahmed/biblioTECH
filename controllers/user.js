@@ -46,7 +46,15 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    const token = sign({ email: user.email, fullName: user.fullName, _id: user._id, role: user.role }, 'RESTFULAPIs');
+    const token = sign({
+      email: user.email,
+      fullName: user.fullName,
+      _id: user._id,
+      role: user.role
+    },
+      process.env.JWT_SECRET
+    );
+
     res.cookie('token', token, { maxAge: 60 * 60 * 24 * 1000 }); // maxAge: 30 days
     res.json({ message: 'Logged in successfully' });
 

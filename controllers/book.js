@@ -116,7 +116,7 @@ export const searchBooks = async (req, res) => {
     const { title, author, category, availableCopies } = req.query;
 
     let filters = {};
-    
+
     if (title) {
       filters.title = { $regex: title, $options: 'i' };
     }
