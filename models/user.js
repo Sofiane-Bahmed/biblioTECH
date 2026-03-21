@@ -18,7 +18,8 @@ const userSchema = new Schema(
       },
       password: {
          type: String,
-         required: true
+         required: true,
+         select: false
       },
       role: {
          type: String,
@@ -27,7 +28,7 @@ const userSchema = new Schema(
       },
       subscribed: {
          type: Boolean,
-         default:false
+         default: false
       },
       suspension_date: {
          type: Number,

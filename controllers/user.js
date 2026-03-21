@@ -2,9 +2,7 @@ import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
 
 import { User } from "../models/user.js"
-import { sendEmailNotification } from "../utils/mailer.js";
-
-const { sign } = Jwt
+import { sendWelcomeEmail } from "../utils/emailService.js";
 
 // register : 
 export const register = async (req, res) => {
@@ -12,31 +10,36 @@ export const register = async (req, res) => {
   const { fullName, password, email, role } = req.body;
 
   try {
-    hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({
+    const newUser = await User.create({
       fullName,
       password: hashedPassword,
       email,
-      role,
-      subscribed: true
-    });
+      role
+    })
 
-    await user.save()
-    res.json(user);
+    res.status(201).json(newUser)
+
+    sendWelcomeEmail(newUser);
 
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    // Handle duplicate email errors (Mongo Error Code 11000)
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+    res.status(500).json({ message: "Server error during registration" });
   }
 };
 
 // log in :
 export const login = async (req, res) => {
 
+  const { sign } = Jwt
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne(email);
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -60,18 +63,6 @@ export const login = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });
-  }
-
-  try {
-    // send welcome email to new user
-    const user = await User.findOne(email);
-    const subject = 'Welcome to the Library';
-    const text = `Dear ${user.fullName},\n\nWelcome to the library! We hope you enjoy our collection of books.\n\nSincerely,\nThe Library Team`;
-    sendEmailNotification(user.email, subject, text);
-
-  } catch (error) {
-    const user = await User.findOne(email);
-    console.log(`Error sending welcome email to ${user.email}: ${error}`);
   }
 };
 
