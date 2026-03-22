@@ -6,9 +6,8 @@ export const createBookCategory = async (req, res) => {
   try {
     const { title } = req.body;
 
-    const newCategory = new Category({ title });
-    await newCategory.save();
-    
+    const newCategory = await Category.create({ title });
+
     res.status(201).json(newCategory);
 
   } catch (error) {
@@ -23,10 +22,10 @@ export const showBookCategory = async (req, res) => {
     const { id } = req.params;
     const categoryId = await Category.findById(id);
 
-    res.send(categoryId);
+    res.status(200).json(categoryId);
 
   } catch (err) {
-    res.send("something went wrong");
+    res.status(500).json({ message: "something went wrong" });
   }
 };
 
@@ -37,13 +36,20 @@ export const updateBookCategory = async (req, res) => {
     const { id } = req.params;
     const { title } = req.body;
 
-    const category = await Category.findById(id);
+    const category = await Category.findByIdAndUpdate(
+      id,
+      {
+        title
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    category.title = title;
-    await category.save();
     res.status(200).json(category);
 
   } catch (error) {

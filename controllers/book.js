@@ -16,13 +16,13 @@ export const addBook = async (req, res) => {
     }
 
     // Create new book
-    const newBook = new Book({
+    const newBook = await Book.create({
       title,
       author,
       copies_available,
       category: existingCategory._id
     });
-    await newBook.save();
+
 
     // Send email notification to subscribers
     const subscribers = await User.find({ subscribed: true });
@@ -32,6 +32,7 @@ export const addBook = async (req, res) => {
       const text = `A new book titled "${title}" by ${author} has been added to the library. Check it out now!`;
       sendEmailNotification(subscriber.email, subject, text);
     }
+
     res.status(201).json(newBook);
 
   } catch (error) {
@@ -65,30 +66,37 @@ export const getBook = async (res, req) => {
 export const updateBook = async (req, res) => {
 
   const { id } = req.params;
-  const { title, author, copies_available, category } = req.body
+  const { title, author, copies_available, category } = req.body;
+
   try {
-    //chek if book exists
-    const book = await Book.findById(id);
-    if (!book) {
-      return res.status(404).json({ message: "book not found" })
-    }
     // Check if category exists
     const existingCategory = await Category.findOne({ title: category });
     if (!existingCategory) {
       return res.status(400).json({ message: 'Category does not exist' });
     }
 
-    const updatedBook = new Book({
-      title,
-      author,
-      copies_available,
-      category: existingCategory._id
-    })
+    const updatedBook = await Book.findByIdAndUpdate(
+      id
+      , {
+        title,
+        author,
+        copies_available,
+        category: existingCategory._id
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    )
+    //chek if book exists
+    if (!updatedBook) {
+      return res.status(404).json({ message: "book not found" })
+    }
 
-    await updatedBook.save()
-    res.status(201).json({ message: "book updated successfully", updatedBook })
+    res.status(200).json({ message: "book updated successfully", updatedBook })
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "something went wrong" })
   }
 }
@@ -106,6 +114,7 @@ export const deleteBook = async (req, res) => {
     res.status(201).json({ message: "book deleted successfully" })
 
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: "something went wrong" })
   }
 }
