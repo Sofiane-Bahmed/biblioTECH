@@ -36,13 +36,12 @@ export const borrowBook = async (req, res) => {
     const borrow_date = new Date();
     const due_date = new Date(borrow_date.getTime() + 7 * 24 * 60 * 60 * 1000); // Due date is 7 days from now
 
-    const newBorrow = new BorrowBook({
+    const newBorrow = BorrowBook.create({
       user: userId,
       book: bookId,
       borrow_date,
       due_date,
     });
-    await newBorrow.save();
 
     // Update book availability
     book.copies_available--;

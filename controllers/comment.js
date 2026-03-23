@@ -24,14 +24,13 @@ export const addComment = async (req, res) => {
                 return res.status(404).json({ message: "Parent comment not found" });
             }
             // Create new comment reply
-            const newCommentReply = new Comment({
+            const newCommentReply = await Comment.create({
                 user: userId,
                 book: bookId,
                 parentComment: parentCommentId,
                 comment,
-            });
+            })
 
-            await newCommentReply.save();
 
             // Add comment to book or parent comment
             parentComment.replies.push(newComment._id);
@@ -45,12 +44,11 @@ export const addComment = async (req, res) => {
         };
 
         // Create new comment
-        const newComment = new Comment({
+        const newComment = await Comment({
             user: userId,
             book: bookId,
             comment,
         });
-        await newComment.save();
 
         // Add comment to book 
         book.comment.push(newComment._id);
