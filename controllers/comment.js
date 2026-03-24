@@ -31,6 +31,9 @@ export const addComment = async (req, res) => {
                 comment,
             })
 
+            if (!newCommentReply) {
+                return res.status(400).json({ message: "failed to create new comment reply" })
+            }
 
             // Add comment to book or parent comment
             parentComment.replies.push(newComment._id);
@@ -53,7 +56,6 @@ export const addComment = async (req, res) => {
         // Add comment to book 
         book.comment.push(newComment._id);
         await book.save();
-
 
         res.status(201).json(newComment);
     } catch (error) {
@@ -104,11 +106,10 @@ export const deleteComment = async (req, res) => {
     try {
         const { commentId } = await req.params
 
-        const comment = await Comment.findById(commentId);
+        const comment = await Comment.findByIdAndDelete(commentId);
         if (!comment) {
             return res.status(404).json({ message: 'comment not found' });
         }
-        await comment.remove();
 
         // remove comment id from book's comments array
         const book = await Book.findById(comment.book);
