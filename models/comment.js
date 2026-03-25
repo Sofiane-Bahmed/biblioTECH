@@ -5,13 +5,13 @@ const Schema = mongoose.Schema
 const commentSchema = new Schema({
 
     user: {
-        type: String,
+        type: Schema.Types.ObjectId,
         ref: 'user',
         required: true
     },
 
     book: {
-        type: String,
+        type: Schema.Types.ObjectId,
         ref: 'book',
         required: true
     },

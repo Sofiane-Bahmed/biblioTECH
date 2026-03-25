@@ -86,13 +86,21 @@ export const updateComment = async (req, res) => {
         const { commentId } = await req.params;
         const { commentUpdate } = req.body;
 
-        const comment = await Comment.findById(commentId);
+        const comment = await Comment.findByIdAndUpdate(
+            commentId,
+            {
+                comment: commentUpdate
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
         if (!comment) {
             return res.status(404).json({ message: 'comment not found' });
         }
 
-        comment.comment = commentUpdate;
-        await comment.save();
         res.status(200).json(comment);
 
     } catch (error) {
