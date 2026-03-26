@@ -5,7 +5,7 @@ import {
     getCommentById,
     updateComment,
     deleteComment,
-} from "../cotrollers/comment.js"
+} from "../controllers/comment.js"
 
 export const commentRouter = express.Router()
 

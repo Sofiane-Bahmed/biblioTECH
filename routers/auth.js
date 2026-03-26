@@ -4,7 +4,7 @@ import {
     register,
     login,
     logout,
-} from "../cotrollers/user.js"
+} from "../controllers/user.js"
 
 export const authRouter = express.Router()
  

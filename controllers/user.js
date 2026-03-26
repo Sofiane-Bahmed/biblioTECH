@@ -39,12 +39,13 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
+
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid password' });
     }
@@ -62,17 +63,19 @@ export const login = async (req, res) => {
     res.json({ message: 'Logged in successfully' });
 
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
 // log_out : 
-export const logout = (res) => {
+export const logout = (req, res) => {
   try {
     res.clearCookie('token');
-    res.json({ message: 'User logged out successfully' });
+    res.status(200).json({ message: 'User logged out successfully' });
   } catch (err) {
-    res.json(err);
+    console.log(err)
+    res.status(500).json({ message: 'internal server error' });
   }
 };
 

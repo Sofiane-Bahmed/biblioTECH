@@ -1,4 +1,4 @@
-import { transporter } from "../config/mail.config";
+import { transporter } from "../config/mail.config.js";
 
 export const sendEmailNotification = async (toEmail, subject, text) => {
     try {

@@ -1,4 +1,4 @@
-import { sendEmailNotification } from "./mailer";
+import { sendEmailNotification } from "./mailer.js";
 
 export const sendWelcomeEmail = async (user) => {
   try {
