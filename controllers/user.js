@@ -51,16 +51,19 @@ export const login = async (req, res) => {
     }
 
     const token = sign({
+      _id: user._id,
       email: user.email,
       fullName: user.fullName,
-      _id: user._id,
-      role: user.role
+      role: user.role,
     },
       process.env.JWT_SECRET
     );
 
+    user.subscribed = true;
+    await user.save();
+
     res.cookie('token', token, { maxAge: 60 * 60 * 24 * 1000 }); // maxAge: 30 days
-    res.json({ message: 'Logged in successfully' });
+    res.json({ message: 'Logged in successfully', user });
 
   } catch (error) {
     console.log(error)
