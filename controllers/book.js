@@ -25,13 +25,13 @@ export const addBook = async (req, res) => {
 
 
     // Send email notification to subscribers
-    // const subscribers = await User.find({ subscribed: true });
+    const subscribers = await User.find({ subscribed: true });
 
-    // for (const subscriber of subscribers) {
-    //   const subject = 'New Book Added';
-    //   const text = `A new book titled "${title}" by ${author} has been added to the library. Check it out now!`;
-    //   sendEmailNotification(subscriber.email, subject, text);
-    // }
+    for (const subscriber of subscribers) {
+      const subject = 'New Book Added';
+      const text = `A new book titled "${title}" by ${author} has been added to the library. Check it out now!`;
+      sendEmailNotification(subscriber.email, subject, text);
+    }
 
     res.status(201).json(newBook);
 

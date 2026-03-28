@@ -2,6 +2,9 @@ import { transporter } from "../config/mail.config.js";
 
 export const sendEmailNotification = async (toEmail, subject, text) => {
     try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            throw new Error("Email credentials missing in .env");
+        }
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: toEmail,
@@ -14,6 +17,5 @@ export const sendEmailNotification = async (toEmail, subject, text) => {
 
     } catch (error) {
         console.error(`Mailer Error: ${error.message}`);
-        throw new Error('Email could not be sent.');
     }
 };

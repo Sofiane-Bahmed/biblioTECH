@@ -82,5 +82,22 @@ export const logout = (req, res) => {
   }
 };
 
+export const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const userId = User.findByIdAndDelete(id);
+
+    if (!userId) return res.status(404).json({ message: "user not found" });
+
+    res.status(200).json({ message: "user deleted successfully" })
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "internal server error" })
+  }
+
+}
+
 
 
