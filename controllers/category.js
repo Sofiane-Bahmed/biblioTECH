@@ -67,7 +67,7 @@ export const deleteBookCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    res.status(200).json({ message: 'Category successfully deleted' });
+    res.status(204).json({ message: 'Category successfully deleted' });
 
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });

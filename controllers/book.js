@@ -111,7 +111,7 @@ export const deleteBook = async (req, res) => {
       return res.status(404).json({ message: "book not found" })
     }
 
-    res.status(201).json({ message: "book deleted successfully" })
+    res.status(204).json({ message: "book deleted successfully" })
 
   } catch (error) {
     console.log(error)
