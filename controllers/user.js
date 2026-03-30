@@ -44,26 +44,37 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!passwordMatch) {
-      return res.status(401).json({ message: 'Invalid password' });
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const token = sign({
       _id: user._id,
-      email: user.email,
-      fullName: user.fullName,
       role: user.role,
     },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
     );
 
     user.subscribed = true;
     await user.save();
 
-    res.cookie('token', token, { maxAge: 60 * 60 * 24 * 1000 }); // maxAge: 30 days
-    res.json({ message: 'Logged in successfully', user });
+    res.cookie('token', token, {
+      axAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      message: 'Welcome back!',
+      user: userResponse
+    });
 
   } catch (error) {
     console.log(error)
@@ -82,11 +93,12 @@ export const logout = (req, res) => {
   }
 };
 
+// Delete a user
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const userId = User.findByIdAndDelete(id);
+    const userId = await User.findByIdAndDelete(id);
 
     if (!userId) return res.status(404).json({ message: "user not found" });
 
@@ -97,6 +109,20 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: "internal server error" })
   }
 
+};
+
+export const getMyProfile = async (req, res) => {
+
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "user not found" });
+
+    res.status(200).json(user)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "internal server error" })
+  }
 }
 
 
