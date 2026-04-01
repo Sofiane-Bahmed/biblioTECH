@@ -62,7 +62,7 @@ export const login = async (req, res) => {
     await user.save();
 
     res.cookie('token', token, {
-      axAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -114,7 +114,7 @@ export const deleteUser = async (req, res) => {
 export const getMyProfile = async (req, res) => {
 
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "user not found" });
 
