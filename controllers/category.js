@@ -11,6 +11,9 @@ export const createBookCategory = async (req, res) => {
     res.status(201).json(newCategory);
 
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Category name already exists" });
+    }
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
@@ -20,9 +23,9 @@ export const showBookCategory = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const categoryId = await Category.findById(id);
+    const category = await Category.findById(id);
 
-    res.status(200).json(categoryId);
+    res.status(200).json(category);
 
   } catch (err) {
     res.status(500).json({ message: "something went wrong" });
@@ -67,7 +70,7 @@ export const deleteBookCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    res.status(204).json({ message: 'Category successfully deleted' });
+    res.status(200).json({ message: 'Category successfully deleted' });
 
   } catch (error) {
     res.status(500).json({ message: 'Something went wrong' });

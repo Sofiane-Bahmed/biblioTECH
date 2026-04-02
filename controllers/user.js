@@ -96,13 +96,12 @@ export const logout = (req, res) => {
 // Delete a user
 export const deleteUser = async (req, res) => {
   const { id } = req.params;
-
+  
   try {
-    const userId = await User.findByIdAndDelete(id);
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(404).json({ message: "user not found" });
 
-    if (!userId) return res.status(404).json({ message: "user not found" });
-
-    res.status(204).json({ message: "user deleted successfully" })
+    res.status(200).json({ message: "user deleted successfully" })
 
   } catch (error) {
     console.log(error)

@@ -9,4 +9,4 @@ import { authorize } from "../middleware/authMiddleware.js";
 export const userRouter = express.Router();
 
 userRouter.get("/me", authorize("user"), getMyProfile);
-userRouter.delete("/:id", deleteUser);
+userRouter.delete("/:id", authorize("admin"), deleteUser);
