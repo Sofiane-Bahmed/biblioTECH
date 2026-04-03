@@ -18,7 +18,7 @@ bookRouter.get("/", getAllBooks)
 bookRouter.get("/search", searchBooks);
 bookRouter.get("/stats", authorize("admin"), getLibraryStatistics);
 bookRouter.get("/:id", getBook)
-bookRouter.patch("/:id", authorize("admin"), updateBook)
+bookRouter.put("/:id", authorize("admin"), updateBook)
 bookRouter.delete("/:id", authorize("admin"), deleteBook)
 
 

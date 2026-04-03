@@ -41,7 +41,7 @@ export const addBook = async (req, res) => {
 };
 
 // read all books : 
-export const getAllBooks = async (res) => {
+export const getAllBooks = async (req,res) => {
   try {
     const books = await Book.find({ copies_available: { $gt: 0 } }).populate('category', 'title');
     res.status(200).json(books);
@@ -51,7 +51,7 @@ export const getAllBooks = async (res) => {
   }
 };
 
-export const getBook = async (res, req) => {
+export const getBook = async (req, res) => {
   const { id } = req.params;
   try {
     const book = await Book.findById(id);
@@ -69,6 +69,12 @@ export const updateBook = async (req, res) => {
   const { title, author, copies_available, category } = req.body;
 
   try {
+
+    const book = await Book.findById(id);
+    console.log(book)
+    if (!book) {
+      return res.status(404).json({ message: "book not found" })
+    }
     // Check if category exists
     const existingCategory = await Category.findOne({ title: category });
     if (!existingCategory) {
@@ -88,10 +94,6 @@ export const updateBook = async (req, res) => {
         runValidators: true
       }
     )
-    //chek if book exists
-    if (!updatedBook) {
-      return res.status(404).json({ message: "book not found" })
-    }
 
     res.status(200).json({ message: "book updated successfully", updatedBook })
 
@@ -111,7 +113,7 @@ export const deleteBook = async (req, res) => {
       return res.status(404).json({ message: "book not found" })
     }
 
-    res.status(204).json({ message: "book deleted successfully" })
+    res.status(200).json({ message: "book deleted successfully" })
 
   } catch (error) {
     console.log(error)
