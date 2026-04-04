@@ -4,8 +4,16 @@ import { User } from "../models/user.js"
 
 // borrow a book : 
 export const borrowBook = async (req, res) => {
+  const userId = req.user._id;
+  const { bookId } = req.body;
+
   try {
-    const { userId, bookId } = req.body;
+    //check if user is suspended
+    const user = await User.findById(userId);
+
+    if (user.suspension_date && user.suspension_date > new Date()) {
+      return res.status(400).json({ message: `Account suspended until ${user.suspension_date.toDateString()}` });
+    }
 
     // Check if user has already borrowed 3 books this month 
     const date = new Date();
@@ -25,16 +33,20 @@ export const borrowBook = async (req, res) => {
 
     // Check if book is available
     const book = await Book.findById(bookId);
-    if (!book) {
-      return res.status(400).json({ message: "book not found" });
+    if (!book || book.copies_available <= 0) {
+      return res.status(404).json({ message: "Book is unavailable." });
     }
-    if (book.copies_available <= 0) {
-      return res.status(400).json({ message: "The book is not available" });
+
+    //check if user already borrowed this book
+    const existingBorrow = await BorrowBook.findOne({ user: userId, book: bookId, return_date: null });
+    if (existingBorrow) {
+      return res.status(400).json({ message: "You have already borrowed this book" });
     }
 
     // Create new borrow
     const borrow_date = new Date();
-    const due_date = new Date(borrow_date.getTime() + 7 * 24 * 60 * 60 * 1000); // Due date is 7 days from now
+    const due_date = new Date();
+    due_date.setDate(due_date.getDate() + 7); // Due date is 7 days from now
 
     const newBorrow = await BorrowBook.create({
       user: userId,
@@ -47,28 +59,12 @@ export const borrowBook = async (req, res) => {
     book.copies_available--;
     await book.save();
 
-    // Check if the book is returned late
-    const currentDate = new Date();
-    if (currentDate > newBorrow.due_date) {
-      // Calculate the number of days late
-      const daysLate = Math.floor((currentDate - newBorrow.due_date) / (1000 * 60 * 60 * 24));
-      // Apply the late return penalty
-      if (daysLate >= 10) {
-        const user = await User.findById(userId);
-        if (user) {
-          user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); // Suspension date is 10 days from now
-          await user.save();
-          return res.status(400).json({ message: "You have been suspended for 10 days due to the late return of the book" });
-        }
-      }
-    }
-
     res.status(201).json(newBorrow);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 
 // return book
 export const returnBook = async (req, res) => {

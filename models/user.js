@@ -31,7 +31,7 @@ const userSchema = new Schema(
          default: false
       },
       suspension_date: {
-         type: Number,
+         type: Date,
       },
    }
 )
