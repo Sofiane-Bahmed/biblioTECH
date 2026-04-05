@@ -59,7 +59,7 @@ export const borrowBook = async (req, res) => {
     book.copies_available--;
     await book.save();
 
-    res.status(201).json(newBorrow);
+    res.status(201).json({ message: "Book borrowed successfully", borrow: newBorrow });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong" });
@@ -68,43 +68,51 @@ export const borrowBook = async (req, res) => {
 
 // return book
 export const returnBook = async (req, res) => {
-  try {
-    const { borrowId, bookId } = req.body;
+  const userId = req.user._id;
+  const { bookId } = req.body;
+  const { id } = req.params;
 
-    // Check if borrow exists
-    const borrow = await BorrowBook.findOne({ user: borrowId, book: bookId });
-    if (!borrow) {
-      return res.status(400).json({ message: 'Loan not found' });
+  try {
+    //  Fetch everything needed
+    const [user, book, borrow] = await Promise.all([
+      User.findById(userId),
+      Book.findById(bookId),
+      BorrowBook.findOne({ _id: id, user: userId, book: bookId })
+    ]);
+
+    if (!user || !book || !borrow) {
+      return res.status(404).json({ message: "Record not found" });
     }
 
-    // Update book availability
-    const book = await Book.findOne({ _id: borrow.book });
-    book.copies_available++;
-    await book.save();
+    // Prevent double-returning
+    if (borrow.return_date) {
+      return res.status(400).json({ message: "This book has already been returned" });
+    }
 
-    // Update borrow return date
-    borrow.return_date = new Date();
-    await borrow.save();
-
-    // Check if the book was returned late
     const currentDate = new Date();
+    let message = "The book was successfully returned";
+
+    // Handle Late Penalty
     if (currentDate > borrow.due_date) {
-      // Calculate the number of days late
       const daysLate = Math.floor((currentDate - borrow.due_date) / (1000 * 60 * 60 * 24));
 
-      // Apply the late return penalty
       if (daysLate >= 10) {
-        const user = await User.findById(borrow.user);
-        if (user) {
-          user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); // Suspension date is 10 days from now
-          await user.save();
-          return res.status(400).json({ message: "You have been suspended for 10 days due to the late return of the book" });
-        }
+        user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); //suspend for 10 days
+        await user.save();
+        message = "Book returned, but you are suspended for 10 days due to delay.";
       }
     }
+    // Update book availability
+    book.copies_available++;
+    // Update borrow return date
+    borrow.return_date = currentDate;
 
-    res.status(200).json({ message: 'The book was successfully returned' });
+    await Promise.all([book.save(), borrow.save()]);
+
+    res.status(200).json({ message });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };

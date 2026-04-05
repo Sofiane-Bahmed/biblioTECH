@@ -11,6 +11,6 @@ import { authorize } from "../middleware/authMiddleware.js"
 export const borrowBookRouter = express.Router()
 
 borrowBookRouter.post("/", authorize("user"), borrowBook)
-borrowBookRouter.patch("/:id/return", returnBook)
-borrowBookRouter.patch("/:id/renew", renewBorrowedBook)
-borrowBookRouter.get("/history/:userId", getBorrowingHistory)
+borrowBookRouter.patch("/:id/return", authorize("user"), returnBook)
+borrowBookRouter.patch("/:id/renew", authorize("user"), renewBorrowedBook)
+borrowBookRouter.get("/history/:userId", authorize("user"), getBorrowingHistory)
