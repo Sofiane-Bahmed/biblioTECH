@@ -117,14 +117,23 @@ export const returnBook = async (req, res) => {
   }
 };
 
+//Update it with G
+
 // Get borrowing history for a user
 export const getBorrowingHistory = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const borrowingHistory = await BorrowBook.find({ user: userId });
+    const history = await BorrowBook
+      .find({ user: userId })
+      .populate("book")
+      .sort({ borrow_date: -1 });
+      
+    if (!history || history.length === 0) {
+      return res.status(200).json({ message: "No borrowing history found", history: [] });
+    }
 
-    res.status(200).json(borrowingHistory);
+    res.status(200).json(history);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "something went wrong" })
