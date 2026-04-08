@@ -117,7 +117,6 @@ export const returnBook = async (req, res) => {
   }
 };
 
-//Update it with G
 
 // Get borrowing history for a user
 export const getBorrowingHistory = async (req, res) => {
@@ -128,7 +127,7 @@ export const getBorrowingHistory = async (req, res) => {
       .find({ user: userId })
       .populate("book")
       .sort({ borrow_date: -1 });
-      
+
     if (!history || history.length === 0) {
       return res.status(200).json({ message: "No borrowing history found", history: [] });
     }
@@ -143,30 +142,44 @@ export const getBorrowingHistory = async (req, res) => {
 // Renew borrowed book
 export const renewBorrowedBook = async (req, res) => {
   try {
-    const { borrowId } = req.params;
+    const userId = req.user._id;
+    const { bookId } = req.body;
+    const { id } = req.params;
 
-    // Check if borrow exists
-    const existingBorrow = await BorrowBook.findById(borrowId);
-    if (!existingBorrow) {
-      return res.status(404).json({ message: 'Borrow not found' });
+    //  Fetch everything needed
+    const [user, book, borrow] = await Promise.all([
+      User.findById(userId),
+      Book.findById(bookId),
+      BorrowBook.findOne({ _id: id, user: userId, book: bookId })
+    ]);
+
+    if (!user || !book || !borrow) {
+      return res.status(404).json({ message: "Record not found" });
     }
 
     // Check if the borrow has already been renewed
-    if (existingBorrow.renewed) {
+    if (borrow.renewed) {
       return res.status(400).json({ message: 'The maximum number of renewals has been reached' });
     }
 
+    // Prevent renewal if book is already late
+    if (new Date() > borrow.due_date) {
+      return res.status(400).json({ message: 'Cannot renew a late book. Please return it first.' });
+    }
+
     // Calculate new due date
-    const newDueDate = new Date(existingBorrow.due_date.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const newDueDate = new Date(borrow.due_date);
+    newDueDate.setDate(newDueDate.getDate() + 7);
 
     // Update borrow
-    existingBorrow.due_date = newDueDate;
-    existingBorrow.renewed = true;
-    await existingBorrow.save();
+    borrow.due_date = newDueDate;
+    borrow.renewed = true;
+    await borrow.save();
 
-    res.status(200).json({ message: 'Borrow renewed successfully', borrow: existingBorrow });
+    res.status(200).json({ message: 'Borrow renewed for 7 more days', borrow: borrow });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
