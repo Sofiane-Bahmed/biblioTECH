@@ -41,7 +41,7 @@ export const addBook = async (req, res) => {
 };
 
 // read all books : 
-export const getAllBooks = async (req,res) => {
+export const getAllBooks = async (req, res) => {
   try {
     const books = await Book.find({ copies_available: { $gt: 0 } }).populate('category', 'title');
     res.status(200).json(books);
@@ -155,7 +155,7 @@ export const searchBooks = async (req, res) => {
 };
 
 // view libary statistics
-export const getLibraryStatistics = async (res) => {
+export const getLibraryStatistics = async (req, res) => {
   try {
     const borrows = await BorrowBook.find();
     const books = await Book.find();
