@@ -33,6 +33,12 @@ const userSchema = new Schema(
       suspension_date: {
          type: Date,
       },
+      borrows: [
+         {
+            type: Schema.Types.ObjectId,
+            ref: "borrowBook"
+         }
+      ]
    }
 )
 

@@ -2,11 +2,12 @@ import { Book } from "../models/book.js"
 import { Comment } from "../models/comment.js"
 import { User } from "../models/user.js"
 
-//add comment and the reply of the comment : 
+//add comment or the reply of the comment : 
 export const addComment = async (req, res) => {
-    try {
-        const { userId, bookId, comment, parentCommentId } = req.body;
+    const userId = req.user._id;
+    const { bookId, comment, parentCommentId } = req.body;
 
+    try {
         // Check if user and book exist
         const user = await User.findById(userId);
         const book = await Book.findById(bookId);
@@ -36,18 +37,18 @@ export const addComment = async (req, res) => {
             }
 
             // Add comment to book or parent comment
-            parentComment.replies.push(newComment._id);
+            parentComment.replies.push(newCommentReply._id);
             await parentComment.save();
 
-            book.comment.push(newComment._id);
+            book.comment.push(newCommentReply._id);
             await book.save();
 
-            res.status(201).json(newComment);
+            res.status(201).json(newCommentReply);
             return
         };
 
         // Create new comment
-        const newComment = await Comment({
+        const newComment = await Comment.create({
             user: userId,
             book: bookId,
             comment,

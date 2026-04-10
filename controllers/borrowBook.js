@@ -59,7 +59,16 @@ export const borrowBook = async (req, res) => {
     book.copies_available--;
     await book.save();
 
+    //push borrow to borrows array in book 
+    book.borrows.push(newBorrow._id);
+    await book.save();
+
+    //push borrow to borrows array in user 
+    user.borrows.push(newBorrow._id);
+    await user.save();
+
     res.status(201).json({ message: "Book borrowed successfully", borrow: newBorrow });
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong" });

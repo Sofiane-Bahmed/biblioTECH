@@ -6,13 +6,14 @@ import {
     updateComment,
     deleteComment,
 } from "../controllers/comment.js"
+import { authorize } from "../middleware/authMiddleware.js";
 
 export const commentRouter = express.Router()
 
-commentRouter.post("/", addComment);
-commentRouter.get("/:id", getCommentById);
-commentRouter.put("/:id", updateComment);
-commentRouter.delete("/:id", deleteComment);
+commentRouter.post("/", authorize("user"), addComment);
+commentRouter.get("/:id", authorize("user"), getCommentById);
+commentRouter.put("/:id", authorize("user"), updateComment);
+commentRouter.delete("/:id", authorize("user"), deleteComment);
 
 
 
