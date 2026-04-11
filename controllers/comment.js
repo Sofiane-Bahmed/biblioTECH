@@ -8,61 +8,47 @@ export const addComment = async (req, res) => {
     const { bookId, comment, parentCommentId } = req.body;
 
     try {
-        // Check if user and book exist
-        const user = await User.findById(userId);
+        // check if the book exists
         const book = await Book.findById(bookId);
-        if (!user || !book) {
-            return res.status(404).json({ message: "user or book not found" });
-        }
+        if (!book) return res.status(404).json({ message: "Book not found" });
 
-        //reply to a comment
-        let parentComment = null;
-        if (parentCommentId) {
-
-            // If parent comment ID is provided, check if the parent comment exists
-            parentComment = await Comment.findById(parentCommentId);
-            if (!parentComment) {
-                return res.status(404).json({ message: "Parent comment not found" });
-            }
-            // Create new comment reply
-            const newCommentReply = await Comment.create({
-                user: userId,
-                book: bookId,
-                parentComment: parentCommentId,
-                comment,
-            })
-
-            if (!newCommentReply) {
-                return res.status(400).json({ message: "failed to create new comment reply" })
-            }
-
-            // Add comment to book or parent comment
-            parentComment.replies.push(newCommentReply._id);
-            await parentComment.save();
-
-            book.comment.push(newCommentReply._id);
-            await book.save();
-
-            res.status(201).json(newCommentReply);
-            return
-        };
-
-        // Create new comment
-        const newComment = await Comment.create({
+        // Prepare comment data
+        const commentData = {
             user: userId,
             book: bookId,
-            comment,
-        });
+            comment
+        };
 
-        // Add comment to book 
-        book.comment.push(newComment._id);
+        // If it's a reply, validate the parent
+        if (parentCommentId) {
+            const parent = await Comment.findById(parentCommentId);
+            if (!parent) return res.status(404).json({ message: "Parent comment not found" });
+            commentData.parentComment = parentCommentId;
+        }
+
+        //Create the comment (works for both top-level and replies)
+        const savedComment = await Comment.create(commentData);
+
+        // Update parent if necessary
+        if (parentCommentId) {
+            await Comment.findByIdAndUpdate(
+                parentCommentId,
+                {
+                    $push: { replies: savedComment._id }
+                });
+        }
+
+        // link the comment to the book
+        book.comment.push(savedComment._id);
         await book.save();
 
-        res.status(201).json(newComment);
+        res.status(201).json(savedComment);
+
     } catch (error) {
-        res.status(500).json({ message: "something went wrong" });
+        console.error(error);
+        res.status(500).json({ message: "Something went wrong" });
     }
-}
+};
 
 // get specific comment
 export const getCommentById = async (req, res) => {

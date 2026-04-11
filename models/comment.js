@@ -17,19 +17,23 @@ const commentSchema = new Schema({
     },
     comment: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     parentComment: {
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'comment',
+        default: null
     },
     date: {
         type: Date,
         default: Date.now
     },
     replies: [{
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'comment'
     }],
-});
-
+}, { timestamps: true }
+);
 
 export const Comment = mongoose.model("comment", commentSchema)
