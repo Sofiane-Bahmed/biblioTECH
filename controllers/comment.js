@@ -53,9 +53,16 @@ export const addComment = async (req, res) => {
 // get specific comment
 export const getCommentById = async (req, res) => {
     try {
-        const { commentId } = await req.params
-
-        const comment = await Comment.findById(commentId);
+        const { id } = req.params
+        const comment = await Comment
+            .findById(id)
+            .populate('user', 'fullName email')
+            .populate('book', 'title author')
+            .populate({
+                path: 'replies',
+                populate: { path: 'user', select: 'fullName' } 
+            });
+        ;
 
         if (!comment) {
             return res.status(404).json({ message: 'comment not found' });
@@ -63,6 +70,7 @@ export const getCommentById = async (req, res) => {
         res.status(200).json(comment);
 
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'something went wrong' });
     }
 };
