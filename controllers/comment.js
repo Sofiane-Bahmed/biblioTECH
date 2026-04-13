@@ -60,7 +60,7 @@ export const getCommentById = async (req, res) => {
             .populate('book', 'title author')
             .populate({
                 path: 'replies',
-                populate: { path: 'user', select: 'fullName' } 
+                populate: { path: 'user', select: 'fullName' }
             });
         ;
 
@@ -75,28 +75,29 @@ export const getCommentById = async (req, res) => {
     }
 };
 
-// update comment
+// update a comment
 export const updateComment = async (req, res) => {
+    const { id } = req.params;
+    const { commentUpdate } = req.body;
+    const userId = req.user._id
     try {
-        const { commentId } = await req.params;
-        const { commentUpdate } = req.body;
-
-        const comment = await Comment.findByIdAndUpdate(
-            commentId,
-            {
-                comment: commentUpdate
-            },
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-
+        const comment = await Comment.findById(id);
         if (!comment) {
             return res.status(404).json({ message: 'comment not found' });
         }
+        if (comment.user.toString() !== userId.toString()) {
+            return res.status(403).json({
+                message: "FORBIDDEN: You can only edit your own comments"
+            })
+        }
 
-        res.status(200).json(comment);
+        comment.comment = commentUpdate;
+        await comment.save();
+
+        res.status(200).json({
+            message: 'Comment updated successfully',
+            comment
+        });
 
     } catch (error) {
         res.status(500).json({ message: 'something went wrong' });
@@ -104,7 +105,6 @@ export const updateComment = async (req, res) => {
 };
 
 //delete comment
-
 export const deleteComment = async (req, res) => {
     try {
         const { commentId } = await req.params
