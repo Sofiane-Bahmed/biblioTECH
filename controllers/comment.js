@@ -79,7 +79,8 @@ export const getCommentById = async (req, res) => {
 export const updateComment = async (req, res) => {
     const { id } = req.params;
     const { commentUpdate } = req.body;
-    const userId = req.user._id
+    const userId = req.user._id;
+
     try {
         const comment = await Comment.findById(id);
         if (!comment) {
@@ -104,23 +105,41 @@ export const updateComment = async (req, res) => {
     }
 };
 
-//delete comment
+//delete a comment 
 export const deleteComment = async (req, res) => {
     try {
-        const { commentId } = await req.params
+        const { id } = req.params;
+        const userId = req.user._id;
+        const userRole = req.user.role;
 
-        const comment = await Comment.findByIdAndDelete(commentId);
+        const comment = await Comment.findById(id);
         if (!comment) {
-            return res.status(404).json({ message: 'comment not found' });
+            return res.status(404).json({ message: 'Comment not found' });
         }
 
-        // remove comment id from book's comments array
-        const book = await Book.findById(comment.book);
-        book.comment = book.comment.filter(id => id.toString() !== commentId);
-        await book.save();
+        // Owner or Admin only
+        if (comment.user.toString() !== userId.toString() && userRole !== 'admin') {
+            return res.status(403).json({ message: 'You are not authorized to delete this comment' });
+        }
 
-        res.status(200).json({ message: 'comment deleted successfully' });
+        // Remove the ID from the Book's array
+        await Book.findByIdAndUpdate(comment.book, {
+            $pull: { comment: id }
+        });
+
+        // If it's a reply, remove it from the parent's replies array 
+        if (comment.parentComment) {
+            await Comment.findByIdAndUpdate(comment.parentComment, {
+                $pull: { replies: id }
+            });
+        }
+
+        // Delete the actual comment
+        await Comment.findByIdAndDelete(id);
+
+        res.status(200).json({ message: 'Comment deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'something went wrong' });
+        console.error(error);
+        res.status(500).json({ message: 'Something went wrong' });
     }
 };
