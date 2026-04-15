@@ -143,3 +143,44 @@ export const deleteComment = async (req, res) => {
         res.status(500).json({ message: 'Something went wrong' });
     }
 };
+
+// get all comments of a book
+export const getCommentsByBook = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const comments = await Comment.find({ book: id, parentComment: null })
+            .populate('user', 'fullName email')
+            .populate({
+                path: 'replies',
+                populate: { path: 'user', select: 'fullName' }
+            });
+
+        if (!comments.length) {
+            return res.status(404).json({ message: 'No comments found for this book' });
+        }
+
+        res.status(200).json(comments);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Something went wrong' });
+    }
+}
+
+// get all comments
+export const getAllComments = async (req, res) => {
+    try {
+        const comments = await Comment.find()
+            .populate('user', 'fullName email')
+            .populate('book', 'title author')
+            .populate({ path: 'replies', populate: { path: 'user', select: 'fullName' } });
+
+        if (!comments.length) {
+            return res.status(404).json({ message: 'No comments found' });
+        }
+        res.status(200).json(comments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Something went wrong' });
+    }
+};

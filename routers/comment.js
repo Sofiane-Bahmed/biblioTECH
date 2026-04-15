@@ -5,15 +5,19 @@ import {
     getCommentById,
     updateComment,
     deleteComment,
+    getCommentsByBook,
+    getAllComments,
 } from "../controllers/comment.js"
 import { authorize } from "../middleware/authMiddleware.js";
 
 export const commentRouter = express.Router()
 
 commentRouter.post("/", authorize("user"), addComment);
+commentRouter.get("/", authorize("user"), getAllComments);
 commentRouter.get("/:id", authorize("user"), getCommentById);
 commentRouter.put("/:id", authorize("user"), updateComment);
 commentRouter.delete("/:id", authorize("user"), deleteComment);
+commentRouter.get("/:id", authorize("user"), getCommentsByBook);
 
 
 
