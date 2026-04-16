@@ -1,6 +1,5 @@
 import { Book } from "../models/book.js"
 import { Comment } from "../models/comment.js"
-import { User } from "../models/user.js"
 
 //add comment or the reply of the comment : 
 export const addComment = async (req, res) => {
@@ -60,7 +59,13 @@ export const getCommentById = async (req, res) => {
             .populate('book', 'title author')
             .populate({
                 path: 'replies',
-                populate: { path: 'user', select: 'fullName' }
+                populate: [
+                    { path: 'user', select: 'fullName' },
+                    {
+                        path: 'replies', // Deep nesting: Level 3
+                        populate: { path: 'user', select: 'fullName' }
+                    }
+                ]
             });
         ;
 
@@ -149,14 +154,21 @@ export const getCommentsByBook = async (req, res) => {
     const { id } = req.params;
     try {
         const comments = await Comment.find({ book: id, parentComment: null })
+            .sort({ date: -1 })
             .populate('user', 'fullName email')
             .populate({
                 path: 'replies',
-                populate: { path: 'user', select: 'fullName' }
+                populate: [
+                    { path: 'user', select: 'fullName' },
+                    {
+                        path: 'replies', // Deep nesting: Level 3
+                        populate: { path: 'user', select: 'fullName' }
+                    }
+                ]
             });
 
         if (!comments.length) {
-            return res.status(404).json({ message: 'No comments found for this book' });
+            return res.status(200).json([]);
         }
 
         res.status(200).json(comments);
