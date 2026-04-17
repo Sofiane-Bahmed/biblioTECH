@@ -26,6 +26,9 @@ const userSchema = new Schema(
          enum: ["user", "admin"],
          required: true
       },
+      refreshToken: {
+         type: String
+      },
       subscribed: {
          type: Boolean,
          default: false

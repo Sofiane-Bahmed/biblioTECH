@@ -5,17 +5,16 @@ const { verify } = Jwt;
 export const authorize = (requiredRole) => async (req, res, next) => {
 
     try {
-        const token = req.cookies.token;
+        const token = req.cookies.accessToken;
         if (!token) return res.status(401).json({ message: "token not found" });
 
-        const decoded = verify(token, process.env.JWT_SECRET)
+        const decoded = verify(token, process.env.JWT_ACCESS_SECRET)
 
         // Define the hierarchy
         const roles = ["user", "admin"];
         const userRoleLevel = roles.indexOf(decoded.role);
         const requiredRoleLevel = roles.indexOf(requiredRole);
 
-        // If the user's "clearance level" is lower than required, block them
         if (userRoleLevel < requiredRoleLevel) {
             return res.status(403).json({ message: "Access forbidden: Insufficient permissions" });
         }
@@ -24,6 +23,13 @@ export const authorize = (requiredRole) => async (req, res, next) => {
         next()
     }
     catch (err) {
-        res.status(401).json({ message: "Invalid or expired token" })
+        // Check if the error is specifically due to expiration
+        if (err.name === "TokenExpiredError") {
+            return res.status(401).json({
+                message: "Access token expired",
+                code: "TOKEN_EXPIRED" // Highlighting this for the frontend
+            });
+        }
+        res.status(401).json({ message: "Invalid token" });
     }
 };
