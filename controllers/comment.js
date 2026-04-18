@@ -1,5 +1,6 @@
 import { Book } from "../models/book.js"
 import { Comment } from "../models/comment.js"
+import { User } from "../models/user.js";
 
 //add comment or the reply of the comment : 
 export const addComment = async (req, res) => {
@@ -39,7 +40,11 @@ export const addComment = async (req, res) => {
 
         // link the comment to the book
         book.comment.push(savedComment._id);
-        await book.save();
+        //link the comment to user
+        const user = await User.findById(userId);
+        user.comments.push(savedComment._id);
+
+        await Promise.all([book.save(), user.save()]);
 
         res.status(201).json(savedComment);
 

@@ -41,7 +41,13 @@ const userSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "borrowBook"
          }
-      ]
+      ],
+      comments: [
+         {
+            type: Schema.Types.ObjectId,
+            ref: "comment"
+         }
+      ],
    }
 )
 

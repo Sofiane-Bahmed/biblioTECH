@@ -145,13 +145,18 @@ export const deleteUser = async (req, res) => {
 };
 
 export const getMyProfile = async (req, res) => {
+  const userId = req.user._id;
 
   try {
-    const userId = req.user._id;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "user not found" });
 
-    res.status(200).json(user)
+    const userResponse = user.toObject();
+    delete userResponse.refreshToken;
+    delete userResponse.__v;
+
+    res.status(200).json(userResponse)
+
   } catch (error) {
     console.log(error)
     res.status(500).json({ message: "internal server error" })
