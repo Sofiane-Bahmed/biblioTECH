@@ -7,7 +7,12 @@ import { sendWelcomeEmail } from "../utils/emailService.js";
 // register : 
 export const register = async (req, res) => {
 
-  const { fullName, password, email, role } = req.body;
+  const {
+    fullName,
+    password,
+    email,
+    role
+  } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -91,6 +96,8 @@ export const login = async (req, res) => {
 
     const userResponse = user.toObject();
     delete userResponse.password;
+    delete userResponse.refreshToken;
+    delete userResponse.__v;
 
     res.status(200).json({
       message: 'Welcome back!',
@@ -108,7 +115,7 @@ export const logout = async (req, res) => {
   try {
     const { refreshToken } = req.cookies;
 
-    // Remove refresh token =from the database
+    // Remove refresh token from the database
     if (refreshToken) {
       await User.findOneAndUpdate(
         { refreshToken: refreshToken },
@@ -143,6 +150,19 @@ export const deleteUser = async (req, res) => {
   }
 
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User
+      .find()
+      .select('-password -refreshToken -__v');
+
+    res.status(200).json(users)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: "internal server error" })
+  }
+}
 
 export const getMyProfile = async (req, res) => {
   const userId = req.user._id;
