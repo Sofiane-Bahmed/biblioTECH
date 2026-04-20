@@ -1,4 +1,5 @@
 import express from "express"
+import { rateLimit } from 'express-rate-limit'
 import mongoose from "mongoose"
 import * as  dotenv from "dotenv"
 import cookieParser from "cookie-parser";
@@ -14,6 +15,18 @@ const app = express()
 app.use(express.json())
 app.use(cookieParser());
 dotenv.config();
+
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+	standardHeaders: 'draft-8',
+	legacyHeaders: false, 
+	ipv6Subnet: 56,
+
+})
+
+// Apply the rate limiting middleware to all requests.
+app.use(limiter)
 
 const dburi = process.env.DBURI
 const port = process.env.PORT
@@ -31,6 +44,7 @@ mongoose
   });
 
 app.use(express.urlencoded({ extended: true }));
+
 
 app.use("/users", userRouter)
 app.use("/auth", authRouter)
