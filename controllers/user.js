@@ -151,6 +151,49 @@ export const deleteUser = async (req, res) => {
 
 };
 
+export const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { fullName, email, role } = req.body;
+  const adminId = req.user._id;
+  const adminRole = req.user.role;
+
+  try {
+    // Authorization Check
+    if (adminRole !== "admin" && adminId.toString() !== id) {
+      return res.status(403).json({ message: "You are not authorized to update this user" });
+    }
+
+    const updateData = { fullName, email };
+
+    // Only an admin can change roles
+    if (role) {
+      if (adminRole === "admin") {
+        if (!["user", "admin"].includes(role)) {
+          return res.status(400).json({ message: "Invalid role" });
+        }
+        updateData.role = role;
+      } else {
+        // If a non-admin tries to send a role, we just ignore it or send an error
+        return res.status(403).json({ message: "Only admins can change roles" });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "User updated successfully", user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User
