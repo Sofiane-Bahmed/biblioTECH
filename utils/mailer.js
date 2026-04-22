@@ -1,21 +1,25 @@
-import { transporter } from "../config/mail.config.js";
+import { Resend } from 'resend';
+import dotenv from 'dotenv';
+dotenv.config(); 
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendEmailNotification = async (toEmail, subject, text) => {
     try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            throw new Error("Email credentials missing in .env");
-        }
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
+        const { data, error } = await resend.emails.send({
+            from: 'Library <onboarding@resend.dev>', 
             to: toEmail,
-            subject,
-            text
-        };
+            subject: subject,
+            text: text,
+        });
 
-        const info = await transporter.sendMail(mailOptions);
-        return info;
+        if (error) {
+            throw new Error(error.message);
+        }
 
+        return data;
     } catch (error) {
-        console.error(`Mailer Error: ${error.message}`);
+        console.error("Resend API Error:", error.message);
+        throw error;
     }
 };

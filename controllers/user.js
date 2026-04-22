@@ -26,7 +26,7 @@ export const register = async (req, res) => {
 
     res.status(201).json(newUser)
 
-    sendWelcomeEmail(newUser);
+    await sendWelcomeEmail(newUser);
 
   } catch (err) {
     // Handle duplicate email errors (Mongo Error Code 11000)

@@ -13,10 +13,10 @@ import { authRouter } from "./routers/auth.js"
 import { userRouter } from "./routers/user.js"
 
 const app = express()
+dotenv.config();
 app.use(helmet());
 app.use(express.json())
 app.use(cookieParser());
-dotenv.config();
 
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
