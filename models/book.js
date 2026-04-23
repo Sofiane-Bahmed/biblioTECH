@@ -20,7 +20,8 @@ const bookSchema = new Schema(
         },
         copies_available: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
         },
         borrows: [{
             type: Schema.Types.ObjectId,

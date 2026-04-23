@@ -5,19 +5,17 @@ import mongoose from "mongoose"
 import * as  dotenv from "dotenv"
 import cookieParser from "cookie-parser";
 
-import { bookRouter } from "./routers/book.js"
-import { borrowBookRouter } from "./routers/borrowBook.js"
-import { categoryRouter } from "./routers/category.js"
-import { commentRouter } from "./routers/comment.js"
-import { authRouter } from "./routers/auth.js"
-import { userRouter } from "./routers/user.js"
+import router from "./routers/index.js"
 
 const app = express()
 dotenv.config();
+
 app.use(helmet());
 app.use(express.json())
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
+// Apply the rate limiting middleware to all requests.
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
@@ -26,10 +24,9 @@ const limiter = rateLimit({
 	ipv6Subnet: 56,
 
 })
-
-// Apply the rate limiting middleware to all requests.
 app.use(limiter)
 
+// Database connection and server start
 const dburi = process.env.DBURI
 const port = process.env.PORT
 
@@ -45,15 +42,8 @@ mongoose
     console.log(err);
   });
 
-app.use(express.urlencoded({ extended: true }));
-
-
-app.use("/users", userRouter)
-app.use("/auth", authRouter)
-app.use("/books", bookRouter)
-app.use("/borrows", borrowBookRouter)
-app.use("/categories", categoryRouter)
-app.use("/comments", commentRouter)
+// Routes
+app.use("/api", router)
 
 
 

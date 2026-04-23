@@ -7,7 +7,12 @@ import { sendEmailNotification } from "../utils/mailer.js";
 // add books :
 export const addBook = async (req, res) => {
   try {
-    const { title, author, copies_available, category } = req.body;
+    const {
+      title,
+      author,
+      copies_available,
+      category
+    } = req.body;
 
     // Check if category exists
     const existingCategory = await Category.findOne({ title: category });

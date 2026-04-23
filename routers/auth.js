@@ -5,7 +5,7 @@ import {
     login,
     logout,
     refresh,
-} from "../controllers/user.js"
+} from "../controllers/auth.js"
 
 export const authRouter = express.Router()
  

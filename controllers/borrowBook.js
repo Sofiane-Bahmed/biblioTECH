@@ -38,7 +38,11 @@ export const borrowBook = async (req, res) => {
     }
 
     //check if user already borrowed this book
-    const existingBorrow = await BorrowBook.findOne({ user: userId, book: bookId, return_date: null });
+    const existingBorrow = await BorrowBook.findOne({
+      user: userId,
+      book: bookId,
+      return_date: null
+    });
     if (existingBorrow) {
       return res.status(400).json({ message: "You have already borrowed this book" });
     }
