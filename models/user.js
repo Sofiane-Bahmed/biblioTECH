@@ -27,7 +27,16 @@ const userSchema = new Schema(
          required: true
       },
       refreshToken: {
-         type: String
+         type: String,
+         select: false
+      },
+      passwordResetToken: {
+         type: String,
+         select: false,
+      },
+      passwordResetExpires: {
+         type: Date,
+         select: false,
       },
       subscribed: {
          type: Boolean,

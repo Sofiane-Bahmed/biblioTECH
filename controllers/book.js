@@ -2,7 +2,7 @@ import { Book } from "../models/book.js"
 import { Category } from "../models/category.js";
 import { User } from "../models/user.js"
 import { BorrowBook } from "../models/borrowBook.js"
-import { sendEmailNotification } from "../utils/mailer.js";
+import { sendBookAddedEmail } from "../utils/email-service/sendBookAdded.js";
 
 // add books :
 export const addBook = async (req, res) => {
@@ -28,14 +28,12 @@ export const addBook = async (req, res) => {
       category: existingCategory._id
     });
 
-
     // Send email notification to subscribers
     const subscribers = await User.find({ subscribed: true });
 
     for (const subscriber of subscribers) {
-      const subject = 'New Book Added';
-      const text = `A new book titled "${title}" by ${author} has been added to the library. Check it out now!`;
-      sendEmailNotification(subscriber.email, subject, text);
+
+      await sendBookAddedEmail(subscriber, { title, author });
     }
 
     res.status(201).json(newBook);
