@@ -16,15 +16,13 @@ export const register = async (req, res) => {
   } = req.body;
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     // Check if this is the first user to register and assign admin role if so
     const isFirstUser = (await User.countDocuments()) === 0;
     const role = isFirstUser ? "admin" : "user";
 
     const newUser = await User.create({
       fullName,
-      password: hashedPassword,
+      password,
       email,
       role
     })
@@ -153,9 +151,8 @@ export const refresh = async (req, res) => {
   try {
     // Verify token
     const decoded = Jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
     // Check if token exists in DB
-    const user = await User.findById(decoded._id);
+    const user = await User.findById(decoded._id).select('+refreshToken');
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(403).json({ message: "Invalid refresh token" });
     }
@@ -222,7 +219,6 @@ export const resetPassword = async (req, res) => {
   try {
     // Hash the token from the URL to match the DB version
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
     // Find user with valid token that hasn't expired
     const user = await User.findOne({
       passwordResetToken: hashedToken,
@@ -232,7 +228,7 @@ export const resetPassword = async (req, res) => {
     if (!user) return res.status(400).json({ message: "Token is invalid or has expired" });
 
     // Set new password 
-    user.password = await bcrypt.hash(password, 10);
+    user.password = password;
     user.passwordResetToken = undefined; // Clear the token
     user.passwordResetExpires = undefined;
     await user.save();
