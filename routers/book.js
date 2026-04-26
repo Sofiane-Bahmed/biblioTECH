@@ -14,10 +14,10 @@ import { authorize } from "../middleware/authMiddleware.js";
 export const bookRouter = express.Router()
 
 bookRouter.post("/", authorize("admin"), addBook);
-bookRouter.get("/", getAllBooks)
-bookRouter.get("/search", searchBooks);
+bookRouter.get("/", authorize("user"), getAllBooks)
+bookRouter.get("/search", authorize("user"), searchBooks);
 bookRouter.get("/stats", authorize("admin"), getLibraryStatistics);
-bookRouter.get("/:id", getBook)
+bookRouter.get("/:id", authorize("user"), getBook)
 bookRouter.put("/:id", authorize("admin"), updateBook)
 bookRouter.delete("/:id", authorize("admin"), deleteBook)
 
