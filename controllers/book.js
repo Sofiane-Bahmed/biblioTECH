@@ -49,7 +49,7 @@ export const getAllBooks = async (req, res) => {
     const books = await Book
       .find({ copies_available: { $gt: 0 } })
       .populate('category', 'title');
-      
+
     res.status(200).json(books);
 
   } catch (error) {
@@ -72,10 +72,14 @@ export const getBook = async (req, res) => {
 export const updateBook = async (req, res) => {
 
   const { id } = req.params;
-  const { title, author, copies_available, category } = req.body;
+  const {
+    title,
+    author,
+    copies_available,
+    category
+  } = req.body;
 
   try {
-
     const book = await Book.findById(id);
     if (!book) {
       return res.status(404).json({ message: "book not found" })

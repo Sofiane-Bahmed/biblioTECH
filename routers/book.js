@@ -13,13 +13,28 @@ import { authorize } from "../middleware/authMiddleware.js";
 
 export const bookRouter = express.Router()
 
-bookRouter.post("/", authorize("admin"), addBook);
-bookRouter.get("/", authorize("user"), getAllBooks)
-bookRouter.get("/search", authorize("user"), searchBooks);
-bookRouter.get("/stats", authorize("admin"), getLibraryStatistics);
-bookRouter.get("/:id", authorize("user"), getBook)
-bookRouter.put("/:id", authorize("admin"), updateBook)
-bookRouter.delete("/:id", authorize("admin"), deleteBook)
+// Admin routes
+const adminRoutes = express.Router();
+adminRoutes.use(authorize("admin"));
+
+adminRoutes.post("/", addBook);
+adminRoutes.post("/stats", getLibraryStatistics);
+adminRoutes.put("/:id", updateBook);
+adminRoutes.delete("/:id", deleteBook);
+
+bookRouter.use("/admin", adminRoutes);
+
+// User routes
+const userRoutes = express.Router();
+userRoutes.use(authorize("user"));
+
+userRoutes.get("/", getAllBooks);
+userRoutes.get("/search", searchBooks);
+userRoutes.get("/:id", getBook);
+
+bookRouter.use("/", userRoutes);
+
+
 
 
 
