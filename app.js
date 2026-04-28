@@ -10,6 +10,7 @@ import router from "./routers/index.js"
 const app = express()
 dotenv.config();
 
+// Middlewares
 app.use(helmet());
 app.use(express.json())
 app.use(cookieParser());

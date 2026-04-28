@@ -28,7 +28,7 @@ const bookSchema = new Schema(
             ref: 'borrowBook'
         }],
 
-        comment: [{
+        comments: [{
             type: Schema.Types.ObjectId,
             ref: 'comment'
         }]

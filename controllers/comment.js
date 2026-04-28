@@ -5,7 +5,11 @@ import { User } from "../models/user.js";
 //add comment or the reply of the comment : 
 export const addComment = async (req, res) => {
     const userId = req.user._id;
-    const { bookId, comment, parentCommentId } = req.body;
+    const {
+        bookId,
+        comment,
+        parentCommentId
+    } = req.body;
 
     try {
         // check if the book exists
@@ -38,9 +42,9 @@ export const addComment = async (req, res) => {
                 });
         }
 
-        // link the comment to the book
-        book.comment.push(savedComment._id);
-        //link the comment to user
+        // link the comment to book
+        book.comments.push(savedComment._id);
+        // link the comment to user
         const user = await User.findById(userId);
         user.comments.push(savedComment._id);
 
@@ -115,7 +119,6 @@ export const updateComment = async (req, res) => {
     }
 };
 
-//delete a comment 
 export const deleteComment = async (req, res) => {
     try {
         const { id } = req.params;
@@ -123,34 +126,36 @@ export const deleteComment = async (req, res) => {
         const userRole = req.user.role;
 
         const comment = await Comment.findById(id);
-        if (!comment) {
-            return res.status(404).json({ message: 'Comment not found' });
-        }
+        if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
-        // Owner or Admin only
         if (comment.user.toString() !== userId.toString() && userRole !== 'admin') {
-            return res.status(403).json({ message: 'You are not authorized to delete this comment' });
+            return res.status(403).json({ message: 'Unauthorized' });
         }
 
-        // Remove the ID from the Book's array
-        await Book.findByIdAndUpdate(comment.book, {
-            $pull: { comment: id }
-        });
+        const childCommentIds = comment.replies || [];
 
-        // If it's a reply, remove it from the parent's replies array 
-        if (comment.parentComment) {
-            await Comment.findByIdAndUpdate(comment.parentComment, {
-                $pull: { replies: id }
-            });
-        }
+        // Combine all clean-up tasks into one parallel execution
+        await Promise.all([
+            // Remove parent from Book and User
+            Book.findByIdAndUpdate(comment.book, { $pull: { comments: id } }),
+            User.findByIdAndUpdate(comment.user, { $pull: { comments: id } }),
 
-        // Delete the actual comment
-        await Comment.findByIdAndDelete(id);
+            // Remove parent from its own Parent's replies (if it exists)
+            comment.parentComment
+                ? Comment.findByIdAndUpdate(comment.parentComment, { $pull: { replies: id } })
+                : Promise.resolve(),
 
-        res.status(200).json({ message: 'Comment deleted successfully' });
+            // Delete the children from DB 
+            Comment.deleteMany({ _id: { $in: childCommentIds } }),
+
+            // Delete the parent itself
+            Comment.findByIdAndDelete(id)
+        ]);
+
+        res.status(200).json({ message: 'Comment and its replies deleted' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Something went wrong' });
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
