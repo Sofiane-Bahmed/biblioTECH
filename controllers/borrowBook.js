@@ -1,6 +1,7 @@
 import { BorrowBook } from "../models/borrowBook.js"
 import { Book } from "../models/book.js"
 import { User } from "../models/user.js"
+import { sendSuspensionWarningEmail } from "../utils/email-service/sendSuspensionWarning.js";
 
 // borrow a book : 
 export const borrowBook = async (req, res) => {
@@ -101,23 +102,26 @@ export const returnBook = async (req, res) => {
 
     const currentDate = new Date();
     let message = "The book was successfully returned";
-
-    // Handle Late Penalty
-    if (currentDate > borrow.due_date) {
-      const daysLate = Math.floor((currentDate - borrow.due_date) / (1000 * 60 * 60 * 24));
-
-      if (daysLate >= 10) {
-        user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); //suspend for 10 days
-        await user.save();
-        message = "Book returned, but you are suspended for 10 days due to delay.";
-      }
-    }
     // Update book availability
     book.copies_available++;
     // Update borrow return date
     borrow.return_date = currentDate;
+    const savedOperations = [book.save(), borrow.save()];
+    // Handle Late Penalty
+    if (currentDate > borrow.due_date) {
+      const daysLate = Math.ceil((currentDate - borrow.due_date) / (1000 * 60 * 60 * 24));
 
-    await Promise.all([book.save(), borrow.save()]);
+      if (daysLate > 0 && daysLate <= 3) {
+        await sendSuspensionWarningEmail(user, book);
+        message = `Book returned, but it was ${daysLate} day(s) late. A warning email has been sent to you. Please return books on time to avoid suspension.`;
+      } else if (daysLate > 3) {
+        user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); //suspend for 10 days
+        savedOperations.push(user.save())
+        message = "Book returned, but you are suspended for 10 days due to delay.";
+      }
+    }
+    
+    await Promise.all(savedOperations);
 
     res.status(200).json({ message });
 
@@ -126,7 +130,6 @@ export const returnBook = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
 
 // Get borrowing history for a user
 export const getBorrowingHistory = async (req, res) => {
