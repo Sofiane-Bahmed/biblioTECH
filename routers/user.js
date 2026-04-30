@@ -10,7 +10,20 @@ import { authorize } from "../middleware/authMiddleware.js";
 
 export const userRouter = express.Router();
 
-userRouter.get("/me", authorize("user"), getMyProfile);
-userRouter.get("/getAll", authorize("admin"), getAllUsers);
-userRouter.put("/:id", authorize("user"), updateUser);
-userRouter.delete("/:id", authorize("admin"), deleteUser);
+//Admin routes
+const adminRoutes = express.Router();
+adminRoutes.use(authorize("admin"));
+
+adminRoutes.get("/getAll", getAllUsers);
+adminRoutes.delete("/:id", deleteUser);
+
+userRouter.use("/admin", adminRoutes);
+
+// User routes
+const userRoutes = express.Router();
+userRoutes.use(authorize("user"));
+
+userRoutes.get("/me", getMyProfile);
+userRoutes.put("/:id", updateUser);
+
+userRouter.use("/", userRoutes);

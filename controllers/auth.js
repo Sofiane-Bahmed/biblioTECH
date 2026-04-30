@@ -56,6 +56,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    //check if user is suspended
     if (user.suspension_date && user.suspension_date > new Date()) {
       return res.status(403).json({
         message: "Your account is suspended",
