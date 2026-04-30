@@ -9,13 +9,14 @@ export const borrowBook = async (req, res) => {
   const { bookId } = req.body;
 
   try {
-    //check if user is suspended
     const user = await User.findById(userId);
-
+    //check if user is suspended
     if (user.suspension_date && user.suspension_date > new Date()) {
-      return res.status(400).json({ message: `Account suspended until ${user.suspension_date.toDateString()}` });
+      return res.status(403).json({
+        message: "Your account is suspended",
+        until: user.suspension_date.toString()
+      });
     }
-
     // Check if user has already borrowed 3 books this month 
     const date = new Date();
     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -107,6 +108,7 @@ export const returnBook = async (req, res) => {
     // Update borrow return date
     borrow.return_date = currentDate;
     const savedOperations = [book.save(), borrow.save()];
+
     // Handle Late Penalty
     if (currentDate > borrow.due_date) {
       const daysLate = Math.ceil((currentDate - borrow.due_date) / (1000 * 60 * 60 * 24));
@@ -114,13 +116,14 @@ export const returnBook = async (req, res) => {
       if (daysLate > 0 && daysLate <= 3) {
         await sendSuspensionWarningEmail(user, book);
         message = `Book returned, but it was ${daysLate} day(s) late. A warning email has been sent to you. Please return books on time to avoid suspension.`;
-      } else if (daysLate > 3) {
+      }
+      else if (daysLate > 3) {
         user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); //suspend for 10 days
         savedOperations.push(user.save())
         message = "Book returned, but you are suspended for 10 days due to delay.";
       }
-    }
-    
+    };
+
     await Promise.all(savedOperations);
 
     res.status(200).json({ message });

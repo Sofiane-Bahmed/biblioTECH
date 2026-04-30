@@ -56,6 +56,12 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    if (user.suspension_date && user.suspension_date > new Date()) {
+      return res.status(403).json({
+        message: "Your account is suspended",
+        until: user.suspension_date.toString()
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
