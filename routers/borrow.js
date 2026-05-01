@@ -5,7 +5,7 @@ import {
         returnBook,
         getBorrowingHistory,
         renewBorrowedBook
-} from "../controllers/borrowBook.js"
+} from "../controllers/borrow.js"
 import { authorize } from "../middleware/authMiddleware.js"
 
 export const borrowBookRouter = express.Router()

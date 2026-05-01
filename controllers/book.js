@@ -1,7 +1,7 @@
 import { Book } from "../models/book.js"
 import { Category } from "../models/category.js";
 import { User } from "../models/user.js"
-import { BorrowBook } from "../models/borrowBook.js"
+import { BorrowBook } from "../models/borrow.js"
 import { sendBookAddedEmail } from "../utils/email-service/sendBookAdded.js";
 
 // add books :

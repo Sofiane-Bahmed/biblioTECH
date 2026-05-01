@@ -4,7 +4,7 @@ import { authRouter } from "./auth.js"
 import { userRouter } from "./user.js"
 import { categoryRouter } from "./category.js"
 import { bookRouter } from "./book.js"
-import { borrowBookRouter } from "./borrowBook.js"
+import { borrowBookRouter } from "./borrow.js"
 import { commentRouter } from "./comment.js"
 
 const router = express.Router();

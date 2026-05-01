@@ -1,4 +1,4 @@
-import { BorrowBook } from "../models/borrowBook.js"
+import { BorrowBook } from "../models/borrow.js"
 import { Book } from "../models/book.js"
 import { User } from "../models/user.js"
 import { sendSuspensionWarningEmail } from "../utils/email-service/sendSuspensionWarning.js";
