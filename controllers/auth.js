@@ -149,23 +149,27 @@ export const logout = async (req, res) => {
   }
 };
 
-// Refresh Access Token
+// Refresh Access Token and Rotate Refresh Token
 export const refresh = async (req, res) => {
-  const { refreshToken } = req.cookies;
+  const { sign, verify } = Jwt;
 
+  const { refreshToken } = req.cookies;
   if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
   try {
     // Verify token
-    const decoded = Jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     // Check if token exists in DB
     const user = await User.findById(decoded._id).select('+refreshToken');
     if (!user || user.refreshToken !== refreshToken) {
-      return res.status(403).json({ message: "Invalid refresh token" });
+      if (user) {
+        await User.findByIdAndUpdate(user._id, { refreshToken: null });
+      }
+      return res.status(403).json({ message: "Invalid refresh token / Potential theft detected" });
     }
 
-    // Generate new Access Token
-    const newAccessToken = Jwt.sign(
+    // Generate new Pair (Rotate refresh token)
+    const newAccessToken = sign(
       {
         _id: user._id,
         role: user.role
@@ -174,15 +178,35 @@ export const refresh = async (req, res) => {
       { expiresIn: '15m' }
     );
 
+    const newRefreshToken = sign(
+      {
+        _id: user._id
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    )
+
+    await User.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict'
+    }
+
     res.cookie(
       'accessToken',
       newAccessToken,
-      {
-        httpOnly: true,
-        secure: true
-      });
+      cookieOptions
+    );
 
-    res.status(200).json({ message: "Token refreshed" });
+    res.cookie(
+      'refreshToken',
+      newRefreshToken,
+      cookieOptions
+    );
+
+    res.status(200).json({ message: "Token refreshed and rotated successfully" });
 
   } catch (error) {
     console.log(error);
