@@ -157,9 +157,7 @@ export const refresh = async (req, res) => {
   if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
   try {
-    // Verify token
     const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    // Check if token exists in DB
     const user = await User.findById(decoded._id).select('+refreshToken');
     if (!user || user.refreshToken !== refreshToken) {
       if (user) {
