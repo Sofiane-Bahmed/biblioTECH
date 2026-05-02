@@ -91,23 +91,23 @@ export const login = async (req, res) => {
     user.subscribed = true;
     await user.save();
 
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax'
+    };
+    
     res.cookie(
       'accessToken',
       accessToken,
-      {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax'
-      });
+      cookieOptions
+    );
 
     res.cookie(
       'refreshToken',
       refreshToken,
-      {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax'
-      });
+      cookieOptions
+    );
 
     const userResponse = user.toObject();
     delete userResponse.password;
