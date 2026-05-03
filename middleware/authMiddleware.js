@@ -6,7 +6,7 @@ export const authorize = (requiredRole) => async (req, res, next) => {
 
     try {
         const token = req.cookies.accessToken;
-        if (!token) return res.status(401).json({ message: "token not found" });
+        if (!token) return res.status(401).json({ message: "token not found, require login" });
 
         const decoded = verify(token, process.env.JWT_ACCESS_SECRET)
 

@@ -18,6 +18,10 @@ const bookSchema = new Schema(
             type: String,
             required: true
         },
+        description: {
+            type: String,
+            required: true,
+        },
         copies_available: {
             type: Number,
             required: true,
@@ -27,7 +31,6 @@ const bookSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'borrowBook'
         }],
-
         comments: [{
             type: Schema.Types.ObjectId,
             ref: 'comment'

@@ -4,14 +4,15 @@ import { User } from "../models/user.js"
 import { BorrowBook } from "../models/borrow.js"
 import { sendBookAddedEmail } from "../utils/email-service/sendBookAdded.js";
 
-// add books :
+// add books 
 export const addBook = async (req, res) => {
   try {
     const {
       title,
       author,
+      category,
+      description,
       copies_available,
-      category
     } = req.body;
 
     // Check if category exists
@@ -24,6 +25,7 @@ export const addBook = async (req, res) => {
     const newBook = await Book.create({
       title,
       author,
+      description,
       copies_available,
       category: existingCategory._id
     });
@@ -75,6 +77,7 @@ export const updateBook = async (req, res) => {
   const {
     title,
     author,
+    description,
     copies_available,
     category
   } = req.body;
@@ -95,6 +98,7 @@ export const updateBook = async (req, res) => {
       , {
         title,
         author,
+        description,
         copies_available,
         category: existingCategory._id
       },
@@ -133,7 +137,13 @@ export const deleteBook = async (req, res) => {
 // search books by filtring : 
 export const searchBooks = async (req, res) => {
   try {
-    const { title, author, category, availableCopies } = req.query;
+    const {
+      title,
+      author,
+      category,
+      description,
+      availableCopies
+    } = req.query;
 
     let filters = {};
 
@@ -152,7 +162,10 @@ export const searchBooks = async (req, res) => {
       }
     }
     if (availableCopies) {
-      filters.available_copies = { $gte: availableCopies };
+      filters.copies_available = { $gte: availableCopies };
+    }
+    if (description) {
+      filters.description = { $regex: description, $options: 'i' };
     }
 
     const books = await Book.find(filters).populate('category', 'title');
