@@ -5,6 +5,7 @@ import mongoose from "mongoose"
 import * as  dotenv from "dotenv"
 import cookieParser from "cookie-parser";
 
+import connectDB from "./db/index.js";
 import router from "./routers/index.js"
 
 const app = express()
@@ -27,21 +28,13 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
-// Database connection and server start
-const dburi = process.env.DBURI
-const port = process.env.PORT
+// Connect to Database and Start Server
+const port = process.env.PORT || 5000;
+connectDB();
 
-mongoose.set("strictQuery", true)
-mongoose
-  .connect(dburi)
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`this app is running in port http://localhost:${port}`);
-    });
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
 
 // Routes
 app.use("/api", router)
