@@ -8,7 +8,7 @@ import { sendPasswordResetEmail } from "../utils/email-service/sendResetPassword
 
 import asyncHandler from "../utils/asyncHandler.js";
 
-// register : 
+// register 
 export const register = asyncHandler(async (req, res) => {
   const {
     fullName,

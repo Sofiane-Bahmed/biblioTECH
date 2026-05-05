@@ -4,74 +4,67 @@ import { User } from "../models/user.js"
 import { BorrowBook } from "../models/borrow.js"
 import { sendBookAddedEmail } from "../utils/email-service/sendBookAdded.js";
 
+import asyncHandler from "../utils/asyncHandler.js";
+
 // add books 
-export const addBook = async (req, res) => {
-  try {
-    const {
-      title,
-      author,
-      category,
-      description,
-      copies_available,
-    } = req.body;
+export const addBook = asyncHandler(async (req, res) => {
 
-    // Check if category exists
-    const existingCategory = await Category.findOne({ title: category });
-    if (!existingCategory) {
-      return res.status(400).json({ message: 'Category does not exist' });
-    }
+  const {
+    title,
+    author,
+    category,
+    description,
+    copies_available,
+  } = req.body;
 
-    // Create new book
-    const newBook = await Book.create({
-      title,
-      author,
-      description,
-      copies_available,
-      category: existingCategory._id
-    });
-
-    // Send email notification to subscribers
-    const subscribers = await User.find({ subscribed: true });
-
-    for (const subscriber of subscribers) {
-
-      await sendBookAddedEmail(subscriber, { title, author });
-    }
-
-    res.status(201).json(newBook);
-
-  } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
+  // Check if category exists
+  const existingCategory = await Category.findOne({ title: category });
+  if (!existingCategory) {
+    return res.status(400).json({ message: 'Category does not exist' });
   }
-};
+
+  // Create new book
+  const newBook = await Book.create({
+    title,
+    author,
+    description,
+    copies_available,
+    category: existingCategory._id
+  });
+
+  // Send email notification to subscribers
+  const subscribers = await User.find({ subscribed: true });
+
+  for (const subscriber of subscribers) {
+
+    await sendBookAddedEmail(subscriber, { title, author });
+  }
+
+  res.status(201).json(newBook);
+
+});
 
 // read all books : 
-export const getAllBooks = async (req, res) => {
-  try {
-    const books = await Book
-      .find({ copies_available: { $gt: 0 } })
-      .populate('category', 'title');
+export const getAllBooks = asyncHandler(async (req, res) => {
 
-    res.status(200).json(books);
+  const books = await Book
+    .find({ copies_available: { $gt: 0 } })
+    .populate('category', 'title');
 
-  } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
-  }
-};
+  res.status(200).json(books);
 
-export const getBook = async (req, res) => {
+});
+
+export const getBook = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  try {
-    const book = await Book.findById(id);
-    res.status(200).json(book);
 
-  } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
-  }
-};
+  const book = await Book.findById(id);
+  res.status(200).json(book);
+
+});
 
 // update a book 
-export const updateBook = async (req, res) => {
+export const updateBook = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
   const {
@@ -82,135 +75,120 @@ export const updateBook = async (req, res) => {
     category
   } = req.body;
 
-  try {
-    const book = await Book.findById(id);
-    if (!book) {
-      return res.status(404).json({ message: "book not found" })
-    }
-    // Check if category exists
-    const existingCategory = await Category.findOne({ title: category });
-    if (!existingCategory) {
-      return res.status(400).json({ message: 'Category does not exist' });
-    }
-
-    const updatedBook = await Book.findByIdAndUpdate(
-      id
-      , {
-        title,
-        author,
-        description,
-        copies_available,
-        category: existingCategory._id
-      },
-      {
-        new: true,
-        runValidators: true
-      }
-    )
-
-    res.status(200).json({ message: "book updated successfully", updatedBook })
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "something went wrong" })
+  const book = await Book.findById(id);
+  if (!book) {
+    return res.status(404).json({ message: "book not found" })
   }
-}
-
-// delete a book 
-export const deleteBook = async (req, res) => {
-
-  const { id } = req.params;
-  try {
-    const book = await Book.findByIdAndDelete(id);
-    if (!book) {
-      return res.status(404).json({ message: "book not found" })
-    }
-
-    res.status(200).json({ message: "book deleted successfully" })
-
-  } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: "something went wrong" })
+  // Check if category exists
+  const existingCategory = await Category.findOne({ title: category });
+  if (!existingCategory) {
+    return res.status(400).json({ message: 'Category does not exist' });
   }
-}
 
-// search books by filtring : 
-export const searchBooks = async (req, res) => {
-  try {
-    const {
+  const updatedBook = await Book.findByIdAndUpdate(
+    id
+    , {
       title,
       author,
-      category,
       description,
-      availableCopies
-    } = req.query;
+      copies_available,
+      category: existingCategory._id
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  )
 
-    let filters = {};
+  res.status(200).json({ message: "book updated successfully", updatedBook })
 
-    if (title) {
-      filters.title = { $regex: title, $options: 'i' };
-    }
-    if (author) {
-      filters.author = { $regex: author, $options: 'i' };
-    }
-    if (category) {
-      const categoryId = await Category.findOne({ title: category });
-      if (categoryId) {
-        filters.category = categoryId._id;
-      } else {
-        return res.status(400).json({ message: 'Category not found' });
-      }
-    }
-    if (availableCopies) {
-      filters.copies_available = { $gte: availableCopies };
-    }
-    if (description) {
-      filters.description = { $regex: description, $options: 'i' };
-    }
+});
 
-    const books = await Book.find(filters).populate('category', 'title');
-    res.status(200).json(books);
+// delete a book 
+export const deleteBook = asyncHandler(async (req, res) => {
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Something went wrong' });
+  const { id } = req.params;
+
+  const book = await Book.findByIdAndDelete(id);
+  if (!book) {
+    return res.status(404).json({ message: "book not found" })
   }
-};
+
+  res.status(200).json({ message: "book deleted successfully" })
+
+});
+
+// search books by filtring : 
+export const searchBooks = asyncHandler(async (req, res) => {
+
+  const {
+    title,
+    author,
+    category,
+    description,
+    availableCopies
+  } = req.query;
+
+  let filters = {};
+
+  if (title) {
+    filters.title = { $regex: title, $options: 'i' };
+  }
+  if (author) {
+    filters.author = { $regex: author, $options: 'i' };
+  }
+  if (category) {
+    const categoryId = await Category.findOne({ title: category });
+    if (categoryId) {
+      filters.category = categoryId._id;
+    } else {
+      return res.status(400).json({ message: 'Category not found' });
+    }
+  }
+  if (availableCopies) {
+    filters.copies_available = { $gte: availableCopies };
+  }
+  if (description) {
+    filters.description = { $regex: description, $options: 'i' };
+  }
+
+  const books = await Book.find(filters).populate('category', 'title');
+  res.status(200).json(books);
+
+});
 
 // view libary statistics
-export const getLibraryStatistics = async (req, res) => {
-  try {
-    const borrows = await BorrowBook.find();
-    const books = await Book.find();
+export const getLibraryStatistics = asyncHandler(async (req, res) => {
 
-    const borrowCount = borrows.length;
-    const bookCount = books.length;
+  const borrows = await BorrowBook.find();
+  const books = await Book.find();
 
-    let mostBorrowedBook = { id: null, count: 0 };
-    const bookCounts = {};
+  const borrowCount = borrows.length;
+  const bookCount = books.length;
 
-    for (const borrow of borrows) {
-      const bookId = borrow.book;
-      if (bookId in bookCounts) {
-        bookCounts[bookId]++;
-      } else {
-        bookCounts[bookId] = 1;
-      }
+  let mostBorrowedBook = { id: null, count: 0 };
+  const bookCounts = {};
 
-      if (bookCounts[bookId] > mostBorrowedBook.count) {
-        mostBorrowedBook = { id: bookId, count: bookCounts[bookId] };
-      }
+  for (const borrow of borrows) {
+    const bookId = borrow.book;
+    if (bookId in bookCounts) {
+      bookCounts[bookId]++;
+    } else {
+      bookCounts[bookId] = 1;
     }
 
-    const statistics = {
-      borrowCount,
-      bookCount,
-      mostBorrowedBook,
-      bookCounts
-    };
-
-    res.status(200).json(statistics);
-  } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
+    if (bookCounts[bookId] > mostBorrowedBook.count) {
+      mostBorrowedBook = { id: bookId, count: bookCounts[bookId] };
+    }
   }
-};
+
+  const statistics = {
+    borrowCount,
+    bookCount,
+    mostBorrowedBook,
+    bookCounts
+  };
+
+  res.status(200).json(statistics);
+
+}); 
