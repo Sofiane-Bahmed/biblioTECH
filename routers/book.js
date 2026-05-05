@@ -9,7 +9,7 @@ import {
        searchBooks,
        getLibraryStatistics,
 } from "../controllers/book.js"
-import { authorize } from "../middleware/authMiddleware.js";
+import { authorize } from "../middlewares/authMiddleware.js";
 
 export const bookRouter = express.Router()
 

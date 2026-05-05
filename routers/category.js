@@ -6,7 +6,7 @@ import {
     updateBookCategory,
     deleteBookCategory
 } from "../controllers/category.js"
-import { authorize } from "../middleware/authMiddleware.js"
+import { authorize } from "../middlewares/authMiddleware.js"
 
 export const categoryRouter = express.Router()
 

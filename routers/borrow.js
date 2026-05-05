@@ -6,7 +6,7 @@ import {
         getBorrowingHistory,
         renewBorrowedBook
 } from "../controllers/borrow.js"
-import { authorize } from "../middleware/authMiddleware.js"
+import { authorize } from "../middlewares/authMiddleware.js"
 
 export const borrowBookRouter = express.Router();
 

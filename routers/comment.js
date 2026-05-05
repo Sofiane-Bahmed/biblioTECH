@@ -8,7 +8,7 @@ import {
     getCommentsByBook,
     getAllComments,
 } from "../controllers/comment.js"
-import { authorize } from "../middleware/authMiddleware.js";
+import { authorize } from "../middlewares/authMiddleware.js";
 
 export const commentRouter = express.Router()
 

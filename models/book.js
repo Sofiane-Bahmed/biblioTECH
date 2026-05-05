@@ -7,16 +7,18 @@ const bookSchema = new Schema(
         category: {
             type: Schema.Types.ObjectId,
             ref: "category",
-            required: true
+            required: true,
         },
 
         title: {
             type: String,
-            required: true
+            required: true,
+            unique: true
         },
         author: {
             type: String,
-            required: true
+            required: true,
+            unique:true
         },
         description: {
             type: String,
