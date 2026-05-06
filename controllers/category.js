@@ -1,78 +1,63 @@
 import { Category } from "../models/category.js"
 
+import asyncHandler from "../utils/asyncHandler.js";
+
 // create book category
-export const createBookCategory = async (req, res) => {
+export const createBookCategory = asyncHandler(async (req, res) => {
 
-  try {
-    const { title } = req.body;
+  const { title } = req.body;
 
-    const newCategory = await Category.create({ title });
+  const newCategory = await Category.create({ title });
 
-    res.status(201).json(newCategory);
+  res.status(201).json(newCategory);
 
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ message: "Category name already exists" });
-    }
-    res.status(500).json({ message: 'Something went wrong' });
-  }
-};
+});
 
 // read a book category
-export const showBookCategory = async (req, res) => {
+export const showBookCategory = asyncHandler(async (req, res) => {
 
-  try {
-    const { id } = req.params;
-    const category = await Category.findById(id);
+  const { id } = req.params;
+  const category = await Category.findById(id);
 
-    res.status(200).json(category);
+  res.status(200).json(category);
 
-  } catch (err) {
-    res.status(500).json({ message: "something went wrong" });
-  }
-};
+});
+
 
 // update a book category
-export const updateBookCategory = async (req, res) => {
+export const updateBookCategory = asyncHandler(async (req, res) => {
 
-  try {
-    const { id } = req.params;
-    const { title } = req.body;
+  const { id } = req.params;
+  const { title } = req.body;
 
-    const category = await Category.findByIdAndUpdate(
-      id,
-      {
-        title
-      },
-      {
-        new: true,
-        runValidators: true
-      }
-    );
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+  const category = await Category.findByIdAndUpdate(
+    id,
+    {
+      title
+    },
+    {
+      new: true,
+      runValidators: true
     }
-
-    res.status(200).json(category);
-
-  } catch (error) {
-    res.status(500).json({ message: error });
+  );
+  if (!category) {
+    return res.status(404).json({ message: 'Category not found' });
   }
-};
+
+  res.status(200).json(category);
+
+});
 
 // delete a book category
-export const deleteBookCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
+export const deleteBookCategory = asyncHandler(async (req, res) => {
 
-    const category = await Category.findByIdAndDelete(id);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
+  const { id } = req.params;
 
-    res.status(200).json({ message: 'Category successfully deleted' });
-
-  } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
+  const category = await Category.findByIdAndDelete(id);
+  if (!category) {
+    return res.status(404).json({ message: 'Category not found' });
   }
-};
+
+  res.status(200).json({ message: 'Category successfully deleted' });
+
+}); 
