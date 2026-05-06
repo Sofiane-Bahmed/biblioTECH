@@ -23,6 +23,12 @@ export const showBookCategory = asyncHandler(async (req, res) => {
 
 });
 
+// read all categories
+export const showBookCategories = asyncHandler(async (req, res) => {
+  const categories = await Category.find();
+
+  res.status(200).json(categories);
+});
 
 // update a book category
 export const updateBookCategory = asyncHandler(async (req, res) => {

@@ -4,7 +4,8 @@ import {
     createBookCategory,
     showBookCategory,
     updateBookCategory,
-    deleteBookCategory
+    deleteBookCategory,
+    showBookCategories
 } from "../controllers/category.js"
 import { authorize } from "../middlewares/authMiddleware.js"
 
@@ -13,6 +14,7 @@ export const categoryRouter = express.Router()
 categoryRouter.use(authorize("admin"));
 
 categoryRouter.post("/", createBookCategory)
+categoryRouter.get("/", showBookCategories)
 categoryRouter.get("/:id", showBookCategory)
 categoryRouter.patch("/:id", updateBookCategory)
 categoryRouter.delete("/:id", deleteBookCategory)
