@@ -4,6 +4,7 @@ import {
     deleteUser,
     getAllUsers,
     getMyProfile,
+    getUserById,
     updateUser
 } from "../controllers/user.js"
 import { authorize } from "../middlewares/authMiddleware.js";
@@ -15,6 +16,7 @@ const adminRoutes = express.Router();
 adminRoutes.use(authorize("admin"));
 
 adminRoutes.get("/getAll", getAllUsers);
+adminRoutes.get("/:id", getUserById);
 adminRoutes.delete("/:id", deleteUser);
 
 userRouter.use("/admin", adminRoutes);

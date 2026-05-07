@@ -52,6 +52,18 @@ export const updateUser = asyncHandler(async (req, res) => {
 
 });
 
+// Get a user by ID (admin only)
+export const getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await User
+    .findById(id)
+    .select('-password -refreshToken -__v');
+  if (!user) return res.status(404).json({ message: "user not found" });
+
+  res.status(200).json(user);
+});
+
 // Get all users (admin only)
 export const getAllUsers = asyncHandler(async (req, res) => {
 
