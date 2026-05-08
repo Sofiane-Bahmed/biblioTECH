@@ -27,12 +27,7 @@ export const register = asyncHandler(async (req, res) => {
     role
   })
 
-  const userResponse = newUser.toObject();
-  delete userResponse.password;
-  delete userResponse.refreshToken;
-  delete userResponse.__v;
-
-  res.status(201).json(userResponse)
+  res.status(201).json(newUser);
 
   await sendWelcomeEmail(newUser);
 
@@ -101,14 +96,9 @@ export const login = asyncHandler(async (req, res) => {
     cookieOptions
   );
 
-  const userResponse = user.toObject();
-  delete userResponse.password;
-  delete userResponse.refreshToken;
-  delete userResponse.__v;
-
   res.status(200).json({
     message: 'Welcome back!',
-    user: userResponse
+    user
   });
 
 });
@@ -240,8 +230,6 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   // Set new password 
   user.password = password;
-  user.passwordResetToken = undefined; // Clear the token
-  user.passwordResetExpires = undefined;
   await user.save();
 
   res.status(200).json({ message: "Password reset successful!" });

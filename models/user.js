@@ -76,5 +76,17 @@ userSchema.pre("save", async function (next) {
    }
 });
 
+// Methode to delete sensitive information when converting to JSON
+userSchema.set("toJSON", {
+   transform: (doc, ret) => {
+      delete ret.password;
+      delete ret.refreshToken;
+      delete ret.passwordResetToken;
+      delete ret.passwordResetExpires;
+      delete ret.__v;
+      return ret;
+   }
+});
+
 export const User = mongoose.model("user", userSchema);
 
