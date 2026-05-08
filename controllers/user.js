@@ -16,7 +16,12 @@ export const deleteUser = asyncHandler(async (req, res) => {
 // Update a user
 export const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { fullName, email, role } = req.body;
+  const {
+    fullName,
+    email,
+    role
+  } = req.body;
+
   const adminId = req.user._id;
   const adminRole = req.user.role;
 
@@ -56,9 +61,8 @@ export const updateUser = asyncHandler(async (req, res) => {
 export const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const user = await User
-    .findById(id)
-    .select('-password -refreshToken -__v');
+  const user = await User.findById(id)
+
   if (!user) return res.status(404).json({ message: "user not found" });
 
   res.status(200).json(user);
@@ -67,11 +71,9 @@ export const getUserById = asyncHandler(async (req, res) => {
 // Get all users (admin only)
 export const getAllUsers = asyncHandler(async (req, res) => {
 
-  const users = await User
-    .find()
-    .select('-password -refreshToken -__v');
+  const users = await User.find()
 
-  res.status(200).json(users)
+  res.status(200).json(users);
 
 });
 
@@ -82,11 +84,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ message: "user not found" });
 
-  const userResponse = user.toObject();
-  delete userResponse.refreshToken;
-  delete userResponse.__v;
-
-  res.status(200).json(userResponse)
+  res.status(200).json(user);
 
 });
 
