@@ -133,14 +133,15 @@ export const getBorrowingHistory = asyncHandler(async (req, res) => {
 
   const history = await BorrowBook
     .find({ user: userId })
-    .populate("book")
-    .sort({ borrow_date: -1 });
+    .lean()
+    .populate("book", "title author")
+    .sort({ borrow_date: -1 })
 
   if (!history || history.length === 0) {
     return res.status(200).json({ message: "No borrowing history found", history: [] });
   }
 
-  res.status(200).json(history);
+  res.status(200).json(history)
 
 });
 
@@ -182,5 +183,39 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
   await borrow.save();
 
   res.status(200).json({ message: 'Borrow renewed for 7 more days', borrow: borrow });
+
+});
+
+// Get all borrows (admin only)
+export const getAllBorrows = asyncHandler(async (req, res) => {
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const [borrows, totalBorrows] = await Promise.all([
+    BorrowBook
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .populate("user", "fullName email")
+      .populate("book", "title author")
+      .sort({ borrow_date: -1 })
+      .lean(),
+    BorrowBook.countDocuments()
+  ]);
+
+  if (!borrows || borrows.length === 0) {
+    return res.status(200).json({ message: "No borrowing history found", borrows: [] });
+  }
+
+  res.status(200).json({
+    success: true,
+    count: borrows.length,
+    totalPages: Math.ceil(totalBorrows / limit),
+    currentPage: page,
+    totalBorrows,
+    data: borrows
+  });
 
 });
