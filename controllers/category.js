@@ -25,7 +25,7 @@ export const showBookCategory = asyncHandler(async (req, res) => {
 
 // read all categories
 export const showBookCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find();
+  const categories = await Category.find().lean().exec();
 
   res.status(200).json(categories);
 });

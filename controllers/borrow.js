@@ -147,9 +147,9 @@ export const getBorrowingHistory = asyncHandler(async (req, res) => {
 // Renew borrowed book
 export const renewBorrowedBook = asyncHandler(async (req, res) => {
 
-  const userId = req.user._id;
-  const { bookId } = req.body;
   const { id } = req.params;
+  const { bookId } = req.body;
+  const userId = req.user._id;
 
   //  Fetch everything needed
   const [user, book, borrow] = await Promise.all([

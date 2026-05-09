@@ -174,7 +174,9 @@ export const getCommentsByBook = asyncHandler(async (req, res) => {
 // get all comments
 export const getAllComments = asyncHandler(async (req, res) => {
 
-    const comments = await Comment.find()
+    const comments = await Comment
+        .find()
+        .lean()
         .populate('user', 'fullName email')
         .populate('book', 'title author')
         .populate({
@@ -188,7 +190,7 @@ export const getAllComments = asyncHandler(async (req, res) => {
     if (!comments.length) {
         return res.status(404).json({ message: 'No comments found' });
     }
-    
+
     res.status(200).json(comments);
 
 }); 
