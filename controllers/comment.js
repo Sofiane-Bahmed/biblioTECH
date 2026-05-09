@@ -155,7 +155,10 @@ export const getCommentsByBook = asyncHandler(async (req, res) => {
         .populate({
             path: 'replies',
             populate: [
-                { path: 'user', select: 'fullName' },
+                {
+                    path: 'user',
+                    select: 'fullName'
+                },
                 {
                     path: 'replies', // Deep nesting: Level 3
                     populate: { path: 'user', select: 'fullName' }
@@ -174,23 +177,38 @@ export const getCommentsByBook = asyncHandler(async (req, res) => {
 // get all comments
 export const getAllComments = asyncHandler(async (req, res) => {
 
-    const comments = await Comment
-        .find()
-        .lean()
-        .populate('user', 'fullName email')
-        .populate('book', 'title author')
-        .populate({
-            path: 'replies',
-            populate: {
-                path: 'user',
-                select: 'fullName'
-            }
-        });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [comments, totalComments] = await Promise.all([
+        Comment
+            .find()
+            .lean()
+            .skip(skip)
+            .limit(limit)
+            .populate('user', 'fullName email')
+            .populate('book', 'title author')
+            .populate({
+                path: 'replies',
+                populate: {
+                    path: 'user',
+                    select: 'fullName'
+                }
+            }),
+        Comment.countDocuments()
+    ]);
 
     if (!comments.length) {
         return res.status(404).json({ message: 'No comments found' });
     }
 
-    res.status(200).json(comments);
-
+    res.status(200).json({
+        success: true,
+        count: comments.length,
+        totalPages: Math.ceil(totalComments / limit),
+        currentPage: page,
+        totalComments,
+        data: comments
+    });
 }); 
