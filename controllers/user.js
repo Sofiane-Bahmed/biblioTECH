@@ -71,12 +71,31 @@ export const getUserById = asyncHandler(async (req, res) => {
 // Get all users (admin only)
 export const getAllUsers = asyncHandler(async (req, res) => {
 
-  const users = await User.find()
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
 
-  res.status(200).json(users);
+  const [users, tottalUsers] = await Promise.all([
+    await User
+      .find()
+      .skip(skip)
+      .limit(limit),
+
+    User.countDocuments()
+  ]);
+
+  if (!users.length) return res.status(404).json({ message: "No users found" });
+
+  res.status(200).json({
+    success: true,
+    count: users.length,
+    totalPages: Math.ceil(tottalUsers / limit),
+    currentPage: page,
+    totalUsers: tottalUsers,
+    data: users
+  });
 
 });
-
 // Get my profile
 export const getMyProfile = asyncHandler(async (req, res) => {
   const userId = req.user._id;
