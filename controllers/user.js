@@ -75,7 +75,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const [users, tottalUsers] = await Promise.all([
+  const [users, totalUsers] = await Promise.all([
     await User
       .find()
       .skip(skip)
@@ -89,9 +89,9 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     count: users.length,
-    totalPages: Math.ceil(tottalUsers / limit),
+    totalPages: Math.ceil(totalUsers / limit),
     currentPage: page,
-    totalUsers: tottalUsers,
+    totalUsers: totalUsers,
     data: users
   });
 
