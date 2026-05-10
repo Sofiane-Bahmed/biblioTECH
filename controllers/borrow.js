@@ -2,7 +2,7 @@ import { BorrowBook } from "../models/borrow.js"
 import { Book } from "../models/book.js"
 import { User } from "../models/user.js"
 import { sendSuspensionWarningEmail } from "../utils/email-service/sendSuspensionWarning.js";
-
+import { getPaginatedData } from "../utils/paginate.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 // borrow a book
@@ -189,33 +189,19 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
 // Get all borrows (admin only)
 export const getAllBorrows = asyncHandler(async (req, res) => {
 
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    req,
+    populate: [
+      { path: 'user', select: 'fullName email' },
+      { path: 'book', select: 'title author' }
+    ],
+  });
 
-  const [borrows, totalBorrows] = await Promise.all([
-    BorrowBook
-      .find()
-      .skip(skip)
-      .limit(limit)
-      .populate("user", "fullName email")
-      .populate("book", "title author")
-      .sort({ borrow_date: -1 })
-      .lean(),
-    BorrowBook.countDocuments()
-  ]);
-
-  if (!borrows || borrows.length === 0) {
-    return res.status(200).json({ message: "No borrowing history found", borrows: [] });
+  if (!result.data.length) {
+    return res.status(200).json({ message: "No borrowing history found", data: [] });
   }
 
-  res.status(200).json({
-    success: true,
-    count: borrows.length,
-    totalPages: Math.ceil(totalBorrows / limit),
-    currentPage: page,
-    totalBorrows,
-    data: borrows
-  });
+  res.status(200).json(result);
 
 });
