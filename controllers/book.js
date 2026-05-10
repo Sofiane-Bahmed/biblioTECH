@@ -3,7 +3,7 @@ import { Category } from "../models/category.js";
 import { User } from "../models/user.js"
 import { BorrowBook } from "../models/borrow.js"
 import { sendBookAddedEmail } from "../utils/email-service/sendBookAdded.js";
-
+import { getPaginatedData } from "../utils/paginate.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 // add books 
@@ -47,37 +47,23 @@ export const addBook = asyncHandler(async (req, res) => {
 // read all books : 
 export const getAllBooks = asyncHandler(async (req, res) => {
 
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+  const result = await getPaginatedData({
+    model: Book,
+    query: { copies_available: { $gt: 0 } },
+    req,
+    populate: [
+      { path: 'category', select: 'title' },
+      { path: 'copies_available' }
+    ]
+  });
 
-  const [books, totalBooks] = await Promise.all([
-    await Book
-      .find({ copies_available: { $gt: 0 } })
-      .populate('category', 'title')
-      .populate('copies_available')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .lean()
-      .exec(),
-    Book.countDocuments({ copies_available: { $gt: 0 } })
-  ])
-
-  if (!books.length || books.length === 0) {
+  if (!result.data.length) {
     return res.status(404).json({ message: 'No books found' });
   }
 
-  res.status(200).json({
-    success: true,
-    count: books.length,
-    totalPages: Math.ceil(totalBooks / limit),
-    currentPage: page,
-    totalBooks,
-    books
-  });
-
+  res.status(200).json(result);
 });
+
 
 export const getBook = asyncHandler(async (req, res) => {
   const { id } = req.params;

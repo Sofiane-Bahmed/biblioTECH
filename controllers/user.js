@@ -76,11 +76,10 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const [users, totalUsers] = await Promise.all([
-    await User
+    User
       .find()
       .skip(skip)
       .limit(limit),
-
     User.countDocuments()
   ]);
 
