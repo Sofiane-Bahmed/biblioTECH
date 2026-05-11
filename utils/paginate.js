@@ -1,5 +1,11 @@
-export const getPaginatedData = async ({ model, query = {}, req, populate = [], sort = { createdAt: -1 } }) => {
-    
+export const getPaginatedData = async ({
+    model,
+    query = {},
+    req,
+    populate = [],
+    sort = { createdAt: -1 }
+}) => {
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;

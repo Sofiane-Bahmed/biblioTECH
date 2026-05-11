@@ -150,31 +150,58 @@ export const deleteComment = asyncHandler(async (req, res) => {
 export const getCommentsByBook = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const comments = await Comment.find({ book: id, parentComment: null })
-        .sort({ date: -1 })
-        .populate('user', 'fullName email')
-        .populate({
-            path: 'replies',
-            populate: [
-                {
-                    path: 'user',
-                    select: 'fullName'
-                },
-                {
-                    path: 'replies', // Deep nesting: Level 3
-                    populate: {
+    const result = await getPaginatedData({
+        model: Comment,
+        query: { book: id, parentComment: null },
+        req,
+        populate: [
+            {
+                path: 'user',
+                select: 'fullName email'
+            },
+            {
+                path: 'replies',
+                populate: [
+                    {
                         path: 'user',
                         select: 'fullName'
+                    },
+                    {
+                        path: 'replies', // Deep nesting: Level 3
+                        populate: {
+                            path: 'user',
+                            select: 'fullName'
+                        }
                     }
-                }
-            ]
-        });
+                ]
+            }
+        ]
+    })
+    // const comments = await Comment.find({ book: id, parentComment: null })
+    //     .sort({ date: -1 })
+    //     .populate('user', 'fullName email')
+    //     .populate({
+    //         path: 'replies',
+    //         populate: [
+    //             {
+    //                 path: 'user',
+    //                 select: 'fullName'
+    //             },
+    //             {
+    //                 path: 'replies', // Deep nesting: Level 3
+    //                 populate: {
+    //                     path: 'user',
+    //                     select: 'fullName'
+    //                 }
+    //             }
+    //         ]
+    //     });
 
-    if (!comments.length) {
-        return res.status(200).json([]);
+    if (!result.data.length) {
+        return res.status(404).json({ message: 'No comments found for this book' });
     }
 
-    res.status(200).json(comments);
+    res.status(200).json(result);
 
 });
 
