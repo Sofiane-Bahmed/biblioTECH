@@ -1,35 +1,26 @@
 import Jwt from "jsonwebtoken"
+import asyncHandler from "../utils/asyncHandler";
 
 const { verify } = Jwt;
 
-export const authorize = (requiredRole) => async (req, res, next) => {
+export const authorize = (requiredRole) => asyncHandler(async (req, res, next) => {
 
-    try {
-        const token = req.cookies.accessToken;
-        if (!token) return res.status(401).json({ message: "token not found, require login" });
+    const token = req.cookies.accessToken;
+    if (!token) return res.status(401).json({ message: "token not found, require login" });
 
-        const decoded = verify(token, process.env.JWT_ACCESS_SECRET)
+    const decoded = verify(token, process.env.JWT_ACCESS_SECRET)
 
-        // Define the hierarchy
-        const roles = ["user", "admin"];
-        const userRoleLevel = roles.indexOf(decoded.role);
-        const requiredRoleLevel = roles.indexOf(requiredRole);
+    // Define the hierarchy
+    const roles = ["user", "admin"];
+    const userRoleLevel = roles.indexOf(decoded.role);
+    const requiredRoleLevel = roles.indexOf(requiredRole);
 
-        if (userRoleLevel < requiredRoleLevel) {
-            return res.status(403).json({ message: "Access forbidden: Insufficient permissions" });
-        }
-
-        req.user = decoded;
-        next()
+    if (userRoleLevel < requiredRoleLevel) {
+        return res.status(403).json({ message: "Access forbidden: Insufficient permissions" });
     }
-    catch (err) {
-        // Check if the error is specifically due to expiration
-        if (err.name === "TokenExpiredError") {
-            return res.status(401).json({
-                message: "Access token expired",
-                code: "TOKEN_EXPIRED" // Highlighting this for the frontend
-            });
-        }
-        res.status(401).json({ message: "Invalid token" });
-    }
-};
+
+    req.user = decoded;
+    next()
+
+});
+
