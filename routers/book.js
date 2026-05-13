@@ -10,7 +10,7 @@ import {
        getLibraryStatistics,
 } from "../controllers/book.js"
 import { authorize } from "../middlewares/authMiddleware.js";
-import { addBookSchema} from "../validations/book.schema.js";
+import { addBookSchema, updateBookSchema } from "../validations/book.schema.js";
 import { validate } from "../middlewares/validate.js";
 
 export const bookRouter = express.Router()
@@ -21,7 +21,7 @@ adminRoutes.use(authorize("admin"));
 
 adminRoutes.post("/", validate(addBookSchema), addBook);
 adminRoutes.post("/stats", getLibraryStatistics);
-adminRoutes.put("/:id", updateBook);
+adminRoutes.put("/:id", validate(updateBookSchema), updateBook);
 adminRoutes.delete("/:id", deleteBook);
 
 bookRouter.use("/admin", adminRoutes);
