@@ -36,7 +36,6 @@ export const addBook = asyncHandler(async (req, res) => {
   const subscribers = await User.find({ subscribed: true });
 
   for (const subscriber of subscribers) {
-
     await sendBookAddedEmail(subscriber, { title, author });
   }
 
