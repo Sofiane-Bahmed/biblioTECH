@@ -1,4 +1,4 @@
-import express from "express"
+import express from "express";
 
 import {
     deleteUser,
@@ -6,12 +6,13 @@ import {
     getMyProfile,
     getUserById,
     updateUser
-} from "../controllers/user.js"
+} from "../controllers/user.js";
 import { authorize } from "../middlewares/authMiddleware.js";
 import { validate } from "../middlewares/validate.js";
 import {
     deleteUserSchema,
-    getUserByIdSchema
+    getUserByIdSchema,
+    updateUserSchema
 } from "../validations/user.schema.js";
 
 export const userRouter = express.Router();
@@ -31,6 +32,6 @@ const userRoutes = express.Router();
 userRoutes.use(authorize("user"));
 
 userRoutes.get("/me", getMyProfile);
-userRoutes.put("/:id", updateUser);
+userRoutes.put("/:id", validate(updateUserSchema), updateUser);
 
 userRouter.use("/", userRoutes);
