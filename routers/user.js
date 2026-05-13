@@ -8,6 +8,11 @@ import {
     updateUser
 } from "../controllers/user.js"
 import { authorize } from "../middlewares/authMiddleware.js";
+import { validate } from "../middlewares/validate.js";
+import {
+    deleteUserSchema,
+    getUserByIdSchema
+} from "../validations/user.schema.js";
 
 export const userRouter = express.Router();
 
@@ -16,8 +21,8 @@ const adminRoutes = express.Router();
 adminRoutes.use(authorize("admin"));
 
 adminRoutes.get("/getAll", getAllUsers);
-adminRoutes.get("/:id", getUserById);
-adminRoutes.delete("/:id", deleteUser);
+adminRoutes.get("/:id", validate(getUserByIdSchema), getUserById);
+adminRoutes.delete("/:id", validate(deleteUserSchema), deleteUser);
 
 userRouter.use("/admin", adminRoutes);
 

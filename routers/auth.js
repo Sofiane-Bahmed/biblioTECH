@@ -15,7 +15,7 @@ import {
     loginSchema,
     registerSchema,
     resetPasswordSchema
-} from "../validations/user.schema.js"
+} from "../validations/auth.schema.js"
 
 export const authRouter = express.Router()
 
