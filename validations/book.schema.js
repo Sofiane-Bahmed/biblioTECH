@@ -57,4 +57,14 @@ export const updateBookSchema = z.object({
     }).partial()
 });
 
+export const deleteBookSchema = z.object({
+    params: z.object({
+        id: z
+            .string()
+            .min(1, "User ID is required")
+            .max(24, "User ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
+    }),
+});
+
 
