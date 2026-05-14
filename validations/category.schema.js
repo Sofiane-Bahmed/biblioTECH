@@ -33,3 +33,13 @@ export const updateBookCategorySchema = z.object({
             .max(50, "Category name must be at most 50 characters"),
     }),
 });
+
+export const deleteBookCategorySchema = z.object({
+    params: z.object({
+        id: z
+            .string()
+            .min(1, "category ID is required")
+            .max(24, "category ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid category ID format"),
+    }),
+});

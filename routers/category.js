@@ -10,6 +10,7 @@ import {
 import { authorize } from "../middlewares/authMiddleware.js"
 import {
     createBookCategorySchema,
+    deleteBookCategorySchema,
     showBookCategorySchema,
     updateBookCategorySchema
 } from "../validations/category.schema.js";
@@ -23,4 +24,4 @@ categoryRouter.post("/", validate(createBookCategorySchema), createBookCategory)
 categoryRouter.get("/", showBookCategories)
 categoryRouter.get("/:id", validate(showBookCategorySchema), showBookCategory)
 categoryRouter.patch("/:id", validate(updateBookCategorySchema), updateBookCategory)
-categoryRouter.delete("/:id", deleteBookCategory)
+categoryRouter.delete("/:id", validate(deleteBookCategorySchema), deleteBookCategory)
