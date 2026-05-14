@@ -32,10 +32,14 @@ export const updateBookCategorySchema = z.object({
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid category ID format"),
     }),
     body: z.object({
-        name: z
+        title: z
             .string()
-            .min(2, "Category name must be at least 2 characters")
-            .max(50, "Category name must be at most 50 characters"),
+            .min(2, "Category title must be at least 2 characters")
+            .max(50, "Category title must be at most 50 characters"),
+        description: z
+            .string()
+            .min(10, "Category description must be at least 10 characters")
+            .max(500, "Category description must be at most 500 characters"),
     }),
 });
 

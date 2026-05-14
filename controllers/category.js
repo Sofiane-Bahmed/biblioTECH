@@ -34,12 +34,13 @@ export const showBookCategories = asyncHandler(async (req, res) => {
 export const updateBookCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
-  const { title } = req.body;
+  const { title, description } = req.body;
 
   const category = await Category.findByIdAndUpdate(
     id,
     {
-      title
+      title,
+      description
     },
     {
       new: true,
