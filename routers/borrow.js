@@ -8,6 +8,11 @@ import {
         getAllBorrows
 } from "../controllers/borrow.js"
 import { authorize } from "../middlewares/authMiddleware.js"
+import { validate } from "../middlewares/validate.js";
+import {
+        borrowBookSchema,
+        returnBookSchema
+} from "../validations/borrow.schema.js";
 
 export const borrowBookRouter = express.Router();
 
@@ -22,7 +27,7 @@ borrowBookRouter.use("/admin", adminRoutes)
 // User routes
 borrowBookRouter.use(authorize("user"));
 
-borrowBookRouter.post("/", borrowBook)
+borrowBookRouter.post("/", validate(borrowBookSchema), borrowBook)
 borrowBookRouter.get("/history", getBorrowingHistory)
-borrowBookRouter.patch("/:id/return", returnBook)
+borrowBookRouter.patch("/:id/return", validate(returnBookSchema), returnBook)
 borrowBookRouter.patch("/:id/renew", renewBorrowedBook)
