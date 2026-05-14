@@ -67,4 +67,30 @@ export const deleteBookSchema = z.object({
     }),
 });
 
+export const searchBookSchema = z.object({
+    query: z.object({
+        title: z
+            .string()
+            .min(1, "Title must be at least 1 character")
+            .max(100, "Title must be at most 100 characters"),
+        author: z
+            .string()
+            .min(2, "Author must be at least 2 characters")
+            .max(50, "Author must be at most 50 characters"),
+        category: z
+            .string()
+            .min(2, "Category must be at least 2 characters")
+            .max(50, "Category must be at most 50 characters"),
+        description: z
+            .string()
+            .min(10, "Description must be at least 10 characters")
+            .max(500, "Description must be at most 500 characters"),
+        copies_available: z
+            .coerce
+            .number()
+            .int()
+            .nonnegative("Copies available cannot be negative")
+    }).partial()
+});
+
 

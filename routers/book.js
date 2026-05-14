@@ -9,9 +9,14 @@ import {
        searchBooks,
        getLibraryStatistics,
 } from "../controllers/book.js"
-import { authorize } from "../middlewares/authMiddleware.js";
-import { addBookSchema, deleteBookSchema, updateBookSchema } from "../validations/book.schema.js";
+import {
+       addBookSchema,
+       deleteBookSchema,
+       searchBookSchema,
+       updateBookSchema
+} from "../validations/book.schema.js";
 import { validate } from "../middlewares/validate.js";
+import { authorize } from "../middlewares/authMiddleware.js";
 
 export const bookRouter = express.Router()
 
@@ -31,7 +36,7 @@ const userRoutes = express.Router();
 userRoutes.use(authorize("user"));
 
 userRoutes.get("/", getAllBooks);
-userRoutes.get("/search", searchBooks);
+userRoutes.get("/search", validate(searchBookSchema), searchBooks);
 userRoutes.get("/:id", getBook);
 
 bookRouter.use("/", userRoutes);

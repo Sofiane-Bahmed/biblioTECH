@@ -135,7 +135,7 @@ export const searchBooks = asyncHandler(async (req, res) => {
     author,
     category,
     description,
-    availableCopies
+    available_copies
   } = req.query;
 
   let filters = {};
@@ -154,8 +154,8 @@ export const searchBooks = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: 'Category not found' });
     }
   }
-  if (availableCopies) {
-    filters.copies_available = { $gte: availableCopies };
+  if (available_copies) {
+    filters.copies_available = { $gte: available_copies };
   }
   if (description) {
     filters.description = { $regex: description, $options: 'i' };
