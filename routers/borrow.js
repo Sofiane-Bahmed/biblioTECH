@@ -11,6 +11,7 @@ import { authorize } from "../middlewares/authMiddleware.js"
 import { validate } from "../middlewares/validate.js";
 import {
         borrowBookSchema,
+        renewBorrowedBookSchema,
         returnBookSchema
 } from "../validations/borrow.schema.js";
 
@@ -30,4 +31,4 @@ borrowBookRouter.use(authorize("user"));
 borrowBookRouter.post("/", validate(borrowBookSchema), borrowBook)
 borrowBookRouter.get("/history", getBorrowingHistory)
 borrowBookRouter.patch("/:id/return", validate(returnBookSchema), returnBook)
-borrowBookRouter.patch("/:id/renew", renewBorrowedBook)
+borrowBookRouter.patch("/:id/renew", validate(renewBorrowedBookSchema), renewBorrowedBook)
