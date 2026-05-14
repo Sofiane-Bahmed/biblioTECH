@@ -5,9 +5,9 @@ import asyncHandler from "../utils/asyncHandler.js";
 // create book category
 export const createBookCategory = asyncHandler(async (req, res) => {
 
-  const { title } = req.body;
+  const { title, description } = req.body;
 
-  const newCategory = await Category.create({ title });
+  const newCategory = await Category.create({ title, description });
 
   res.status(201).json(newCategory);
 
