@@ -12,6 +12,7 @@ import {
 import {
        addBookSchema,
        deleteBookSchema,
+       getBookSchema,
        searchBookSchema,
        updateBookSchema
 } from "../validations/book.schema.js";
@@ -37,7 +38,7 @@ userRoutes.use(authorize("user"));
 
 userRoutes.get("/", getAllBooks);
 userRoutes.get("/search", validate(searchBookSchema), searchBooks);
-userRoutes.get("/:id", getBook);
+userRoutes.get("/:id", validate(getBookSchema), getBook);
 
 bookRouter.use("/", userRoutes);
 

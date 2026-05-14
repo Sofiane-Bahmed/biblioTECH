@@ -29,9 +29,9 @@ export const updateBookSchema = z.object({
     params: z.object({
         id: z
             .string()
-            .min(1, "User ID is required")
-            .max(24, "User ID must be 24 characters")
-            .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
+            .min(1, "Book ID is required")
+            .max(24, "Book ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
     }),
     body: z.object({
         title: z
@@ -61,11 +61,22 @@ export const deleteBookSchema = z.object({
     params: z.object({
         id: z
             .string()
-            .min(1, "User ID is required")
-            .max(24, "User ID must be 24 characters")
-            .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
+            .min(1, "Book ID is required")
+            .max(24, "Book ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
     }),
 });
+
+export const getBookSchema = z.object({
+    params: z.object({
+        id: z
+            .string()
+            .min(1, "Book ID is required")
+            .max(24, "Book ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
+    }),
+});
+
 
 export const searchBookSchema = z.object({
     query: z.object({
