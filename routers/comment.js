@@ -9,12 +9,14 @@ import {
     getAllComments,
 } from "../controllers/comment.js"
 import { authorize } from "../middlewares/authMiddleware.js";
+import { validate } from "../middlewares/validate.js"
+import { commentSchema } from "../validations/comment.schema.js";
 
 export const commentRouter = express.Router()
 
 commentRouter.use(authorize("user"));
 
-commentRouter.post("/", addComment);
+commentRouter.post("/", validate(commentSchema), addComment);
 commentRouter.get("/", getAllComments);
 commentRouter.get("/book/:id", getCommentsByBook);
 commentRouter.get("/:id", getCommentById);

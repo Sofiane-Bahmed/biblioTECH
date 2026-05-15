@@ -177,25 +177,6 @@ export const getCommentsByBook = asyncHandler(async (req, res) => {
             }
         ]
     })
-    // const comments = await Comment.find({ book: id, parentComment: null })
-    //     .sort({ date: -1 })
-    //     .populate('user', 'fullName email')
-    //     .populate({
-    //         path: 'replies',
-    //         populate: [
-    //             {
-    //                 path: 'user',
-    //                 select: 'fullName'
-    //             },
-    //             {
-    //                 path: 'replies', // Deep nesting: Level 3
-    //                 populate: {
-    //                     path: 'user',
-    //                     select: 'fullName'
-    //                 }
-    //             }
-    //         ]
-    //     });
 
     if (!result.data.length) {
         return res.status(404).json({ message: 'No comments found for this book' });
