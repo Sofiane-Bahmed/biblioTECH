@@ -149,18 +149,22 @@ export const getBorrowingHistory = asyncHandler(async (req, res) => {
 export const renewBorrowedBook = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
-  const { bookId } = req.body;
   const userId = req.user._id;
 
-  //  Fetch everything needed
-  const [user, book, borrow] = await Promise.all([
-    User.findById(userId),
-    Book.findById(bookId),
-    BorrowBook.findOne({ _id: id, user: userId, book: bookId })
-  ]);
+  const borrow = await BorrowBook
+    .findOne({
+      _id: id,
+      user: userId
+    })
+    .populate("book")
 
-  if (!user || !book || !borrow) {
-    return res.status(404).json({ message: "Record not found" });
+  if (!borrow) {
+    return res.status(404).json({ message: "Borrow not found" });
+  }
+
+  // Check if the associated book exists
+  if (!borrow.book) {
+    return res.status(404).json({ message: "Associated book not found" });
   }
 
   // Check if the borrow has already been renewed
