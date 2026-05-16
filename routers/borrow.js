@@ -28,7 +28,7 @@ borrowBookRouter.use("/admin", adminRoutes)
 // User routes
 borrowBookRouter.use(authorize("user"));
 
-borrowBookRouter.post("/", validate(borrowBookSchema), borrowBook)
 borrowBookRouter.get("/history", getBorrowingHistory)
+borrowBookRouter.post("/:id/borrow", validate(borrowBookSchema), borrowBook)
 borrowBookRouter.patch("/:id/return", validate(returnBookSchema), returnBook)
 borrowBookRouter.patch("/:id/renew", validate(renewBorrowedBookSchema), renewBorrowedBook)

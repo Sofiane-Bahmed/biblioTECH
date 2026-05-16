@@ -7,8 +7,8 @@ import asyncHandler from "../utils/asyncHandler.js";
 
 // borrow a book
 export const borrowBook = asyncHandler(async (req, res) => {
+  const { id } = req.params;
   const userId = req.user._id;
-  const { bookId } = req.body;
 
   const user = await User.findById(userId);
   //check if user is suspended
@@ -35,7 +35,7 @@ export const borrowBook = asyncHandler(async (req, res) => {
   }
 
   // Check if book is available
-  const book = await Book.findById(bookId);
+  const book = await Book.findById(id);
   if (!book || book.copies_available <= 0) {
     return res.status(404).json({ message: "Book is unavailable." });
   }
@@ -43,7 +43,7 @@ export const borrowBook = asyncHandler(async (req, res) => {
   //check if user already borrowed this book
   const existingBorrow = await BorrowBook.findOne({
     user: userId,
-    book: bookId,
+    book: id,
     return_date: null
   });
   if (existingBorrow) {
@@ -57,7 +57,7 @@ export const borrowBook = asyncHandler(async (req, res) => {
 
   const newBorrow = await BorrowBook.create({
     user: userId,
-    book: bookId,
+    book: id,
     borrow_date,
     due_date,
   });
