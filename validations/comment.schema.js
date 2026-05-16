@@ -86,3 +86,12 @@ export const updateCommentSchema = z.object({
             .max(500, "CommentUpdate cannot exceed 500 characters"),
     })
 });
+
+export const deleteCommentSchema = z.object({
+    params: z.object({
+        id: z.string()
+            .min(1, "Comment ID is required")
+            .max(24, "Comment ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
+    }),
+});

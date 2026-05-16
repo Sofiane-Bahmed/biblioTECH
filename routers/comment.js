@@ -12,6 +12,7 @@ import { authorize } from "../middlewares/authMiddleware.js";
 import { validate } from "../middlewares/validate.js"
 import {
     commentSchema,
+    deleteCommentSchema,
     getAllCommentsSchema,
     getCommentsByBookSchema,
     getCommentsByIdSchema,
@@ -26,8 +27,8 @@ commentRouter.post("/", validate(commentSchema), addComment);
 commentRouter.get("/", validate(getAllCommentsSchema), getAllComments);
 commentRouter.get("/book/:id", validate(getCommentsByBookSchema), getCommentsByBook);
 commentRouter.get("/:id", validate(getCommentsByIdSchema), getCommentById);
-commentRouter.put("/:id",validate(updateCommentSchema), updateComment);
-commentRouter.delete("/:id", deleteComment);
+commentRouter.put("/:id", validate(updateCommentSchema), updateComment);
+commentRouter.delete("/:id", validate(deleteCommentSchema), deleteComment);
 
 
 
