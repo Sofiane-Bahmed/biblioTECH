@@ -12,6 +12,7 @@ import {
 import {
        addBookSchema,
        deleteBookSchema,
+       getAllBooksSchema,
        getBookSchema,
        searchBookSchema,
        updateBookSchema
@@ -36,7 +37,7 @@ bookRouter.use("/admin", adminRoutes);
 const userRoutes = express.Router();
 userRoutes.use(authorize("user"));
 
-userRoutes.get("/", getAllBooks);
+userRoutes.get("/", validate(getAllBooksSchema), getAllBooks);
 userRoutes.get("/search", validate(searchBookSchema), searchBooks);
 userRoutes.get("/:id", validate(getBookSchema), getBook);
 
