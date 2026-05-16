@@ -28,4 +28,28 @@ export const getCommentsByBookSchema = z.object({
             .max(24, "Book ID must be 24 characters")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
     }),
+    query: z.object({
+        page: z
+            .coerce
+            .number()
+            .int()
+            .min(1).
+            default(1),
+        limit: z
+            .coerce
+            .number()
+            .int()
+            .min(1)
+            .max(100)
+            .default(10),
+    }).optional()
+});
+
+export const getCommentsByIdSchema = z.object({
+    params: z.object({
+        id: z.string()
+            .min(1, "Comment ID is required")
+            .max(24, "Comment ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
+    }),
 });
