@@ -71,3 +71,18 @@ export const getCommentsByIdSchema = z.object({
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
     }),
 });
+
+export const updateCommentSchema = z.object({
+    params: z.object({
+        id: z.string()
+            .min(1, "Comment ID is required")
+            .max(24, "Comment ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
+    }),
+    body: z.object({
+        commentUpdate: z
+            .string()
+            .min(1, "CommentUpdate cannot be empty")
+            .max(500, "CommentUpdate cannot exceed 500 characters"),
+    })
+});

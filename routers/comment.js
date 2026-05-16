@@ -14,7 +14,8 @@ import {
     commentSchema,
     getAllCommentsSchema,
     getCommentsByBookSchema,
-    getCommentsByIdSchema
+    getCommentsByIdSchema,
+    updateCommentSchema
 } from "../validations/comment.schema.js";
 
 export const commentRouter = express.Router()
@@ -25,7 +26,7 @@ commentRouter.post("/", validate(commentSchema), addComment);
 commentRouter.get("/", validate(getAllCommentsSchema), getAllComments);
 commentRouter.get("/book/:id", validate(getCommentsByBookSchema), getCommentsByBook);
 commentRouter.get("/:id", validate(getCommentsByIdSchema), getCommentById);
-commentRouter.put("/:id", updateComment);
+commentRouter.put("/:id",validate(updateCommentSchema), updateComment);
 commentRouter.delete("/:id", deleteComment);
 
 
