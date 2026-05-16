@@ -37,7 +37,7 @@ export const getAllCommentsSchema = z.object({
             .max(100)
             .default(10),
     }).optional()
-})
+});
 
 export const getCommentsByBookSchema = z.object({
     params: z.object({

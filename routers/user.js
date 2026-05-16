@@ -11,6 +11,7 @@ import { authorize } from "../middlewares/authMiddleware.js";
 import { validate } from "../middlewares/validate.js";
 import {
     deleteUserSchema,
+    getAllUsersSchema,
     getUserByIdSchema,
     updateUserSchema
 } from "../validations/user.schema.js";
@@ -21,7 +22,7 @@ export const userRouter = express.Router();
 const adminRoutes = express.Router();
 adminRoutes.use(authorize("admin"));
 
-adminRoutes.get("/getAll", getAllUsers);
+adminRoutes.get("/getAll", validate(getAllUsersSchema), getAllUsers);
 adminRoutes.get("/:id", validate(getUserByIdSchema), getUserById);
 adminRoutes.delete("/:id", validate(deleteUserSchema), deleteUser);
 
