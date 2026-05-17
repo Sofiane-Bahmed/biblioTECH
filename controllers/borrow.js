@@ -78,19 +78,24 @@ export const borrowBook = asyncHandler(async (req, res) => {
 // return book
 export const returnBook = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { bookId } = req.body;
   const { id } = req.params;
 
   //  Fetch everything needed
-  const [user, book, borrow] = await Promise.all([
+  const [user, borrow] = await Promise.all([
     User.findById(userId),
-    Book.findById(bookId),
-    BorrowBook.findOne({ _id: id, user: userId, book: bookId })
+    BorrowBook
+      .findOne({
+        _id: id,
+        user: userId
+      })
+      .populate("book")
   ]);
 
-  if (!user || !book || !borrow) {
+  if (!user || !borrow || !borrow.book) {
     return res.status(404).json({ message: "Record not found" });
   }
+
+  const book = borrow.book;
 
   // Prevent double-returning
   if (borrow.return_date) {
@@ -103,6 +108,7 @@ export const returnBook = asyncHandler(async (req, res) => {
   book.copies_available++;
   // Update borrow return date
   borrow.return_date = currentDate;
+
   const savedOperations = [book.save(), borrow.save()];
 
   // Handle Late Penalty
