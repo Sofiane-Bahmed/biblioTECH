@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.use("/auth", authRouter)
 router.use("/users", userRouter)
-router.use("/categories", categoryRouter)
+router.use("/admin/categories", categoryRouter)
 router.use("/books", bookRouter)
 router.use("/borrows", borrowBookRouter)
 router.use("/comments", commentRouter)

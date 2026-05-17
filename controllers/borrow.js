@@ -192,8 +192,10 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
   borrow.renewed = true;
   await borrow.save();
 
-  res.status(200).json({ message: 'Borrow renewed for 7 more days', borrow: borrow });
-
+  res.status(200).json({
+    message: 'Borrow renewed for 7 more days',
+    borrow: borrow
+  });
 });
 
 // Get all borrows (admin only)

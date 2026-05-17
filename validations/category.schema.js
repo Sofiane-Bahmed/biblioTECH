@@ -40,7 +40,7 @@ export const updateBookCategorySchema = z.object({
             .string()
             .min(10, "Category description must be at least 10 characters")
             .max(500, "Category description must be at most 500 characters"),
-    }),
+    }).partial(),
 });
 
 export const deleteBookCategorySchema = z.object({

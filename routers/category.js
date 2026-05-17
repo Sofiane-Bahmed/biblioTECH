@@ -22,6 +22,7 @@ categoryRouter.use(authorize("admin"));
 
 categoryRouter.post("/", validate(createBookCategorySchema), createBookCategory)
 categoryRouter.get("/", showBookCategories)
+
 categoryRouter.get("/:id", validate(showBookCategorySchema), showBookCategory)
 categoryRouter.patch("/:id", validate(updateBookCategorySchema), updateBookCategory)
 categoryRouter.delete("/:id", validate(deleteBookCategorySchema), deleteBookCategory)
