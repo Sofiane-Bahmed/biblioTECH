@@ -1,9 +1,8 @@
-import { BorrowBook } from "../models/borrow.js"
-import { Book } from "../models/book.js"
-import { User } from "../models/user.js"
-import { sendSuspensionWarningEmail } from "../utils/email-service/sendSuspensionWarning.js";
-import { getPaginatedData } from "../utils/paginate.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import { BorrowBook } from "../../models/borrow.js"
+import { Book } from "../../models/book.js"
+import { User } from "../../models/user.js"
+import { sendSuspensionWarningEmail } from "../../utils/email-service/sendSuspensionWarning.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 
 // borrow a book
 export const borrowBook = asyncHandler(async (req, res) => {
@@ -198,22 +197,3 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
   });
 });
 
-// Get all borrows (admin only)
-export const getAllBorrows = asyncHandler(async (req, res) => {
-
-  const result = await getPaginatedData({
-    model: BorrowBook,
-    req,
-    populate: [
-      { path: 'user', select: 'fullName email' },
-      { path: 'book', select: 'title author' }
-    ],
-  });
-
-  if (!result.data.length) {
-    return res.status(200).json({ message: "No borrowing history found", data: [] });
-  }
-
-  res.status(200).json(result);
-
-});
