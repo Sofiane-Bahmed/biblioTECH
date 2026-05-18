@@ -1,6 +1,6 @@
-import { Category } from "../models/category.js"
+import { Category } from "../../models/category.js"
 
-import asyncHandler from "../utils/asyncHandler.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 
 // create book category
 export const createBookCategory = asyncHandler(async (req, res) => {
