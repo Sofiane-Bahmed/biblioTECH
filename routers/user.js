@@ -7,7 +7,7 @@ import {
     getUserById,
     updateUser
 } from "../controllers/user.js";
-import { authorize } from "../middlewares/authMiddleware.js";
+// import { authorize } from "../middlewares/authMiddleware.js";
 import { validate } from "../middlewares/validate.js";
 import {
     deleteUserSchema,
@@ -20,7 +20,7 @@ export const userRouter = express.Router();
 
 //Admin routes
 const adminRoutes = express.Router();
-adminRoutes.use(authorize("admin"));
+// adminRoutes.use(authorize("admin"));
 
 adminRoutes.get("/getAll", validate(getAllUsersSchema), getAllUsers);
 adminRoutes.get("/:id", validate(getUserByIdSchema), getUserById);
@@ -30,7 +30,7 @@ userRouter.use("/admin", adminRoutes);
 
 // User routes
 const userRoutes = express.Router();
-userRoutes.use(authorize("user"));
+// userRoutes.use(authorize("user"));
 
 userRoutes.get("/me", getMyProfile);
 userRoutes.put("/:id", validate(updateUserSchema), updateUser);

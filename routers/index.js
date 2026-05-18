@@ -7,6 +7,8 @@ import { borrowBookRouter } from "./borrow.js"
 import { commentRouter } from "./comment.js"
 import { adminBookRouter } from "./admin/book.js"
 import { publicBookRouter } from "./book.js"
+import { authenticate } from "../middlewares/authenticateMiddleware.js"
+import { authorize } from "../middlewares/authorizeMiddleware.js"
 
 const router = express.Router();
 
@@ -16,8 +18,8 @@ router.use("/users", userRouter)
 router.use("/borrows", borrowBookRouter)
 router.use("/comments", commentRouter)
 
+router.use("/admin/books", authenticate, authorize("admin"), adminBookRouter)
 router.use("/admin/categories", categoryRouter)
-router.use("/admin/books", adminBookRouter)
 
 export default router;
 

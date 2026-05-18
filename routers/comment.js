@@ -8,7 +8,7 @@ import {
     getCommentsByBook,
     getAllComments,
 } from "../controllers/comment.js"
-import { authorize } from "../middlewares/authMiddleware.js";
+// import { authorize } from "../middlewares/authMiddleware.js";
 import { validate } from "../middlewares/validate.js"
 import {
     commentSchema,
@@ -21,7 +21,7 @@ import {
 
 export const commentRouter = express.Router()
 
-commentRouter.use(authorize("user"));
+// commentRouter.use(authorize("user"));
 
 commentRouter.post("/", validate(commentSchema), addComment);
 commentRouter.get("/", validate(getAllCommentsSchema), getAllComments);

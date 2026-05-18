@@ -7,7 +7,7 @@ import {
         renewBorrowedBook,
         getAllBorrows
 } from "../controllers/borrow.js"
-import { authorize } from "../middlewares/authMiddleware.js"
+// import { authorize } from "../middlewares/authMiddleware.js"
 import { validate } from "../middlewares/validate.js";
 import {
         borrowBookSchema,
@@ -18,15 +18,15 @@ import {
 export const borrowBookRouter = express.Router();
 
 // Admin routes
-const adminRoutes = express.Router();
-adminRoutes.use(authorize("admin"));
+// const adminRoutes = express.Router();
+// adminRoutes.use(authorize("admin"));
 
-adminRoutes.get("/", getAllBorrows);
+// adminRoutes.get("/", getAllBorrows);
 
-borrowBookRouter.use("/admin", adminRoutes)
+// borrowBookRouter.use("/admin", adminRoutes)
 
 // User routes
-borrowBookRouter.use(authorize("user"));
+// borrowBookRouter.use(authorize("user"));
 
 borrowBookRouter.get("/history", getBorrowingHistory)
 

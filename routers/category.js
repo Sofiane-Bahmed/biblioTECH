@@ -7,7 +7,7 @@ import {
     deleteBookCategory,
     showBookCategories
 } from "../controllers/category.js"
-import { authorize } from "../middlewares/authMiddleware.js"
+// import { authorize } from "../middlewares/authMiddleware.js"
 import {
     createBookCategorySchema,
     deleteBookCategorySchema,
@@ -18,7 +18,7 @@ import { validate } from "../middlewares/validate.js";
 
 export const categoryRouter = express.Router()
 
-categoryRouter.use(authorize("admin"));
+// categoryRouter.use(authorize("admin"));
 
 categoryRouter.post("/", validate(createBookCategorySchema), createBookCategory)
 categoryRouter.get("/", showBookCategories)
