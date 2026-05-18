@@ -1,9 +1,9 @@
-import { Book } from "../models/book.js"
-import { Comment } from "../models/comment.js"
-import { User } from "../models/user.js";
+import { Book } from "../../models/book.js"
+import { Comment } from "../../models/comment.js"
+import { User } from "../../models/user.js";
 
-import asyncHandler from "../utils/asyncHandler.js";
-import { getPaginatedData } from "../utils/paginate.js";
+import asyncHandler from "../../utils/asyncHandler.js";
+import { getPaginatedData } from "../../utils/paginate.js";
 
 //add comment or the reply of the comment : 
 export const addComment = asyncHandler(async (req, res) => {
