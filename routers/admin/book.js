@@ -5,7 +5,7 @@ import {
        updateBook,
        deleteBook,
        getLibraryStatistics,
-} from "../../controllers/book.js"
+} from "../../controllers/admin/book.js"
 import {
        addBookSchema,
        deleteBookSchema,
