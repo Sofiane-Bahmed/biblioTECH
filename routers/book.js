@@ -1,48 +1,22 @@
 import express from "express"
 
 import {
-       addBook,
        getAllBooks,
        getBook,
-       updateBook,
-       deleteBook,
        searchBooks,
-       getLibraryStatistics,
 } from "../controllers/book.js"
 import {
-       addBookSchema,
-       deleteBookSchema,
        getAllBooksSchema,
        getBookSchema,
        searchBookSchema,
-       updateBookSchema
 } from "../validations/book.schema.js";
 import { validate } from "../middlewares/validate.js";
-import { authorize } from "../middlewares/authMiddleware.js";
 
-export const bookRouter = express.Router()
+export const publicBookRouter = express.Router();
 
-// Admin routes
-const adminRoutes = express.Router();
-adminRoutes.use(authorize("admin"));
-
-adminRoutes.post("/", validate(addBookSchema), addBook);
-adminRoutes.post("/stats", getLibraryStatistics);
-adminRoutes.put("/:id", validate(updateBookSchema), updateBook);
-adminRoutes.delete("/:id", validate(deleteBookSchema), deleteBook);
-
-bookRouter.use("/admin", adminRoutes);
-
-// User routes
-const userRoutes = express.Router();
-userRoutes.use(authorize("user"));
-
-userRoutes.get("/", validate(getAllBooksSchema), getAllBooks);
-userRoutes.get("/search", validate(searchBookSchema), searchBooks);
-userRoutes.get("/:id", validate(getBookSchema), getBook);
-
-bookRouter.use("/", userRoutes);
-
+publicBookRouter.get("/", validate(getAllBooksSchema), getAllBooks);
+publicBookRouter.get("/search", validate(searchBookSchema), searchBooks);
+publicBookRouter.get("/:id", validate(getBookSchema), getBook);
 
 
 
