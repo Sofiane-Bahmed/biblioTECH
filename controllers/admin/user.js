@@ -1,6 +1,6 @@
 import { User } from "../../models/user.js"
 
-import asyncHandler from "../../utils/asyncHandler.js";
+import asyncHandler from "../../utils/async-handler.js";
 
 // Delete a user
 export const deleteUser = asyncHandler(async (req, res) => {

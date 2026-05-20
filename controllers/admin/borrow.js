@@ -1,7 +1,7 @@
 import { BorrowBook } from "../../models/borrow.js";
 
 import { getPaginatedData } from "../../utils/paginate.js";
-import asyncHandler from "../../utils/asyncHandler.js";
+import asyncHandler from "../../utils/async-handler.js";
 
 // Get all borrows 
 export const getAllBorrows = asyncHandler(async (req, res) => {

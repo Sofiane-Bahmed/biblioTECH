@@ -1,6 +1,6 @@
 import { User } from "../../models/user.js"
 
-import asyncHandler from "../../utils/asyncHandler.js";
+import asyncHandler from "../../utils/async-handler.js";
 
 // Update a user
 export const updateUser = asyncHandler(async (req, res) => {

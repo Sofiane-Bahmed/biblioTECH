@@ -1,4 +1,4 @@
-import asyncHandler from "../utils/asyncHandler.js";
+import asyncHandler from "../utils/async-handler.js";
 
 export const authorize = (requiredRole) => asyncHandler(async (req, res, next) => {
     if (!req.user) {

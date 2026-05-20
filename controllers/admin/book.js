@@ -3,7 +3,7 @@ import { Category } from "../../models/category.js";
 import { User } from "../../models/user.js"
 import { BorrowBook } from "../../models/borrow.js"
 import { sendBookAddedEmail } from "../../utils/email-service/book-added.js";
-import asyncHandler from "../../utils/asyncHandler.js";
+import asyncHandler from "../../utils/async-handler.js";
 
 // add books 
 export const addBook = asyncHandler(async (req, res) => {

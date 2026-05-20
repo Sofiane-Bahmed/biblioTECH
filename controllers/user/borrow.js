@@ -2,7 +2,7 @@ import { BorrowBook } from "../../models/borrow.js"
 import { Book } from "../../models/book.js"
 import { User } from "../../models/user.js"
 import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension-warning.js";
-import asyncHandler from "../../utils/asyncHandler.js";
+import asyncHandler from "../../utils/async-handler.js";
 
 // borrow a book
 export const borrowBook = asyncHandler(async (req, res) => {

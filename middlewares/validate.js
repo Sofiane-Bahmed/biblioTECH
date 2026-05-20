@@ -1,4 +1,4 @@
-import asyncHandler from "../utils/asyncHandler.js";
+import asyncHandler from "../utils/async-handler.js";
 
 export const validate = (schema) => asyncHandler(async (req, res, next) => {
     // parseAsync handles both sync and async refinements
