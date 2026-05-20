@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 
 import connectDB from "./db/index.js";
 import router from "./routers/index.js";
-import { errorMiddleware } from "./middlewares/errorMiddleware.js";
+import { errorMiddleware } from "./middlewares/error.js";
 
 const app = express()
 dotenv.config();

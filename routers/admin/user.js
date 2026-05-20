@@ -4,14 +4,15 @@ import {
     deleteUser,
     getAllUsers,
     getUserById,
+    updateUser
 } from "../../controllers/admin/user.js";
 import { validate } from "../../middlewares/validate.js";
 import {
     deleteUserSchema,
     getAllUsersSchema,
     getUserByIdSchema,
+    updateUserSchema
 } from "../../validations/user-schema.js";
-import { updateUser } from "../../controllers/user/profile.js";
 
 export const adminUserRouter = express.Router();
 
