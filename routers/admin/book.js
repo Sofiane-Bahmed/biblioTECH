@@ -10,7 +10,7 @@ import {
        addBookSchema,
        deleteBookSchema,
        updateBookSchema
-} from "../../validations/book.schema.js";
+} from "../../validations/book-schema.js";
 import { validate } from "../../middlewares/validate.js";
 
 export const adminBookRouter = express.Router();

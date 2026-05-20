@@ -11,7 +11,7 @@ import {
         borrowBookSchema,
         renewBorrowedBookSchema,
         returnBookSchema
-} from "../../validations/borrow.schema.js";
+} from "../../validations/borrow-schema.js";
 
 export const userBorrowRouter = express.Router();
 

@@ -10,7 +10,7 @@ import {
     deleteUserSchema,
     getAllUsersSchema,
     getUserByIdSchema,
-} from "../../validations/user.schema.js";
+} from "../../validations/user-schema.js";
 import { updateUser } from "../../controllers/user/profile.js";
 
 export const adminUserRouter = express.Router();

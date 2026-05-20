@@ -9,7 +9,7 @@ import {
        getAllBooksSchema,
        getBookSchema,
        searchBookSchema,
-} from "../validations/book.schema.js";
+} from "../validations/book-schema.js";
 import { validate } from "../middlewares/validate.js";
 
 export const publicBookRouter = express.Router();

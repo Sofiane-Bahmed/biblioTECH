@@ -16,7 +16,7 @@ import {
     getCommentsByBookSchema,
     getCommentsByIdSchema,
     updateCommentSchema
-} from "../../validations/comment.schema.js";
+} from "../../validations/comment-schema.js";
 
 export const userCommentRouter = express.Router()
 

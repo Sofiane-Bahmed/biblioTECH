@@ -12,7 +12,7 @@ import {
     deleteBookCategorySchema,
     showBookCategorySchema,
     updateBookCategorySchema
-} from "../../validations/category.schema.js";
+} from "../../validations/category-schema.js";
 import { validate } from "../../middlewares/validate.js";
 
 export const adminCategoryRouter = express.Router()
