@@ -4,22 +4,16 @@ import asyncHandler from "../../utils/async-handler.js";
 
 // Update profile
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const userId = req.user._id;
   const {
     fullName,
     email,
   } = req.body
 
-  const userId = req.user._id;
-  // Authorization Check
-  if (userId.toString() !== id) {
-    return res.status(403).json({ message: "You are not authorized to update this profile" });
-  }
-
   const updateData = { fullName, email };
 
   const user = await User.findByIdAndUpdate(
-    id,
+    userId,
     { $set: updateData },
     { new: true, runValidators: true }
   );

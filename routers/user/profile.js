@@ -10,4 +10,4 @@ import { updateProfileSchema } from "../../validations/profile-schema.js";
 export const profileRouter = express.Router();
 
 profileRouter.get("/me", getMyProfile);
-profileRouter.put("/:id", validate(updateProfileSchema), updateProfile);
+profileRouter.put("/me", validate(updateProfileSchema), updateProfile);
