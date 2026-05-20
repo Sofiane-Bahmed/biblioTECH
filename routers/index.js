@@ -1,7 +1,7 @@
 import express from "express"
 
 import { authRouter } from "./auth.js"
-import { profileRouter } from "./user/user.js"
+import { profileRouter } from "./user/profile.js"
 import { adminCategoryRouter } from "./admin/category.js"
 import { userBorrowRouter } from "./user/borrow.js"
 import { userCommentRouter } from "./user/comment.js"
