@@ -1,7 +1,7 @@
 import { BorrowBook } from "../../models/borrow.js"
 import { Book } from "../../models/book.js"
 import { User } from "../../models/user.js"
-import { sendSuspensionWarningEmail } from "../../utils/email-service/sendSuspensionWarning.js";
+import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension-warning.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 
 // borrow a book

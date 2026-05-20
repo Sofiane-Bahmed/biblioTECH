@@ -3,8 +3,8 @@ import Jwt from "jsonwebtoken"
 import crypto from "crypto"
 
 import { User } from "../models/user.js"
-import { sendWelcomeEmail } from "../utils/email-service/sendWelcome.js";
-import { sendPasswordResetEmail } from "../utils/email-service/sendResetPassword.js";
+import { sendWelcomeEmail } from "../utils/email-service/welcome.js";
+import { sendPasswordResetEmail } from "../utils/email-service/reset-password.js";
 
 import asyncHandler from "../utils/asyncHandler.js";
 
