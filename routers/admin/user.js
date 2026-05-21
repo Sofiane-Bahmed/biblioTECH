@@ -12,7 +12,7 @@ import {
     getAllUsersSchema,
     getUserByIdSchema,
     updateUserRoleSchema,
-} from "../../validations/user-schema.js";
+} from "../../validations/admin-user-schema.js";
 
 export const adminUserRouter = express.Router();
 
