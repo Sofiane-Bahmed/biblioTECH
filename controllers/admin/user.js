@@ -2,47 +2,29 @@ import { User } from "../../models/user.js"
 
 import asyncHandler from "../../utils/async-handler.js";
 
-// Update a user
-export const updateUser = asyncHandler(async (req, res) => {
+// Update a user role
+export const updateUserRole = asyncHandler(async (req, res) => {
+  const userId = req._id;
+
   const { id } = req.params;
-  const {
-    fullName,
-    email,
-    role
-  } = req.body;
+  const { role } = req.body;
 
-  const adminId = req.user._id;
-  const adminRole = req.user.role;
-
-  // Authorization Check
-  if (adminRole !== "admin" && adminId.toString() !== id) {
-    return res.status(403).json({ message: "You are not authorized to update this user" });
-  }
-
-  const updateData = { fullName, email };
-
-  // Only an admin can change roles
-  if (role) {
-    if (adminRole === "admin") {
-      if (!["user", "admin"].includes(role)) {
-        return res.status(400).json({ message: "Invalid role" });
-      }
-      updateData.role = role;
-    } else {
-      // If a non-admin tries to send a role, we just ignore it or send an error
-      return res.status(403).json({ message: "Only admins can change roles" });
-    }
+  if (userId === id) {
+    return res.status(400).json({ message: "You cannot change your own administrative role" });
   }
 
   const user = await User.findByIdAndUpdate(
     id,
-    { $set: updateData },
+    { $set: { role } },
     { new: true, runValidators: true }
   );
 
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  res.status(200).json({ message: "User updated successfully", user });
+  res.status(200).json({
+    message: `User role successfully updated to ${role}`,
+    user
+  });
 
 });
 

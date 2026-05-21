@@ -4,20 +4,20 @@ import {
     deleteUser,
     getAllUsers,
     getUserById,
-    updateUser
+    updateUserRole
 } from "../../controllers/admin/user.js";
 import { validate } from "../../middlewares/validate.js";
 import {
     deleteUserSchema,
     getAllUsersSchema,
     getUserByIdSchema,
-    updateUserSchema
+    updateUserRoleSchema,
 } from "../../validations/user-schema.js";
 
 export const adminUserRouter = express.Router();
 
 adminUserRouter.get("/getAll", validate(getAllUsersSchema), getAllUsers);
+adminUserRouter.put("/:id/role", validate(updateUserRoleSchema), updateUserRole);
 adminUserRouter.get("/:id", validate(getUserByIdSchema), getUserById);
-adminUserRouter.put("/:id", validate(updateUserSchema), updateUser);
 adminUserRouter.delete("/:id", validate(deleteUserSchema), deleteUser);
 
