@@ -14,6 +14,7 @@ export const addBook = asyncHandler(async (req, res) => {
     category,
     description,
     copies_available,
+    pages
   } = req.body;
 
   // Check if category exists
@@ -22,12 +23,12 @@ export const addBook = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Category does not exist' });
   }
 
-  // Create new book
   const newBook = await Book.create({
     title,
     author,
     description,
     copies_available,
+    pages,
     category: existingCategory._id
   });
 
@@ -52,6 +53,7 @@ export const updateBook = asyncHandler(async (req, res) => {
     author,
     description,
     copies_available,
+    pages,
     category
   } = req.body;
 
@@ -72,6 +74,7 @@ export const updateBook = asyncHandler(async (req, res) => {
       author,
       description,
       copies_available,
+      pages,
       category: existingCategory._id
     },
     {

@@ -124,7 +124,7 @@ export const logout = asyncHandler(async (req, res) => {
 
 });
 
-// Refresh Access Token and Rotate Refresh Token
+// Refresh Access Token and Rotate it
 export const refresh = asyncHandler(async (req, res) => {
   const { sign, verify } = Jwt;
 
@@ -132,7 +132,10 @@ export const refresh = asyncHandler(async (req, res) => {
   if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
   const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-  const user = await User.findById(decoded._id).select('+refreshToken');
+  const user = await User
+    .findById(decoded._id)
+    .select('+refreshToken');
+    
   if (!user || user.refreshToken !== refreshToken) {
     if (user) {
       await User.findByIdAndUpdate(user._id, { refreshToken: null });

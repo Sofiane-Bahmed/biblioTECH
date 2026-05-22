@@ -21,7 +21,11 @@ export const addBookSchema = z.object({
         copies_available: z
             .number()
             .int()
-            .positive("Copies available must be a positive integer")
+            .positive("Copies available must be a positive integer"),
+        pages: z
+            .number()
+            .int()
+            .positive("Pages must be a positive integer")
     })
 });
 
@@ -71,7 +75,11 @@ export const updateBookSchema = z.object({
         copies_available: z
             .number()
             .int()
-            .positive("Copies available must be a positive integer")
+            .positive("Copies available must be a positive integer"),
+        pages: z
+            .number()
+            .int()
+            .positive("Pages must be a positive integer")
     }).partial()
 });
 

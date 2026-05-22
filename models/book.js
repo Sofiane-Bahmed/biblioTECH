@@ -29,6 +29,10 @@ const bookSchema = new Schema(
             required: true,
             min: 1,
         },
+        pages: {
+            type: Number,
+            required: true,
+        },
         borrows: [{
             type: Schema.Types.ObjectId,
             ref: 'borrowBook'
