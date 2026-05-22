@@ -25,7 +25,11 @@ export const addBookSchema = z.object({
         pages: z
             .number()
             .int()
-            .positive("Pages must be a positive integer")
+            .positive("Pages must be a positive integer"),
+        language: z
+            .string()
+            .min(2, "Language must be at least 2 characters")
+            .max(50, "Language must be at most 50 characters")
     })
 });
 
@@ -79,7 +83,11 @@ export const updateBookSchema = z.object({
         pages: z
             .number()
             .int()
-            .positive("Pages must be a positive integer")
+            .positive("Pages must be a positive integer"),
+        language: z
+            .string()
+            .min(2, "Language must be at least 2 characters")
+            .max(50, "Language must be at most 50 characters")
     }).partial()
 });
 
