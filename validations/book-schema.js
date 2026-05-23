@@ -29,7 +29,11 @@ export const addBookSchema = z.object({
         language: z
             .string()
             .min(2, "Language must be at least 2 characters")
-            .max(50, "Language must be at most 50 characters")
+            .max(50, "Language must be at most 50 characters"),
+        publication_year: z
+            .number()
+            .int()
+            .positive("Publication year must be a positive integer")
     })
 });
 
@@ -87,7 +91,11 @@ export const updateBookSchema = z.object({
         language: z
             .string()
             .min(2, "Language must be at least 2 characters")
-            .max(50, "Language must be at most 50 characters")
+            .max(50, "Language must be at most 50 characters"),
+        publication_year: z
+            .number()
+            .int()
+            .positive("Publication year must be a positive integer")
     }).partial()
 });
 
@@ -110,7 +118,6 @@ export const getBookSchema = z.object({
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
     }),
 });
-
 
 export const searchBookSchema = z.object({
     query: z.object({

@@ -37,6 +37,10 @@ const bookSchema = new Schema(
             type: String,
             required: true,
         },
+        publication_year: {
+            type: Number,
+            required: true,
+        },
         borrows: [{
             type: Schema.Types.ObjectId,
             ref: 'borrowBook'

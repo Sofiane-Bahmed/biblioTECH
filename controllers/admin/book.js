@@ -15,7 +15,8 @@ export const addBook = asyncHandler(async (req, res) => {
     description,
     copies_available,
     pages,
-    language
+    language,
+    publication_year
   } = req.body;
 
   // Check if category exists
@@ -31,6 +32,7 @@ export const addBook = asyncHandler(async (req, res) => {
     copies_available,
     pages,
     language,
+    publication_year,
     category: existingCategory._id
   });
 
@@ -57,7 +59,8 @@ export const updateBook = asyncHandler(async (req, res) => {
     copies_available,
     pages,
     language,
-    category
+    category,
+    publication_year
   } = req.body;
 
   const book = await Book.findById(id);
@@ -79,6 +82,7 @@ export const updateBook = asyncHandler(async (req, res) => {
       copies_available,
       pages,
       language,
+      publication_year,
       category: existingCategory._id
     },
     {
