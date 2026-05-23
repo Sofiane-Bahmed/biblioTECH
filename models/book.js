@@ -27,7 +27,6 @@ const bookSchema = new Schema(
         copies_available: {
             type: Number,
             required: true,
-            min: 1,
         },
         pages: {
             type: Number,

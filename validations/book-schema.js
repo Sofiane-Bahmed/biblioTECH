@@ -150,7 +150,12 @@ export const searchBookSchema = z.object({
         language: z
             .string()
             .min(2, "Language must be at least 2 characters")
-            .max(50, "Language must be at most 50 characters")
+            .max(50, "Language must be at most 50 characters"),
+        publication_year: z
+            .coerce
+            .number()
+            .int()
+            .positive("Publication year must be a positive integer")
     }).partial()
 });
 
