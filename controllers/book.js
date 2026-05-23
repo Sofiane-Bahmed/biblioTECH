@@ -40,7 +40,9 @@ export const searchBooks = asyncHandler(async (req, res) => {
     author,
     category,
     description,
-    available_copies
+    available_copies,
+    pages,
+    language
   } = req.query;
 
   let filters = {};
@@ -64,6 +66,12 @@ export const searchBooks = asyncHandler(async (req, res) => {
   }
   if (description) {
     filters.description = { $regex: description, $options: 'i' };
+  }
+  if (pages) {
+    filters.pages = { $gte: pages };
+  }
+  if (language) {
+    filters.language = { $regex: language, $options: 'i' };
   }
 
   const books = await Book.find(filters).populate('category', 'title');

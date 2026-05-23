@@ -134,7 +134,16 @@ export const searchBookSchema = z.object({
             .coerce
             .number()
             .int()
-            .nonnegative("Copies available cannot be negative")
+            .nonnegative("Copies available cannot be negative"),
+        pages: z
+            .coerce
+            .number()
+            .int()
+            .nonnegative("Pages cannot be negative"),
+        language: z
+            .string()
+            .min(2, "Language must be at least 2 characters")
+            .max(50, "Language must be at most 50 characters")
     }).partial()
 });
 
