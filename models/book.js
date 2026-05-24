@@ -40,6 +40,10 @@ const bookSchema = new Schema(
             type: Number,
             required: true,
         },
+        cover_image: {
+            type: String,
+            required: true,
+        },
         borrows: [{
             type: Schema.Types.ObjectId,
             ref: 'borrowBook'

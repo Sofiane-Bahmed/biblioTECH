@@ -25,6 +25,12 @@ export const addBook = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Category does not exist' });
   }
 
+  if (!req.file) {
+    return res.status(400).json({ message: "Book cover image is required" });
+  }
+
+  const coverImageUrl = req.file.path;
+
   const newBook = await Book.create({
     title,
     author,
@@ -33,7 +39,8 @@ export const addBook = asyncHandler(async (req, res) => {
     pages,
     language,
     publication_year,
-    category: existingCategory._id
+    category: existingCategory._id,
+    coverImage: coverImageUrl
   });
 
   // Send email notification to subscribers

@@ -12,12 +12,13 @@ import {
        updateBookSchema
 } from "../../validations/book-schema.js";
 import { validate } from "../../middlewares/validate.js";
+import { uploadBookCover } from "../../middlewares/upload.js";
 
 export const adminBookRouter = express.Router();
 
-adminBookRouter.post("/", validate(addBookSchema), addBook);
+adminBookRouter.post("/", validate(addBookSchema), uploadBookCover, addBook);
 adminBookRouter.post("/stats", getLibraryStatistics);
-adminBookRouter.put("/:id", validate(updateBookSchema), updateBook);
+adminBookRouter.put("/:id", validate(updateBookSchema), uploadBookCover, updateBook);
 adminBookRouter.delete("/:id", validate(deleteBookSchema), deleteBook);
 
 
