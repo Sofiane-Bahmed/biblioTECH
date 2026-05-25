@@ -19,10 +19,12 @@ export const addBookSchema = z.object({
             .min(10, "Description must be at least 10 characters")
             .max(500, "Description must be at most 500 characters"),
         copies_available: z
+            .coerce
             .number()
             .int()
             .positive("Copies available must be a positive integer"),
         pages: z
+            .coerce
             .number()
             .int()
             .positive("Pages must be a positive integer"),
@@ -31,12 +33,10 @@ export const addBookSchema = z.object({
             .min(2, "Language must be at least 2 characters")
             .max(50, "Language must be at most 50 characters"),
         publication_year: z
+            .coerce
             .number()
             .int()
             .positive("Publication year must be a positive integer"),
-        image_url: z
-            .string()
-            .url("Image URL must be a valid URL")
     })
 });
 
@@ -84,10 +84,12 @@ export const updateBookSchema = z.object({
             .min(10, "Description must be at least 10 characters")
             .max(500, "Description must be at most 500 characters"),
         copies_available: z
+            .coerce
             .number()
             .int()
             .positive("Copies available must be a positive integer"),
         pages: z
+            .coerce
             .number()
             .int()
             .positive("Pages must be a positive integer"),
@@ -96,12 +98,10 @@ export const updateBookSchema = z.object({
             .min(2, "Language must be at least 2 characters")
             .max(50, "Language must be at most 50 characters"),
         publication_year: z
+            .coerce
             .number()
             .int()
             .positive("Publication year must be a positive integer"),
-        image_url: z
-            .string()
-            .url("Image URL must be a valid URL")
     }).partial()
 });
 

@@ -16,7 +16,8 @@ export const addBook = asyncHandler(async (req, res) => {
     copies_available,
     pages,
     language,
-    publication_year
+    publication_year,
+    cover_image
   } = req.body;
 
   // Check if category exists
@@ -40,7 +41,7 @@ export const addBook = asyncHandler(async (req, res) => {
     language,
     publication_year,
     category: existingCategory._id,
-    coverImage: coverImageUrl
+    cover_image: coverImageUrl
   });
 
   // Send email notification to subscribers
