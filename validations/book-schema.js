@@ -33,7 +33,10 @@ export const addBookSchema = z.object({
         publication_year: z
             .number()
             .int()
-            .positive("Publication year must be a positive integer")
+            .positive("Publication year must be a positive integer"),
+        image_url: z
+            .string()
+            .url("Image URL must be a valid URL")
     })
 });
 
@@ -95,7 +98,10 @@ export const updateBookSchema = z.object({
         publication_year: z
             .number()
             .int()
-            .positive("Publication year must be a positive integer")
+            .positive("Publication year must be a positive integer"),
+        image_url: z
+            .string()
+            .url("Image URL must be a valid URL")
     }).partial()
 });
 
