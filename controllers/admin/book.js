@@ -77,7 +77,7 @@ export const updateBook = asyncHandler(async (req, res) => {
     updateData.category = existingCategory._id;
   }
 
-  // 4. Handle File upload context safely
+  // Handle File upload context safely
   if (req.file) {
     updateData.cover_image = req.file.path;
   }
