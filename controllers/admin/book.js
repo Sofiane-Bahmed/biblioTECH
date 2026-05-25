@@ -55,52 +55,46 @@ export const addBook = asyncHandler(async (req, res) => {
 
 });
 
-
-// update a book 
+// update a book
 export const updateBook = asyncHandler(async (req, res) => {
-
   const { id } = req.params;
-  const {
-    title,
-    author,
-    description,
-    copies_available,
-    pages,
-    language,
-    category,
-    publication_year
-  } = req.body;
 
+  // Verify the book exists first
   const book = await Book.findById(id);
   if (!book) {
-    return res.status(404).json({ message: "book not found" })
+    return res.status(404).json({ message: "Book not found" });
   }
-  // Check if category exists
-  const existingCategory = await Category.findOne({ title: category });
-  if (!existingCategory) {
-    return res.status(400).json({ message: 'Category does not exist' });
+
+  // Dynamically gather text fields that were actually sent
+  const updateData = { ...req.body };
+
+  //Handle Category update safely if provided
+  if (req.body.category) {
+    const existingCategory = await Category.findOne({ title: req.body.category });
+    if (!existingCategory) {
+      return res.status(400).json({ message: "Category does not exist" });
+    }
+    updateData.category = existingCategory._id;
+  }
+
+  // 4. Handle File upload context safely
+  if (req.file) {
+    updateData.cover_image = req.file.path;
   }
 
   const updatedBook = await Book.findByIdAndUpdate(
-    id
-    , {
-      title,
-      author,
-      description,
-      copies_available,
-      pages,
-      language,
-      publication_year,
-      category: existingCategory._id
-    },
+    id,
+    { $set: updateData },
     {
       new: true,
       runValidators: true
     }
-  )
+  ).populate("category");
 
-  res.status(200).json({ message: "book updated successfully", updatedBook })
-
+  res.status(200).json({
+    message: "Book updated successfully",
+    updatedBook
+  });
 });
 
 // delete a book 
