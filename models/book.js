@@ -4,12 +4,11 @@ const Schema = mongoose.Schema
 
 const bookSchema = new Schema(
     {
-        category: {
+        category: [{
             type: Schema.Types.ObjectId,
             ref: "category",
             required: true,
-        },
-
+        }],
         title: {
             type: String,
             required: true,

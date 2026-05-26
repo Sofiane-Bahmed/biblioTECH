@@ -20,16 +20,18 @@ export const addBook = asyncHandler(async (req, res) => {
     cover_image
   } = req.body;
 
-  // Check if category exists
-  const existingCategory = await Category.findOne({ title: category });
-  if (!existingCategory) {
-    return res.status(400).json({ message: 'Category does not exist' });
+  // Check if categories exist
+  const categoryTitles = Array.isArray(category) ? category : [category];
+  const foundCategories = await Category.find({ title: { $in: categoryTitles } });
+  if (foundCategories.length === 0) {
+    return res.status(400).json({ message: 'None of the specified categories exist.' });
   }
 
   if (!req.file) {
     return res.status(400).json({ message: "Book cover image is required" });
   }
 
+  const categoryIds = foundCategories.map(cat => cat._id);
   const coverImageUrl = req.file.path;
 
   const newBook = await Book.create({
@@ -40,7 +42,7 @@ export const addBook = asyncHandler(async (req, res) => {
     pages,
     language,
     publication_year,
-    category: existingCategory._id,
+    category: categoryIds,
     cover_image: coverImageUrl
   });
 
