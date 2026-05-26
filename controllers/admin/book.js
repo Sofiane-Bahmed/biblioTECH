@@ -23,8 +23,16 @@ export const addBook = asyncHandler(async (req, res) => {
   // Check if categories exist
   const categoryTitles = Array.isArray(category) ? category : [category];
   const foundCategories = await Category.find({ title: { $in: categoryTitles } });
-  if (foundCategories.length === 0) {
-    return res.status(400).json({ message: 'None of the specified categories exist.' });
+  //strict validation check: Do the database results match the user's intent?
+  if (foundCategories.length !== categoryTitles.length) {
+    // find exactly which titles are missing by comparing arrays
+    const foundTitles = foundCategories.map(cat => cat.title);
+    const missingCategories = categoryTitles.filter(title => !foundTitles.includes(title));
+
+    return res.status(400).json({
+      message: "Validation failed: Some specified categories do not exist.",
+      missingCategories
+    });
   }
 
   if (!req.file) {
@@ -77,10 +85,19 @@ export const updateBook = asyncHandler(async (req, res) => {
       : [req.body.category];
 
     const foundCategories = await Category.find({ title: { $in: categoryTitles } });
-    if (foundCategories.length === 0) {
-      return res.status(400).json({ message: "None of the specified categories exist." });
+    if (foundCategories.length !== categoryTitles.length) {
+      // find exactly which titles are missing by comparing arrays
+      const foundTitles = foundCategories.map(cat => cat.title);
+      const missingCategories = categoryTitles.filter(title => !foundTitles.includes(title));
+
+      return res.status(400).json({
+        message: "Validation failed: Some specified categories do not exist.",
+        missingCategories
+      });
     }
-    updateData.category = foundCategories.map(cat => cat._id);
+    
+    const categoryIds = foundCategories.map(cat => cat._id);
+    updateData.category = categoryIds;
   }
 
   // Handle File upload context safely
