@@ -72,11 +72,15 @@ export const updateBook = asyncHandler(async (req, res) => {
 
   //Handle Category update safely if provided
   if (req.body.category) {
-    const existingCategory = await Category.findOne({ title: req.body.category });
-    if (!existingCategory) {
-      return res.status(400).json({ message: "Category does not exist" });
+    const categoryTitles = Array.isArray(req.body.category)
+      ? req.body.category
+      : [req.body.category];
+
+    const foundCategories = await Category.find({ title: { $in: categoryTitles } });
+    if (foundCategories.length === 0) {
+      return res.status(400).json({ message: "None of the specified categories exist." });
     }
-    updateData.category = existingCategory._id;
+    updateData.category = foundCategories.map(cat => cat._id);
   }
 
   // Handle File upload context safely
