@@ -7,9 +7,8 @@ export const addBookSchema = z.object({
             .min(2, "Title must be at least 2 characters")
             .max(100, "Title must be at most 100 characters"),
         author: z
-            .string()
-            .min(2, "Author must be at least 2 characters")
-            .max(50, "Author must be at most 50 characters"),
+            .array(z.string().min(2, "Author name is too short"))
+            .min(1, "At least one author is required"),
         category: z
             .array(z.string().min(2, "Category name is too short"))
             .min(1, "At least one category is required"),

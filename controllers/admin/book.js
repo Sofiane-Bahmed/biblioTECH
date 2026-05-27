@@ -39,12 +39,13 @@ export const addBook = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Book cover image is required" });
   }
 
+  const authorNames = Array.isArray(req.body.author) ? req.body.author : [req.body.author];
   const categoryIds = foundCategories.map(cat => cat._id);
   const coverImageUrl = req.file.path;
 
   const newBook = await Book.create({
     title,
-    author,
+    author: authorNames,
     description,
     copies_available,
     pages,
@@ -58,7 +59,7 @@ export const addBook = asyncHandler(async (req, res) => {
   const subscribers = await User.find({ subscribed: true });
 
   for (const subscriber of subscribers) {
-    await sendBookAddedEmail(subscriber, { title, author });
+    await sendBookAddedEmail(subscriber, { title, author: authorNames });
   }
 
   res.status(201).json(newBook);
@@ -95,7 +96,7 @@ export const updateBook = asyncHandler(async (req, res) => {
         missingCategories
       });
     }
-    
+
     const categoryIds = foundCategories.map(cat => cat._id);
     updateData.category = categoryIds;
   }
