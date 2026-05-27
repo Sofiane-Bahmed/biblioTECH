@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+// Helper function to safely force form inputs into arrays
+const preprocessArray = (val) => {
+    if (val === undefined || val === null) return [];
+    return Array.isArray(val) ? val : [val];
+};
+
 export const addBookSchema = z.object({
     body: z.object({
         title: z
@@ -7,11 +13,11 @@ export const addBookSchema = z.object({
             .min(2, "Title must be at least 2 characters")
             .max(100, "Title must be at most 100 characters"),
         author: z
-            .array(z.string().min(2, "Author name is too short"))
-            .min(1, "At least one author is required"),
+            .preprocess(preprocessArray, z.array(z.string().min(2, "Author name is too short")))
+            .refine((arr) => arr.length > 0, { message: "At least one author is required" }),
         category: z
-            .array(z.string().min(2, "Category name is too short"))
-            .min(1, "At least one category is required"),
+            .preprocess(preprocessArray, z.array(z.string().min(2, "Category name is too short")))
+            .refine((arr) => arr.length > 0, { message: "At least one category is required" }),
         description: z
             .string()
             .min(10, "Description must be at least 10 characters")
