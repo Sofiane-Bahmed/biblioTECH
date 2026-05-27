@@ -76,12 +76,11 @@ export const updateBookSchema = z.object({
             .min(2, "Title must be at least 2 characters")
             .max(100, "Title must be at most 100 characters"),
         author: z
-            .string()
-            .min(2, "Author must be at least 2 characters")
-            .max(50, "Author must be at most 50 characters"),
+            .preprocess(preprocessArray, z.array(z.string().min(2, "Author name is too short")))
+            .refine((arr) => arr.length > 0, { message: "At least one author is required" }),
         category: z
-            .array(z.string().min(2, "Category name is too short"))
-            .min(1, "At least one category is required"),
+            .preprocess(preprocessArray, z.array(z.string().min(2, "Category name is too short")))
+            .refine((arr) => arr.length > 0, { message: "At least one category is required" }),
         description: z
             .string()
             .min(10, "Description must be at least 10 characters")
