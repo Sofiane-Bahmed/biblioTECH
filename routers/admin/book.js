@@ -17,7 +17,7 @@ import { uploadBookCover } from "../../middlewares/upload.js";
 export const adminBookRouter = express.Router();
 
 adminBookRouter.post("/", uploadBookCover, validate(addBookSchema), addBook);
-adminBookRouter.post("/stats", getLibraryStatistics);
+adminBookRouter.get("/stats", getLibraryStatistics);
 adminBookRouter.put("/:id", uploadBookCover, validate(updateBookSchema), updateBook);
 adminBookRouter.delete("/:id", validate(deleteBookSchema), deleteBook);
 
