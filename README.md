@@ -1,7 +1,6 @@
 # Bibliotech 📚
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2014.0.0-brightgreen.svg)](https://nodejs.org/)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Framework: Express](https://img.shields.io/badge/Framework-Express-lightgrey.svg)](https://expressjs.com/)
 
 Bibliotech is a robust and scalable Library Management System API. Designed to streamline the operations of a modern library, it provides a comprehensive set of tools for managing books, users, borrowings, and engagement through comments.
@@ -96,14 +95,6 @@ Bibliotech is a robust and scalable Library Management System API. Designed to s
 - **Security:** Helmet, Express-Rate-Limit
 
 ---
-
-## 🧪 Development
-
-### Running Tests
-Currently, tests are being implemented. To run available tests:
-```bash
-npm test
-```
 
 ### Folder Structure
 ```text
