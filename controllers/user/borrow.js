@@ -76,8 +76,8 @@ export const borrowBook = asyncHandler(async (req, res) => {
 
 // return book
 export const returnBook = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
   const { id } = req.params;
+  const userId = req.user._id;
 
   //  Fetch everything needed
   const [user, borrow] = await Promise.all([

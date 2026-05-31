@@ -4,7 +4,6 @@ import {
        addBook,
        updateBook,
        deleteBook,
-       getLibraryStatistics,
 } from "../../controllers/admin/book.js"
 import {
        addBookSchema,
@@ -17,7 +16,6 @@ import { uploadBookCover } from "../../middlewares/upload.js";
 export const adminBookRouter = express.Router();
 
 adminBookRouter.post("/", uploadBookCover, validate(addBookSchema), addBook);
-adminBookRouter.get("/stats", getLibraryStatistics);
 adminBookRouter.put("/:id", uploadBookCover, validate(updateBookSchema), updateBook);
 adminBookRouter.delete("/:id", validate(deleteBookSchema), deleteBook);
 
