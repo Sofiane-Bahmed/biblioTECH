@@ -8,14 +8,10 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
     const [totalBooks, totalUsers, advancedMetrics] = await Promise.all([
         // Fast metadata reads for absolute totals
         Book.countDocuments(),
-        // Assuming you have a User model imported, otherwise swap with a placeholder or omit
         User.countDocuments({ subscribed: true }),
-
-        // The heavy lifter: One database hit running 4 parallel analysis pipes
         BorrowBook.aggregate([
             {
                 $facet: {
-                    // Pipe 1: Segment loan operational statuses
                     "loanStatuses": [
                         {
                             $group: {
@@ -35,7 +31,6 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                                         ]
                                     }
                                 },
-                                // 2. Overdue: Active (no return date) AND due_date is strictly less than right now
                                 overdueBorrows: {
                                     $sum: {
                                         $cond: [
@@ -58,15 +53,13 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                             }
                         }
                     ],
-
-                    // Pipe 2: Calculate the Top 5 Power Users
                     "topBorrowers": [
                         { $group: { _id: "$user", borrowCount: { $sum: 1 } } },
                         { $sort: { borrowCount: -1 } },
                         { $limit: 5 },
                         {
                             $lookup: {
-                                from: "users", // Adjust this collection name to match your database (usually lowercase plural)
+                                from: "users",
                                 localField: "_id",
                                 foreignField: "_id",
                                 as: "userDetails"
@@ -83,8 +76,6 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                             }
                         }
                     ],
-
-                    // Pipe 3: Aggregate most borrowed genres (Category breakdown)
                     "categoryPopularity": [
                         {
                             $lookup: {
@@ -123,8 +114,6 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                 }
             }
         ]),
-
-        // Separate fast query for inventory alerts
         Book.countDocuments({ copies_available: 0 })
     ]);
 
@@ -135,7 +124,6 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
     const categoryPopularity = facetResult.categoryPopularity || [];
     const outOfStockBooks = advancedMetrics[3] || 0;
 
-    // 3. Deliver a single clean response to fuel the entire frontend layout dashboard
     res.status(200).json({
         summaryCards: {
             totalBooks,
@@ -145,10 +133,10 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
             outOfStockAlerts: outOfStockBooks
         },
         charts: {
-            genreDistribution: categoryPopularity, // Feeds your Pie chart perfectly
+            genreDistribution: categoryPopularity,
         },
         leaderboards: {
-            powerUsers: topBorrowers // Feeds your ranking tables
+            powerUsers: topBorrowers
         }
     });
 });
