@@ -20,16 +20,34 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                         {
                             $group: {
                                 _id: null,
+                                // 1. Active: Counts documents where return_date is missing or null
                                 activeBorrows: {
-                                    $sum: { $cond: [{ $eq: ["$status", "borrowed"] }, 1, 0] }
+                                    $sum: {
+                                        $cond: [
+                                            {
+                                                $or: [
+                                                    { $eq: [{ $type: "$return_date" }, "missing"] },
+                                                    { $eq: ["$return_date", null] }
+                                                ]
+                                            },
+                                            1,
+                                            0
+                                        ]
+                                    }
                                 },
+                                // 2. Overdue: Active (no return date) AND due_date is strictly less than right now
                                 overdueBorrows: {
                                     $sum: {
                                         $cond: [
                                             {
                                                 $and: [
-                                                    { $eq: ["$status", "borrowed"] },
-                                                    { $lt: ["$due_date", new Date()] }
+                                                    {
+                                                        $or: [
+                                                            { $eq: [{ $type: "$return_date" }, "missing"] },
+                                                            { $eq: ["$return_date", null] }
+                                                        ]
+                                                    },
+                                                    { $lt: ["$due_date", new Date()] } // Due date is in the past
                                                 ]
                                             },
                                             1,
