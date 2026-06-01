@@ -11,7 +11,7 @@ import { authenticate } from "../middlewares/authenticate.js"
 import { authorize } from "../middlewares/authorize.js"
 import { adminBorrowRouter } from "./admin/borrow.js"
 import { adminUserRouter } from "./admin/user.js"
-import { statisticsRouter } from "./admin/analytics.js"
+import { adminstatisticsRouter } from "./admin/analytics.js"
 
 const router = express.Router();
 
@@ -26,7 +26,7 @@ router.use("/admin/users", authenticate, authorize("admin"), adminUserRouter)
 router.use("/admin/books", authenticate, authorize("admin"), adminBookRouter)
 router.use("/admin/categories", authenticate, authorize("admin"), adminCategoryRouter)
 router.use("/admin/borrows", authenticate, authorize("admin"), adminBorrowRouter)
-router.use("/admin/stats", authenticate, authorize("admin"), statisticsRouter)
+router.use("/admin/stats", authenticate, authorize("admin"), adminstatisticsRouter)
 
 export default router;
 
