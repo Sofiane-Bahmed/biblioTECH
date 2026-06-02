@@ -50,6 +50,15 @@ export const addBookSchema = z.object({
     })
 });
 
+export const autoImportBookSchema = z.object({
+    body: z.object({
+        isbn: z
+            .string({ required_error: "ISBN code is required to auto-populate fields." })
+            .trim()
+            .regex(isbnRegex, { message: "Invalid ISBN format. Please enter a valid ISBN-10 or ISBN-13 string." }),
+    }),
+});
+
 export const getAllBooksSchema = z.object({
     query: z.object({
         page: z

@@ -4,9 +4,11 @@ import {
        addBook,
        updateBook,
        deleteBook,
+       autoAddBookByIsbn,
 } from "../../controllers/admin/book.js"
 import {
        addBookSchema,
+       autoImportBookSchema,
        deleteBookSchema,
        updateBookSchema
 } from "../../validations/book-schema.js";
@@ -16,6 +18,7 @@ import { uploadBookCover } from "../../middlewares/upload.js";
 export const adminBookRouter = express.Router();
 
 adminBookRouter.post("/", uploadBookCover, validate(addBookSchema), addBook);
+adminBookRouter.get("/auto-import", validate(autoImportBookSchema), autoAddBookByIsbn);
 adminBookRouter.put("/:id", uploadBookCover, validate(updateBookSchema), updateBook);
 adminBookRouter.delete("/:id", validate(deleteBookSchema), deleteBook);
 

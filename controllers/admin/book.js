@@ -1,3 +1,5 @@
+import axios from "axios";
+
 import { Book } from "../../models/book.js"
 import { Category } from "../../models/category.js";
 import { User } from "../../models/user.js"
@@ -75,6 +77,86 @@ export const addBook = asyncHandler(async (req, res) => {
   res.status(201).json(newBook);
 
 });
+
+export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
+  const { isbn } = req.body;
+
+  if (!isbn) {
+    return res.status(400).json({ message: "ISBN code is required to auto-populate fields." });
+  }
+
+  const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
+
+  // Prevent database duplicate records
+  const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
+  if (duplicateBook) {
+    return res.status(400).json({ message: "This book version already exists in inventory." });
+  }
+
+  // 3. Query the Google Books API
+  console.log(`Fetching metadata for ISBN: ${normalizedIsbn}...`);
+  const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${normalizedIsbn}`;
+  const response = await axios.get(googleBooksUrl);
+
+  // Verify that Google actually found a matching book record
+  if (!response.data.items || response.data.items.length === 0) {
+    return res.status(404).json({ message: "No book records found on Google Books API for this ISBN." });
+  }
+
+  // Extract the core volume details out of the payload array
+  const volumeInfo = response.data.items[0].volumeInfo;
+
+  //Extract and Fallback clean properties matching your schema expectations
+  const title = volumeInfo.title || "Untitled Book";
+  const authorNames = volumeInfo.authors || ["Unknown Author"]; // Google returns an array of authors natively
+  const description = volumeInfo.description || "No description provided.";
+  const pages = volumeInfo.pageCount || 0;
+  const language = volumeInfo.language || "en";
+  const publication_year = volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.split("-")[0]) : new Date().getFullYear();
+
+  // Google returns an object containing multiple image size variants
+  const coverImageUrl = volumeInfo.imageLinks?.thumbnail || "https://placehold.co/400x600?text=No+Cover+Available";
+
+  // Dynamic Category Matching (Maps Google categories to your real DB collections)
+  const googleCategories = volumeInfo.categories || ["General"];
+  const categoryIds = [];
+
+  for (const catTitle of googleCategories) {
+    // Look for an exact match case-insensitively, or auto-create it so the cast doesn't crash!
+    let matchedCategory = await Category.findOne({ title: new RegExp(`^${catTitle}$`, "i") });
+
+    if (!matchedCategory) {
+      // If the category doesn't exist in your DB yet, dynamically spin it up on the fly
+      matchedCategory = await Category.create({ title: catTitle.toLowerCase() });
+    }
+    categoryIds.push(matchedCategory._id);
+  }
+
+  const newBook = await Book.create({
+    title,
+    isbn: normalizedIsbn,
+    author: authorNames,
+    description,
+    copies_available: 1, // Defaulting to one copy on initialization scan
+    pages,
+    language,
+    publication_year,
+    category: categoryIds,
+    cover_image: coverImageUrl // Saves the persistent hosting link provided by Google CDN
+  });
+
+  // Send notification logs out to active community subscribers
+  const subscribers = await User.find({ subscribed: true });
+  for (const subscriber of subscribers) {
+    await sendBookAddedEmail(subscriber, { title, author: authorNames });
+  }
+
+  res.status(201).json({
+    message: "Book auto-discovered and registered successfully!",
+    book: newBook
+  });
+});
+
 
 // update a book
 export const updateBook = asyncHandler(async (req, res) => {

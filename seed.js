@@ -53,7 +53,7 @@ const seedDatabase = async () => {
                 pages: faker.number.int({ min: 120, max: 800 }),
                 language: faker.helpers.arrayElement(["English", "French", "German"]),
                 publication_year: faker.number.int({ min: 1995, max: 2026 }),
-                category: assignedCategories, // Passing true ObjectIds passes Mongoose cast limits perfectly!
+                category: assignedCategories, 
                 cover_image: coverImageUrl,
             });
         }
