@@ -42,6 +42,13 @@ const bookSchema = new Schema(
             type: String,
             required: true,
         },
+        isbn: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true,
+            index: true,
+        },
         borrows: [{
             type: Schema.Types.ObjectId,
             ref: 'borrowBook'

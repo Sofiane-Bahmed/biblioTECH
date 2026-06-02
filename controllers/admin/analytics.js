@@ -6,7 +6,6 @@ import asyncHandler from "../../utils/async-handler.js";
 // view libary statistics
 export const getLibraryStatistics = asyncHandler(async (req, res) => {
     const [totalBooks, totalUsers, advancedMetrics] = await Promise.all([
-        // Fast metadata reads for absolute totals
         Book.countDocuments(),
         User.countDocuments({ subscribed: true }),
         BorrowBook.aggregate([

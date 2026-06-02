@@ -6,12 +6,18 @@ const preprocessArray = (val) => {
     return Array.isArray(val) ? val : [val];
 };
 
+const isbnRegex = /^(?:ISBN(?:-1[03])?:?\s*)?(?=[0-9X]{10}$|(?=(?:[0-9]{1,5}-){3})[0-9X]{13}$|[0-9]{13}$|(?=(?:[0-9]{1,5}-){4})[0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/;
+
 export const addBookSchema = z.object({
     body: z.object({
         title: z
             .string()
             .min(2, "Title must be at least 2 characters")
             .max(100, "Title must be at most 100 characters"),
+        isbn: z
+            .string()
+            .trim()
+            .regex(isbnRegex, { message: "Invalid ISBN-10 or ISBN-13 format format required." }),
         author: z
             .preprocess(preprocessArray, z.array(z.string().min(2, "Author name is too short")))
             .refine((arr) => arr.length > 0, { message: "At least one author is required" }),
@@ -75,6 +81,10 @@ export const updateBookSchema = z.object({
             .string()
             .min(2, "Title must be at least 2 characters")
             .max(100, "Title must be at most 100 characters"),
+        isbn: z
+            .string()
+            .trim()
+            .regex(isbnRegex, { message: "Invalid ISBN-10 or ISBN-13 format format required." }),
         author: z
             .preprocess(preprocessArray, z.array(z.string().min(2, "Author name is too short")))
             .refine((arr) => arr.length > 0, { message: "At least one author is required" }),

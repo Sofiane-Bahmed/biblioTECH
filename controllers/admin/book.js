@@ -10,6 +10,7 @@ export const addBook = asyncHandler(async (req, res) => {
 
   const {
     title,
+    isbn,
     author,
     category,
     description,
@@ -33,6 +34,14 @@ export const addBook = asyncHandler(async (req, res) => {
       message: "Validation failed: Some specified categories do not exist.",
       missingCategories
     });
+  };
+
+  // Strip hyphens and spaces to normalize string integrity
+  const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
+  // Check if a book with this exact ISBN already exists before proceeding
+  const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
+  if (duplicateBook) {
+    return res.status(400).json({ message: "A book version with this ISBN already exists in inventory." });
   }
 
   if (!req.file) {
@@ -45,6 +54,7 @@ export const addBook = asyncHandler(async (req, res) => {
 
   const newBook = await Book.create({
     title,
+    isbn: normalizedIsbn,
     author: authorNames,
     description,
     copies_available,
