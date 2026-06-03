@@ -150,16 +150,13 @@ export const searchBookSchema = z.object({
     query: z.object({
         title: z
             .string()
-            .min(1, "Title must be at least 1 character")
             .max(100, "Title must be at most 100 characters"),
         author: z
             .string()
-            .min(2, "Author must be at least 2 characters")
             .max(50, "Author must be at most 50 characters"),
         category: z
-            .string()
-            .min(2, "Category must be at least 2 characters")
-            .max(50, "Category must be at most 50 characters"),
+            .preprocess(preprocessArray, z.array(z.string().min(2, "Category name is too short")))
+            .refine((arr) => arr.length > 0, { message: "At least one category is required" }),
         description: z
             .string()
             .min(10, "Description must be at least 10 characters")
@@ -182,7 +179,19 @@ export const searchBookSchema = z.object({
             .coerce
             .number()
             .int()
-            .positive("Publication year must be a positive integer")
+            .positive("Publication year must be a positive integer"),
+        page: z
+            .coerce
+            .number()
+            .int()
+            .positive()
+            .default(1),
+        limit: z
+            .coerce
+            .number()
+            .int()
+            .positive()
+            .default(10)
     }).partial()
 });
 

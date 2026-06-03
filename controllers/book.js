@@ -3,6 +3,7 @@ import { Category } from "../models/category.js";
 import { getPaginatedData } from "../utils/paginate.js";
 import asyncHandler from "../utils/async-handler.js";
 
+
 // read all books : 
 export const getAllBooks = asyncHandler(async (req, res) => {
 
@@ -32,9 +33,8 @@ export const getBook = asyncHandler(async (req, res) => {
 
 });
 
-// search books by filtring : 
+// search books
 export const searchBooks = asyncHandler(async (req, res) => {
-
   const {
     title,
     author,
@@ -46,39 +46,47 @@ export const searchBooks = asyncHandler(async (req, res) => {
     publication_year
   } = req.query;
 
-  let filters = {};
+  const filters = {};
 
-  if (title) {
-    filters.title = { $regex: title, $options: 'i' };
-  }
-  if (author) {
-    filters.author = { $regex: author, $options: 'i' };
-  }
+  // Map Text Filter Query Strings
+  if (title) filters.title = { $regex: title, $options: 'i' };
+  if (author) filters.author = { $regex: author, $options: 'i' };
+  if (description) filters.description = { $regex: description, $options: 'i' };
+  if (language) filters.language = { $regex: language, $options: 'i' };
+
+  // Map Relational Category Pointer (Supports Multiple Categories)
   if (category) {
-    const categoryId = await Category.findOne({ title: category });
-    if (categoryId) {
-      filters.category = categoryId._id;
+    const categoryTitles = Array.isArray(category) ? category : [category];
+    const foundCategories = await Category.find({
+      title: { $in: categoryTitles.map(title => new RegExp(`^${title}$`, 'i')) }
+    });
+
+    if (foundCategories.length > 0) {
+      const categoryIds = foundCategories.map(cat => cat._id);
+      filters.category = { $all: categoryIds };
     } else {
-      return res.status(400).json({ message: 'Category not found' });
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        totalPages: 0,
+        currentPage: parseInt(req.query.page, 10) || 1,
+        totalItems: 0,
+        data: []
+      });
     }
   }
-  if (available_copies) {
-    filters.copies_available = { $gte: available_copies };
-  }
-  if (description) {
-    filters.description = { $regex: description, $options: 'i' };
-  }
-  if (pages) {
-    filters.pages = { $gte: pages };
-  }
-  if (language) {
-    filters.language = { $regex: language, $options: 'i' };
-  }
-  if (publication_year) {
-    filters.publication_year = { $gte: publication_year };
-  }
 
-  const books = await Book.find(filters).populate('category', 'title');
-  res.status(200).json(books);
+  // Map Slider/Numeric Floor Metrics
+  if (available_copies) filters.copies_available = { $gte: parseInt(available_copies, 10) };
+  if (pages) filters.pages = { $lte: parseInt(pages, 10) };
+  if (publication_year) filters.publication_year = parseInt(publication_year, 10);
 
+  const result = await getPaginatedData({
+    model: Book,
+    query: filters,
+    req: req,
+    populate: [{ path: 'category', select: 'title' }]
+  });
+
+  res.status(200).json(result);
 });

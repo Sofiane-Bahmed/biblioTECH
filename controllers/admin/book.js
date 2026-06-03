@@ -93,7 +93,7 @@ export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "This book version already exists in inventory." });
   }
 
-  // 3. Query the Google Books API
+  // Query the Google Books API
   console.log(`Fetching metadata for ISBN: ${normalizedIsbn}...`);
   const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${normalizedIsbn}`;
   const response = await axios.get(googleBooksUrl);
