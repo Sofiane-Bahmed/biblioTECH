@@ -51,6 +51,13 @@ export const login = asyncHandler(async (req, res) => {
     });
   }
 
+  //check if user is blocked
+  if (user.isBlocked) {
+    return res.status(403).json({
+      message: "Your account is blocked. Please contact support for more information."
+    });
+  }
+
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
@@ -135,7 +142,7 @@ export const refresh = asyncHandler(async (req, res) => {
   const user = await User
     .findById(decoded._id)
     .select('+refreshToken');
-    
+
   if (!user || user.refreshToken !== refreshToken) {
     if (user) {
       await User.findByIdAndUpdate(user._id, { refreshToken: null });
