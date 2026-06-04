@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { faker } from "@faker-js/faker";
 import { Book } from "./models/book.js";
-import { Category } from "./models/category.js"; // Make sure to import your Category model!
+import { Category } from "./models/category.js"; 
 import connectDB from "./db/index.js";
 import dotenv from "dotenv";
 

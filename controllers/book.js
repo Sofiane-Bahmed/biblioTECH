@@ -3,7 +3,6 @@ import { Category } from "../models/category.js";
 import { getPaginatedData } from "../utils/paginate.js";
 import asyncHandler from "../utils/async-handler.js";
 
-
 // read all books : 
 export const getAllBooks = asyncHandler(async (req, res) => {
 

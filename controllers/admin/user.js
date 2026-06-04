@@ -78,6 +78,20 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 
 });
 
+export const blockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await User.findByIdAndUpdate(
+    id,
+    { $set: { isBlocked: true } },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  res.status(200).json({ message: "User blocked successfully", user });
+});
+
 
 
 

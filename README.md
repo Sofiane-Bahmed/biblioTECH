@@ -42,7 +42,7 @@ Bibliotech is a robust and scalable Library Management System API. Designed to s
 3. **Configure environment variables:**
    Create a `.env` file in the root directory and add your credentials:
    ```env
-   PORT=5000
+   PORT=8080
    DBURI=mongodb+srv://your_uri
    JWT_SECRET=your_super_secret_key
    CLOUDINARY_CLOUD_NAME=your_cloud_name

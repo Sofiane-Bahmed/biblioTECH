@@ -46,6 +46,10 @@ const userSchema = new Schema(
       suspension_date: {
          type: Date,
       },
+      isBlocked: {
+         type: Boolean,
+         default: false
+      },
       borrows: [
          {
             type: Schema.Types.ObjectId,
