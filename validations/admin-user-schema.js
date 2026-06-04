@@ -58,3 +58,12 @@ export const blockUserSchema = z.object({
     }),
 });
 
+export const unblockUserSchema = z.object({
+    params: z.object({
+        id: z
+            .string()
+            .min(1, "User ID is required")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
+    }),
+});
+

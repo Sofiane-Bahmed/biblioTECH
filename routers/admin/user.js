@@ -5,6 +5,7 @@ import {
     deleteUser,
     getAllUsers,
     getUserById,
+    unblockUser,
     updateUserRole
 } from "../../controllers/admin/user.js";
 import { validate } from "../../middlewares/validate.js";
@@ -13,6 +14,7 @@ import {
     deleteUserSchema,
     getAllUsersSchema,
     getUserByIdSchema,
+    unblockUserSchema,
     updateUserRoleSchema,
 } from "../../validations/admin-user-schema.js";
 
@@ -23,4 +25,5 @@ adminUserRouter.put("/:id/role", validate(updateUserRoleSchema), updateUserRole)
 adminUserRouter.get("/:id", validate(getUserByIdSchema), getUserById);
 adminUserRouter.delete("/:id", validate(deleteUserSchema), deleteUser);
 adminUserRouter.put("/:id/block", validate(blockUserSchema), blockUser);
+adminUserRouter.put("/:id/unblock", validate(unblockUserSchema), unblockUser);
 
