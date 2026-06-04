@@ -175,6 +175,22 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Borrow not found" });
   }
 
+  // Check if the user is suspended
+  const user = await User.findById(userId);
+  if (user.suspension_date && user.suspension_date > new Date()) {
+    return res.status(403).json({
+      message: "Your account is suspended",
+      until: user.suspension_date.toString()
+    });
+  };
+
+  // Check if the user is blocked
+  if (user.isBlocked) {
+    return res.status(403).json({
+      message: "Your account is blocked. Please contact support for more information."
+    });
+  };
+
   // Check if the associated book exists
   if (!borrow.book) {
     return res.status(404).json({ message: "Associated book not found" });
