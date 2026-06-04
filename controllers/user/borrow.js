@@ -17,6 +17,14 @@ export const borrowBook = asyncHandler(async (req, res) => {
       until: user.suspension_date.toString()
     });
   }
+
+  //check if user is blocked
+  if (user.isBlocked) {
+    return res.status(403).json({
+      message: "Your account is blocked. Please contact support for more information."
+    });
+  }
+
   // Check if user has already borrowed 3 books this month 
   const date = new Date();
   const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
