@@ -66,4 +66,12 @@ export const unblockUserSchema = z.object({
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
     }),
 });
+export const getBorrowByIdSchema = z.object({
+    params: z.object({
+        id: z
+            .string()
+            .min(1, "Borrow ID is required")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
+    }),
+});
 

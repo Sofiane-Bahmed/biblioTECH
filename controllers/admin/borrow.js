@@ -22,3 +22,16 @@ export const getAllBorrows = asyncHandler(async (req, res) => {
   res.status(200).json(result);
 
 });
+
+export const getBorrowById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const borrow = await BorrowBook
+    .findById(id)
+    .populate('user', 'fullName email')
+    .populate('book', 'title author');
+    
+  if (!borrow) {
+    return res.status(404).json({ message: "Borrow record not found" });
+  }
+  res.status(200).json({ data: borrow });
+});

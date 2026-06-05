@@ -22,8 +22,8 @@ export const adminUserRouter = express.Router();
 
 adminUserRouter.get("/getAll", validate(getAllUsersSchema), getAllUsers);
 adminUserRouter.put("/:id/role", validate(updateUserRoleSchema), updateUserRole);
-adminUserRouter.get("/:id", validate(getUserByIdSchema), getUserById);
-adminUserRouter.delete("/:id", validate(deleteUserSchema), deleteUser);
 adminUserRouter.put("/:id/block", validate(blockUserSchema), blockUser);
 adminUserRouter.put("/:id/unblock", validate(unblockUserSchema), unblockUser);
+adminUserRouter.get("/:id", validate(getUserByIdSchema), getUserById);
+adminUserRouter.delete("/:id", validate(deleteUserSchema), deleteUser);
 
