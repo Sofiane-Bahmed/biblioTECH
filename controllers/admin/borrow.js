@@ -36,6 +36,20 @@ export const getBorrowById = asyncHandler(async (req, res) => {
   res.status(200).json({ data: borrow });
 });
 
+export const getActiveBorrows = asyncHandler(async (req, res) => {
+
+  const activeBorrows = await BorrowBook
+    .find({ return_date: { $exists: false } })
+    .populate('user', 'fullName email')
+    .populate('book', 'title author');
+
+  if (!activeBorrows.length) {
+    return res.status(200).json({ message: "No active borrows found", data: [] });
+  }
+  res.status(200).json({ data: activeBorrows });
+
+});
+
 export const deleteBorrowById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const borrow = await BorrowBook.findByIdAndDelete(id);
@@ -44,3 +58,4 @@ export const deleteBorrowById = asyncHandler(async (req, res) => {
   }
   res.status(200).json({ message: "Borrow record deleted successfully" });
 });
+

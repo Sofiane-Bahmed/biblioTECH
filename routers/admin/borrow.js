@@ -2,6 +2,7 @@ import express from "express"
 
 import {
     deleteBorrowById,
+    getActiveBorrows,
     getAllBorrows,
     getBorrowById
 } from "../../controllers/admin/borrow.js"
@@ -14,6 +15,7 @@ import {
 export const adminBorrowRouter = express.Router();
 
 adminBorrowRouter.get("/", getAllBorrows);
+adminBorrowRouter.get("/active", getActiveBorrows);
 adminBorrowRouter.get("/:id", validate(getBorrowByIdSchema), getBorrowById);
 adminBorrowRouter.delete("/:id", validate(deleteBorrowByIdSchema), deleteBorrowById);
 
