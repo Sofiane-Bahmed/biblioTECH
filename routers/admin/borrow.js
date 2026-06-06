@@ -4,7 +4,8 @@ import {
     deleteBorrowById,
     getActiveBorrows,
     getAllBorrows,
-    getBorrowById
+    getBorrowById,
+    getOverdueBorrows
 } from "../../controllers/admin/borrow.js"
 import { validate } from "../../middlewares/validate.js";
 import {
@@ -16,6 +17,7 @@ export const adminBorrowRouter = express.Router();
 
 adminBorrowRouter.get("/", getAllBorrows);
 adminBorrowRouter.get("/active", getActiveBorrows);
+adminBorrowRouter.get("/overdue", getOverdueBorrows);
 adminBorrowRouter.get("/:id", validate(getBorrowByIdSchema), getBorrowById);
 adminBorrowRouter.delete("/:id", validate(deleteBorrowByIdSchema), deleteBorrowById);
 

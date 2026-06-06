@@ -50,6 +50,23 @@ export const getActiveBorrows = asyncHandler(async (req, res) => {
 
 });
 
+export const getOverdueBorrows = asyncHandler(async (req, res) => {
+
+  const overdueBorrows = await BorrowBook
+    .find({
+      return_date: { $exists: false },
+      due_date: { $lt: new Date() }
+    })
+    .populate('user', 'fullName email')
+    .populate('book', 'title author');
+
+  if (!overdueBorrows.length) {
+    return res.status(200).json({ message: "No overdue borrows found", data: [] });
+  }
+  res.status(200).json({ data: overdueBorrows });
+
+});
+
 export const deleteBorrowById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const borrow = await BorrowBook.findByIdAndDelete(id);
