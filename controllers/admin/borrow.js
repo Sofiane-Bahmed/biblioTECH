@@ -38,15 +38,20 @@ export const getBorrowById = asyncHandler(async (req, res) => {
 
 export const getActiveBorrows = asyncHandler(async (req, res) => {
 
-  const activeBorrows = await BorrowBook
-    .find({ return_date: { $exists: false } })
-    .populate('user', 'fullName email')
-    .populate('book', 'title author');
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    req,
+    populate: [
+      { path: 'user', select: 'fullName email' },
+      { path: 'book', select: 'title author' }
+    ],
+    query: { return_date: { $exists: false } }
+  })
 
-  if (!activeBorrows.length) {
+  if (!result.data.length) {
     return res.status(200).json({ message: "No active borrows found", data: [] });
   }
-  res.status(200).json({ data: activeBorrows });
+  res.status(200).json(result);
 
 });
 
@@ -60,7 +65,7 @@ export const getOverdueBorrows = asyncHandler(async (req, res) => {
     .populate('user', 'fullName email')
     .populate('book', 'title author');
 
-  if (!overdueBorrows.length) {
+  if (!overdueBorrows || !overdueBorrows.length) {
     return res.status(200).json({ message: "No overdue borrows found", data: [] });
   }
   res.status(200).json({ data: overdueBorrows });
