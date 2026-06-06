@@ -65,7 +65,9 @@ export const getOverdueBorrows = asyncHandler(async (req, res) => {
     .populate('user', 'fullName email')
     .populate('book', 'title author');
 
-  if (!overdueBorrows || !overdueBorrows.length) {
+
+
+  if (!overdueBorrows.length) {
     return res.status(200).json({ message: "No overdue borrows found", data: [] });
   }
   res.status(200).json({ data: overdueBorrows });
