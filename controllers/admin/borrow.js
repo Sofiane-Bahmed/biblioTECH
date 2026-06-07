@@ -83,3 +83,22 @@ export const deleteBorrowById = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Borrow record deleted successfully" });
 });
 
+export const getUserBorrowingHistory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    req,
+    query: { user: id },
+    populate: [
+      { path: "user", select: "fullName email" },
+      { path: "book", select: "title author" }
+    ]
+  });
+
+  if (!result.data.length) {
+    return res.status(200).json({ message: "No borrowing history found for this user", data: [] });
+  }
+
+  res.status(200).json(result);
+});
