@@ -14,6 +14,7 @@ export const register = asyncHandler(async (req, res) => {
     fullName,
     password,
     email,
+    confirmPassword
   } = req.body;
 
   // Check if this is the first user to register and assign admin role if so
