@@ -5,12 +5,7 @@ import asyncHandler from "../../utils/async-handler.js";
 // Update profile
 export const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const {
-    fullName,
-    email,
-  } = req.body
-
-  const updateData = { fullName, email };
+  const updateData = { ...req.body };
 
   const user = await User.findByIdAndUpdate(
     userId,

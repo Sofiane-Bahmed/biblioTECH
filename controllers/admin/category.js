@@ -34,13 +34,12 @@ export const showBookCategories = asyncHandler(async (req, res) => {
 export const updateBookCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
-  const { title, description } = req.body;
+  const updateData = { ...req.body };
 
   const category = await Category.findByIdAndUpdate(
     id,
     {
-      title,
-      description
+      $set: updateData
     },
     {
       new: true,
@@ -51,7 +50,10 @@ export const updateBookCategory = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Category not found' });
   }
 
-  res.status(200).json(category);
+  res.status(200).json({
+    message: 'Category updated successfully',
+    category
+  });
 
 });
 
