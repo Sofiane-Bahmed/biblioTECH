@@ -3,6 +3,7 @@ import { Book } from "../../models/book.js"
 import { User } from "../../models/user.js"
 import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension-warning.js";
 import asyncHandler from "../../utils/async-handler.js";
+import { getPaginatedData } from "../../utils/paginate.js";
 
 // borrow a book
 export const borrowBook = asyncHandler(async (req, res) => {
@@ -144,17 +145,18 @@ export const getBorrowingHistory = asyncHandler(async (req, res) => {
 
   const userId = req.user._id;
 
-  const history = await BorrowBook
-    .find({ user: userId })
-    .lean()
-    .populate("book", "title author")
-    .sort({ borrow_date: -1 })
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    query: { user: userId },
+    req,
+    populate: [{ path: "book", select: "title author" }]
+  })
 
-  if (!history || history.length === 0) {
+  if (!result.data.length) {
     return res.status(200).json({ message: "No borrowing history found", history: [] });
   }
 
-  res.status(200).json(history)
+  res.status(200).json(result);
 
 });
 
