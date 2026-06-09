@@ -29,19 +29,13 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
-// Connect to Database and Start Server
-const port = process.env.PORT || 5000;
-connectDB();
-
-app.listen(port, () => {
-	console.log(`Server running on http://localhost:${port}`);
-});
-
 // Routes
 app.use("/api", router);
 
 // Global Error Handler
 app.use(errorMiddleware);
+
+export default app;
 
 
 
