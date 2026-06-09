@@ -7,12 +7,13 @@ import { getPaginatedData } from "../../utils/paginate.js";
 
 //add comment or the reply of the comment : 
 export const addComment = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
+    const { bookId } = req.params;
     const {
-        bookId,
         comment,
         parentCommentId
     } = req.body;
+
+    const userId = req.user._id;
 
     // check if the book exists
     const book = await Book.findById(bookId);

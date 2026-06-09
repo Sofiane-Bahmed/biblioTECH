@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
 export const commentSchema = z.object({
-    body: z.object({
+    params: z.object({
         bookId: z
             .string()
             .min(1, "book ID is required")
             .max(24, "book ID must be 24 characters")
-            .regex(/^[0-9a-fA-F]{24}$/, "Invalid parent comment ID format"),
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
+    }),
+    body: z.object({
         comment: z
             .string()
             .min(1, "Comment cannot be empty")

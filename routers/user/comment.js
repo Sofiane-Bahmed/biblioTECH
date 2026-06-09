@@ -20,7 +20,7 @@ import {
 
 export const userCommentRouter = express.Router()
 
-userCommentRouter.post("/", validate(commentSchema), addComment);
+userCommentRouter.post("/book/:bookId", validate(commentSchema), addComment);
 userCommentRouter.get("/", validate(getAllCommentsSchema), getAllComments);
 userCommentRouter.get("/book/:id", validate(getCommentsByBookSchema), getCommentsByBook);
 userCommentRouter.get("/:id", validate(getCommentsByIdSchema), getCommentById);
