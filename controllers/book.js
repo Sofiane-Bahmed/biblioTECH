@@ -28,6 +28,9 @@ export const getBook = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const book = await Book.findById(id);
+  if (!book) {
+    return res.status(404).json({ message: "Book not found" });
+  }
   res.status(200).json(book);
 
 });
