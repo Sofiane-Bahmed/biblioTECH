@@ -228,6 +228,11 @@ describe("🔐 Authentication Operations", () => {
                     password: "newpassword123"
                 });
             expect(loginRes.statusCode).toBe(200);
+
+            // Update tokens for logout test
+            const cookies = loginRes.headers["set-cookie"];
+            accessToken = cookies.find(c => c.startsWith("accessToken=")).split(";")[0].split("=")[1];
+            refreshToken = cookies.find(c => c.startsWith("refreshToken=")).split(";")[0].split("=")[1];
         });
 
         it("Should fail with expired or invalid token", async () => {
