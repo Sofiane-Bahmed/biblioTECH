@@ -8,7 +8,10 @@ import { sendBookAddedEmail } from "../../utils/email-service/book-added.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { notifySubscribersAboutNewBook } from "../../services/notification-service.js";
 import { fetchBookMetadataByIsbn } from "../../services/googleBooks-service.js";
-import { getOrCreateCategories } from "../../services/category-service.js";
+import {
+  getOrCreateCategories,
+  validateExistingCategories
+} from "../../services/category-service.js";
 
 export const addBook = asyncHandler(async (req, res) => {
 
@@ -82,13 +85,11 @@ export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
 
   const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
 
-  // Uniqueness Guard
   const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
   if (duplicateBook) {
     return res.status(400).json({ message: "This book version already exists in inventory." });
   }
 
-  // Fetch Metadata from External Service
   const metadata = await fetchBookMetadataByIsbn(normalizedIsbn);
   if (!metadata) {
     return res.status(404).json({ message: "No book records found on Google Books API for this ISBN." });
@@ -96,7 +97,6 @@ export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
 
   const categoryIds = await getOrCreateCategories(metadata.categories);
 
-  // Persist to Database
   const newBook = await Book.create({
     isbn: normalizedIsbn,
     title: metadata.title,
@@ -118,43 +118,24 @@ export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
   notifySubscribersAboutNewBook({ title: metadata.title, author: metadata.authors }).catch(console.error);
 });
 
-
-// update a book
 export const updateBook = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { category, ...allowedUpdates } = req.body;
 
-  // Verify the book exists first
-  const book = await Book.findById(id);
-  if (!book) {
-    return res.status(404).json({ message: "Book not found" });
-  }
+  const updateData = { ...allowedUpdates };
 
-  // Dynamically gather text fields that were actually sent
-  const updateData = { ...req.body };
+  if (category) {
+    const { categoryIds, missingCategories } = await validateExistingCategories(category);
 
-  //Handle Category update safely if provided
-  if (req.body.category) {
-    const categoryTitles = Array.isArray(req.body.category)
-      ? req.body.category
-      : [req.body.category];
-
-    const foundCategories = await Category.find({ title: { $in: categoryTitles } });
-    if (foundCategories.length !== categoryTitles.length) {
-      // find exactly which titles are missing by comparing arrays
-      const foundTitles = foundCategories.map(cat => cat.title);
-      const missingCategories = categoryTitles.filter(title => !foundTitles.includes(title));
-
+    if (missingCategories.length > 0) {
       return res.status(400).json({
         message: "Validation failed: Some specified categories do not exist.",
         missingCategories
       });
     }
-
-    const categoryIds = foundCategories.map(cat => cat._id);
     updateData.category = categoryIds;
   }
 
-  // Handle File upload context safely
   if (req.file) {
     updateData.cover_image = req.file.path;
   }
@@ -162,11 +143,12 @@ export const updateBook = asyncHandler(async (req, res) => {
   const updatedBook = await Book.findByIdAndUpdate(
     id,
     { $set: updateData },
-    {
-      new: true,
-      runValidators: true
-    }
+    { new: true, runValidators: true }
   ).populate("category");
+
+  if (!updatedBook) {
+    return res.status(404).json({ message: "Book not found" });
+  }
 
   res.status(200).json({
     message: "Book updated successfully",

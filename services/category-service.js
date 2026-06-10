@@ -17,3 +17,15 @@ export const getOrCreateCategories = async (categoryTitles) => {
     // Combine both sets of IDs to return
     return [...existingCategories, ...newCategories].map(cat => cat._id);
 };
+
+export const validateExistingCategories = async (inputCategories) => {
+    const categoryTitles = Array.isArray(inputCategories) ? inputCategories : [inputCategories];
+
+    const foundCategories = await Category.find({ title: { $in: categoryTitles } });
+    const foundTitles = foundCategories.map(cat => cat.title);
+
+    const missingCategories = categoryTitles.filter(title => !foundTitles.includes(title));
+    const categoryIds = foundCategories.map(cat => cat._id);
+
+    return { categoryIds, missingCategories };
+};
