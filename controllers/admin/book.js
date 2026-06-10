@@ -32,29 +32,21 @@ export const addBook = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Book cover image is required" });
   }
 
-  // Normalize & Verify Duplication
   const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
   const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
   if (duplicateBook) {
     return res.status(400).json({ message: "A book version with this ISBN already exists in inventory." });
   }
 
-  // Validate and Map Categories
-  const categoryTitles = Array.isArray(category) ? category : [category];
-  const foundCategories = await Category.find({ title: { $in: categoryTitles } });
-  if (foundCategories.length !== categoryTitles.length) {
-    const foundTitles = foundCategories.map(cat => cat.title);
-    const missingCategories = categoryTitles.filter(title => !foundTitles.includes(title));
-
+  const { categoryIds, missingCategories } = await validateExistingCategories(category);
+  if (missingCategories.length > 0) {
     return res.status(400).json({
       message: "Validation failed: Some specified categories do not exist.",
       missingCategories
     });
-  };
+  }
 
-  // Persist Data
   const authorNames = Array.isArray(author) ? author : [author];
-  const categoryIds = foundCategories.map(cat => cat._id);
   const coverImageUrl = req.file.path;
 
   const newBook = await Book.create({
@@ -156,7 +148,6 @@ export const updateBook = asyncHandler(async (req, res) => {
   });
 });
 
-// delete a book 
 export const deleteBook = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
