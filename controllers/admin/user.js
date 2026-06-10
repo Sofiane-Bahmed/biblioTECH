@@ -4,7 +4,7 @@ import asyncHandler from "../../utils/async-handler.js";
 
 // Update a user role
 export const updateUserRole = asyncHandler(async (req, res) => {
-  const userId = req._id;
+  const userId = req.user._id;
 
   const { id } = req.params;
   const { role } = req.body;
