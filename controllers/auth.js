@@ -139,7 +139,13 @@ export const refresh = asyncHandler(async (req, res) => {
   const { refreshToken } = req.cookies;
   if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
-  const decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  let decoded;
+  try {
+    decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
+  }
+
   const user = await User
     .findById(decoded._id)
     .select('+refreshToken');
