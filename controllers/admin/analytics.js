@@ -5,7 +5,7 @@ import asyncHandler from "../../utils/async-handler.js";
 
 // view libary statistics
 export const getLibraryStatistics = asyncHandler(async (req, res) => {
-    const [totalBooks, totalUsers, advancedMetrics] = await Promise.all([
+    const [totalBooks, totalUsers, advancedMetrics, outOfStockBooks] = await Promise.all([
         Book.countDocuments(),
         User.countDocuments({ subscribed: true }),
         BorrowBook.aggregate([
@@ -70,7 +70,7 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                                 _id: 0,
                                 userId: "$_id",
                                 borrowCount: 1,
-                                name: "$userDetails.name",
+                                name: "$userDetails.fullName",
                                 email: "$userDetails.email"
                             }
                         }
@@ -121,7 +121,6 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
     const loanStats = facetResult.loanStatuses?.[0] || { activeBorrows: 0, overdueBorrows: 0 };
     const topBorrowers = facetResult.topBorrowers || [];
     const categoryPopularity = facetResult.categoryPopularity || [];
-    const outOfStockBooks = advancedMetrics[3] || 0;
 
     res.status(200).json({
         summaryCards: {
