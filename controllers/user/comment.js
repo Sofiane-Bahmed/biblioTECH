@@ -1,60 +1,75 @@
+import mongoose from "mongoose";
+
 import { Book } from "../../models/book.js"
 import { Comment } from "../../models/comment.js"
 import { User } from "../../models/user.js";
-
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
 
-//add comment or the reply of the comment : 
 export const addComment = asyncHandler(async (req, res) => {
     const { bookId } = req.params;
-    const {
-        comment,
-        parentCommentId
-    } = req.body;
+    const { comment, parentCommentId } = req.body;
 
     const userId = req.user._id;
 
-    // check if the book exists
-    const book = await Book.findById(bookId);
-    if (!book) return res.status(404).json({ message: "Book not found" });
+    const bookExists = await Book.exists({ _id: bookId });
+    if (!bookExists) return res.status(404).json({ message: "Book not found" });
 
-    // Prepare comment data
     const commentData = {
         user: userId,
         book: bookId,
-        comment
+        comment,
+        ...(parentCommentId && { parentComment: parentCommentId })
     };
 
-    // If it's a reply, validate the parent
-    if (parentCommentId) {
-        const parent = await Comment.findById(parentCommentId);
-        if (!parent) return res.status(404).json({ message: "Parent comment not found" });
-        commentData.parentComment = parentCommentId;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // If it's a sub-thread reply, verify structural parent existence inside the session
+        if (parentCommentId) {
+            const parentExists = await Comment
+                .exists({ _id: parentCommentId })
+                .session(session);
+            if (!parentExists) {
+                return res.status(404).json({ message: "Parent comment not found" });
+            }
+        }
+
+        const [savedComment] = await Comment.create([commentData], { session });
+
+        if (parentCommentId) {
+            // Keep sub-replies localized strictly inside their parent node tree path
+            await Comment.findByIdAndUpdate(
+                parentCommentId,
+                { $push: { replies: savedComment._id } },
+                { session }
+            );
+        } else {
+            // Only attach top-level root threads directly to the parent book schema
+            await Book.findByIdAndUpdate(
+                bookId,
+                { $push: { comments: savedComment._id } },
+                { session }
+            );
+        }
+
+        await User.findByIdAndUpdate(
+            userId,
+            { $push: { comments: savedComment._id } },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json(savedComment);
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).json({ message: "Failed to persist comment entry safely.", error: error.message });
     }
-
-    //Create the comment (works for both top-level and replies)
-    const savedComment = await Comment.create(commentData);
-
-    // Update parent if necessary
-    if (parentCommentId) {
-        await Comment.findByIdAndUpdate(
-            parentCommentId,
-            {
-                $push: { replies: savedComment._id }
-            });
-    }
-
-    // link the comment to book
-    book.comments.push(savedComment._id);
-    // link the comment to user
-    const user = await User.findById(userId);
-    user.comments.push(savedComment._id);
-
-    await Promise.all([book.save(), user.save()]);
-
-    res.status(201).json(savedComment);
-
 });
 
 // get specific comment
