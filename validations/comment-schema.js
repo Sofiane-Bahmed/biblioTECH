@@ -82,10 +82,10 @@ export const updateCommentSchema = z.object({
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
     }),
     body: z.object({
-        commentUpdate: z
+        comment: z
             .string()
-            .min(1, "CommentUpdate cannot be empty")
-            .max(500, "CommentUpdate cannot exceed 500 characters"),
+            .min(1, "Comment cannot be empty")
+            .max(500, "Comment cannot exceed 500 characters"),
     })
 });
 

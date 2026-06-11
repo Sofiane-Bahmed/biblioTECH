@@ -75,9 +75,9 @@ export const addComment = asyncHandler(async (req, res) => {
 // get specific comment
 export const getCommentById = asyncHandler(async (req, res) => {
 
-    const { id } = req.params
+    const { id: commentId } = req.params;
     const comment = await Comment
-        .findById(id)
+        .findById(commentId)
         .populate('user', 'fullName email')
         .populate('book', 'title author')
         .populate({
@@ -99,30 +99,38 @@ export const getCommentById = asyncHandler(async (req, res) => {
 
 });
 
-// update a comment
 export const updateComment = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { commentUpdate } = req.body;
+    const { id: commentId } = req.params;
+    const { comment } = req.body;
+
     const userId = req.user._id;
 
-    const comment = await Comment.findById(id);
     if (!comment) {
-        return res.status(404).json({ message: 'comment not found' });
-    }
-    if (comment.user.toString() !== userId.toString()) {
-        return res.status(403).json({
-            message: "FORBIDDEN: You can only edit your own comments"
-        })
+        return res.status(400).json({ message: "Comment content is required for updates." });
     }
 
-    comment.comment = commentUpdate;
-    await comment.save();
+    const updatedComment = await Comment.findOneAndUpdate(
+        {
+            _id: commentId,
+            user: userId
+        },
+        { $set: { comment } },
+        {
+            new: true,
+            runValidators: true
+        }
+    );
 
-    res.status(200).json({
-        message: 'Comment updated successfully',
-        comment
+    if (!updatedComment) {
+        return res.status(404).json({
+            message: "Comment not found or you are not authorized to edit this resource."
+        });
+    }
+
+    return res.status(200).json({
+        message: "Comment updated successfully",
+        comment: updatedComment
     });
-
 });
 
 export const deleteComment = asyncHandler(async (req, res) => {
