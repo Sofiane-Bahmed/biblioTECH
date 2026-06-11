@@ -29,6 +29,10 @@ const commentSchema = new Schema({
         type: Date,
         default: Date.now
     },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
     replies: [{
         type: Schema.Types.ObjectId,
         ref: 'comment'
