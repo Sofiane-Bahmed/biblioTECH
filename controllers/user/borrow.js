@@ -8,6 +8,8 @@ import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
 import { checkBorrowEligibility } from "../../services/borrow-service.js";
 import { calculateLatePenalty } from "../../services/penalty-service.js";
+import { checkUserSanctionStatus } from "../../services/borrow-service.js";
+
 
 
 export const borrowBook = asyncHandler(async (req, res) => {
@@ -34,9 +36,10 @@ export const borrowBook = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
+    const BORROW_PERIOD_DAYS = 7;
     const borrowDate = new Date();
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 7); // 7-day borrowing period
+    dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
 
     const [newBorrow] = await BorrowBook.create(
       [{
@@ -171,7 +174,6 @@ export const returnBook = asyncHandler(async (req, res) => {
   }
 });
 
-// Get borrowing history for a user
 export const getBorrowingHistory = asyncHandler(async (req, res) => {
 
   const userId = req.user._id;
@@ -180,77 +182,70 @@ export const getBorrowingHistory = asyncHandler(async (req, res) => {
     model: BorrowBook,
     query: { user: userId },
     req,
-    populate: [{ path: "book", select: "title author" }]
+    populate: [{
+      path: "book",
+      select: "title author"
+    }]
   })
 
   if (!result.data.length) {
-    return res.status(200).json({ message: "No borrowing history found", history: [] });
+    return res.status(200).json({
+      message: "No borrowing history found",
+      history: []
+    });
   }
 
   res.status(200).json(result);
 
 });
 
-// Renew borrowed book
 export const renewBorrowedBook = asyncHandler(async (req, res) => {
-
-  const { id } = req.params;
+  const { id: borrowId } = req.params;
   const userId = req.user._id;
 
-  const borrow = await BorrowBook
-    .findOne({
-      _id: id,
-      user: userId
-    })
-    .populate("book")
+  const [user, borrow] = await Promise.all([
+    User.findById(userId),
+    BorrowBook.findOne({ _id: borrowId, user: userId }).populate("book")
+  ]);
 
-  if (!borrow) {
-    return res.status(404).json({ message: "Borrow not found" });
+  if (!borrow || !borrow.book) {
+    return res.status(404).json({ message: "Active borrow record or associated book not found." });
   }
 
-  // Check if the user is suspended
-  const user = await User.findById(userId);
-  if (user.suspension_date && user.suspension_date > new Date()) {
-    return res.status(403).json({
-      message: "Your account is suspended",
-      until: user.suspension_date.toString()
-    });
-  };
-
-  // Check if the user is blocked
-  if (user.isBlocked) {
-    return res.status(403).json({
-      message: "Your account is blocked. Please contact support for more information."
-    });
-  };
-
-  // Check if the associated book exists
-  if (!borrow.book) {
-    return res.status(404).json({ message: "Associated book not found" });
+  const sanction = checkUserSanctionStatus(user);
+  if (!sanction.status) {
+    return res
+      .status(403)
+      .json({
+        message: sanction.message,
+        ...(sanction.until && { until: sanction.until })
+      });
   }
 
-  // Check if the borrow has already been renewed
   if (borrow.renewed) {
-    return res.status(400).json({ message: 'The maximum number of renewals has been reached' });
+    return res
+      .status(400)
+      .json({ message: "The maximum number of renewals (1) has been reached." });
   }
 
-  // Prevent renewal if book is already late
-  if (new Date() > borrow.due_date) {
-    return res.status(400).json({ message: 'Cannot renew a late book. Please return it first.' });
+  const currentDate = new Date();
+  if (currentDate > borrow.due_date) {
+    return res
+      .status(400)
+      .json({ message: "Cannot renew a late book. Please return it to inventory first." });
   }
 
-  // Calculate new due date
+  const RENEWAL_DAYS_EXTENSION = 7;
   const newDueDate = new Date(borrow.due_date);
-  newDueDate.setDate(newDueDate.getDate() + 7);
+  newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
 
-  // Update borrow
   borrow.due_date = newDueDate;
   borrow.renewed = true;
   await borrow.save();
 
-  res.status(200).json({
-    message: 'Borrow renewed for 7 more days',
-    borrow: borrow
+  return res.status(200).json({
+    message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
+    borrow
   });
 });
 

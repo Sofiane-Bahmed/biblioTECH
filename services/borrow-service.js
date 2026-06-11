@@ -54,3 +54,26 @@ export const checkBorrowEligibility = async (userId, bookId) => {
 
     return { status: true };
 };
+
+export const checkUserSanctionStatus = (user) => {
+    if (!user) {
+        return { status: false, message: "User record not found." };
+    }
+
+    if (user.suspension_date && user.suspension_date > new Date()) {
+        return {
+            status: false,
+            message: "Your account is suspended.",
+            until: user.suspension_date.toString()
+        };
+    }
+
+    if (user.isBlocked) {
+        return {
+            status: false,
+            message: "Your account is blocked. Please contact support for more information."
+        };
+    }
+
+    return { status: true };
+};
