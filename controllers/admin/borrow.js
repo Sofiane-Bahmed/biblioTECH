@@ -1,9 +1,7 @@
 import { BorrowBook } from "../../models/borrow.js";
-
 import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
 
-// Get all borrows 
 export const getAllBorrows = asyncHandler(async (req, res) => {
 
   const result = await getPaginatedData({
@@ -25,6 +23,7 @@ export const getAllBorrows = asyncHandler(async (req, res) => {
 
 export const getBorrowById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
   const borrow = await BorrowBook
     .findById(id)
     .populate('user', 'fullName email')
@@ -65,8 +64,6 @@ export const getOverdueBorrows = asyncHandler(async (req, res) => {
     .populate('user', 'fullName email')
     .populate('book', 'title author');
 
-
-
   if (!overdueBorrows.length) {
     return res.status(200).json({ message: "No overdue borrows found", data: [] });
   }
@@ -76,6 +73,7 @@ export const getOverdueBorrows = asyncHandler(async (req, res) => {
 
 export const deleteBorrowById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  
   const borrow = await BorrowBook.findByIdAndDelete(id);
   if (!borrow) {
     return res.status(404).json({ message: "Borrow record not found" });

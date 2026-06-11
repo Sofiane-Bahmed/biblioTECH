@@ -1,8 +1,6 @@
 import { Category } from "../../models/category.js"
-
 import asyncHandler from "../../utils/async-handler.js";
 
-// create book category
 export const createBookCategory = asyncHandler(async (req, res) => {
 
   const { title, description } = req.body;
@@ -13,27 +11,26 @@ export const createBookCategory = asyncHandler(async (req, res) => {
 
 });
 
-// read a book category
 export const showBookCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
+
   const category = await Category.findById(id);
 
   res.status(200).json(category);
 
 });
 
-// read all categories
 export const showBookCategories = asyncHandler(async (req, res) => {
   const categories = await Category.find().lean().exec();
 
   res.status(200).json(categories);
 });
 
-// update a book category
 export const updateBookCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
+
   const updateData = { ...req.body };
 
   const category = await Category.findByIdAndUpdate(
@@ -57,7 +54,6 @@ export const updateBookCategory = asyncHandler(async (req, res) => {
 
 });
 
-// delete a book category
 export const deleteBookCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;

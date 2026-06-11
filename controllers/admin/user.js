@@ -1,14 +1,12 @@
 import { User } from "../../models/user.js"
-
 import asyncHandler from "../../utils/async-handler.js";
 
-// Update a user role
 export const updateUserRole = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-
   const { id } = req.params;
   const { role } = req.body;
 
+  const userId = req.user._id;
+  
   if (userId === id) {
     return res.status(400).json({ message: "You cannot change your own administrative role" });
   }
@@ -28,7 +26,6 @@ export const updateUserRole = asyncHandler(async (req, res) => {
 
 });
 
-// Delete a user
 export const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -39,7 +36,6 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
 });
 
-// Get a user by ID 
 export const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -50,7 +46,6 @@ export const getUserById = asyncHandler(async (req, res) => {
   res.status(200).json(user);
 });
 
-// Get all users
 export const getAllUsers = asyncHandler(async (req, res) => {
 
   const page = parseInt(req.query.page) || 1;

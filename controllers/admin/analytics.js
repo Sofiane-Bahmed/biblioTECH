@@ -3,8 +3,8 @@ import { User } from "../../models/user.js";
 import { BorrowBook } from "../../models/borrow.js";
 import asyncHandler from "../../utils/async-handler.js";
 
-// view libary statistics
 export const getLibraryStatistics = asyncHandler(async (req, res) => {
+    
     const [totalBooks, totalUsers, advancedMetrics, outOfStockBooks] = await Promise.all([
         Book.countDocuments(),
         User.countDocuments({ subscribed: true }),
