@@ -7,6 +7,8 @@ import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
 import { checkBorrowEligibility } from "../../services/borrow-service.js";
+import { calculateLatePenalty } from "../../services/penalty-service.js";
+
 
 export const borrowBook = asyncHandler(async (req, res) => {
 
@@ -95,61 +97,78 @@ export const borrowBook = asyncHandler(async (req, res) => {
   }
 });
 
-// return book
+
 export const returnBook = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+
+  const { id: borrowId } = req.params;
   const userId = req.user._id;
 
-  //  Fetch everything needed
   const [user, borrow] = await Promise.all([
     User.findById(userId),
-    BorrowBook
-      .findOne({
-        _id: id,
-        user: userId
-      })
-      .populate("book")
+    BorrowBook.findOne({
+      _id: borrowId,
+      user: userId
+    }).populate("book")
   ]);
 
   if (!user || !borrow || !borrow.book) {
-    return res.status(404).json({ message: "Record not found" });
+    return res.status(404).json({ message: "Borrow record or associated book not found." });
+  }
+
+  if (borrow.return_date) {
+    return res.status(400).json({ message: "This book has already been returned." });
   }
 
   const book = borrow.book;
-
-  // Prevent double-returning
-  if (borrow.return_date) {
-    return res.status(400).json({ message: "This book has already been returned" });
-  }
-
   const currentDate = new Date();
-  let message = "The book was successfully returned";
-  // Update book availability
-  book.copies_available++;
-  // Update borrow return date
-  borrow.return_date = currentDate;
 
-  const savedOperations = [book.save(), borrow.save()];
+  const penalty = calculateLatePenalty(currentDate, borrow.due_date);
 
-  // Handle Late Penalty
-  if (currentDate > borrow.due_date) {
-    const daysLate = Math.ceil((currentDate - borrow.due_date) / (1000 * 60 * 60 * 24));
+  // Atomic Database Changes
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    if (daysLate > 0 && daysLate <= 3) {
-      await sendSuspensionWarningEmail(user, book);
-      message = `Book returned, but it was ${daysLate} day(s) late. A warning email has been sent to you. Please return books on time to avoid suspension.`;
+  try {
+    // Acknowledge Return Status
+    await BorrowBook.findByIdAndUpdate(
+      borrowId,
+      { $set: { return_date: currentDate } },
+      { session });
+
+    // Restock Inventory safely
+    await Book.findByIdAndUpdate(
+      book._id,
+      { $inc: { copies_available: 1 } },
+      { session });
+
+    // Apply Penalties across relevant streams conditionally
+    if (penalty.action === "SUSPEND") {
+      await User.findByIdAndUpdate(
+        userId,
+        { $set: { suspension_date: penalty.suspensionDate } },
+        { session });
     }
-    else if (daysLate > 3) {
-      user.suspension_date = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000); //suspend for 10 days
-      savedOperations.push(user.save())
-      message = "Book returned, but you are suspended for 10 days due to delay.";
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Asynchronous Side-Effects (Non-Blocking)
+    if (penalty.action === "WARNING") {
+      sendSuspensionWarningEmail(user, book).catch(console.error);
     }
-  };
 
-  await Promise.all(savedOperations);
+    return res.status(200).json({ message: penalty.clientMessage });
 
-  res.status(200).json({ message });
-
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    return res
+      .status(500)
+      .json({
+        message: "Failed to process book return transaction safely.",
+        error: error.message
+      });
+  }
 });
 
 // Get borrowing history for a user
