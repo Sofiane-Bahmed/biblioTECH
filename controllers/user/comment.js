@@ -134,75 +134,74 @@ export const updateComment = asyncHandler(async (req, res) => {
 });
 
 export const deleteComment = asyncHandler(async (req, res) => {
-  const { id: commentId } = req.params;
+    const { id: commentId } = req.params;
 
-  const userId = req.user._id;
-  const userRole = req.user.role;
+    const userId = req.user._id;
+    const userRole = req.user.role;
 
-  const comment = await Comment.findById(commentId);
-  if (!comment) return res.status(404).json({ message: "Comment not found" });
+    const comment = await Comment.findById(commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-  const isOwner = comment.user.toString() === userId.toString();
-  const isAdmin = userRole === "admin";
-  
-  if (!isOwner && !isAdmin) {
-    return res.status(403).json({ message: "Unauthorized: You cannot remove this resource." });
-  }
+    const isOwner = comment.user.toString() === userId.toString();
+    const isAdmin = userRole === "admin";
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const hasReplies = comment.replies && comment.replies.length > 0;
-
-    if (hasReplies) {
-      // A. Soft Delete: Scrub sensitive data but preserve tree nodes for children
-      await Comment.findByIdAndUpdate(
-        commentId,
-        { 
-          $set: { 
-            comment: "This comment has been removed.",
-            isDeleted: true // Optional schema flag if you want to style it differently on UI
-          },
-          $unset: { user: "" } // Remove author linkage for privacy
-        },
-        { session }
-      );
-    } else {
-      // B. Hard Delete: No children exist, safe to erase completely
-      await Comment.findByIdAndDelete(commentId, { session });
-
-      // Unlink references in parallel
-      await Promise.all([
-        Book.findByIdAndUpdate(comment.book, { $pull: { comments: commentId } }, { session }),
-        User.findByIdAndUpdate(comment.user, { $pull: { comments: commentId } }, { session }),
-        comment.parentComment
-          ? Comment.findByIdAndUpdate(comment.parentComment, { $pull: { replies: commentId } }, { session })
-          : Promise.resolve()
-      ]);
+    if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: "Unauthorized: You cannot remove this resource." });
     }
 
-    await session.commitTransaction();
-    session.endSession();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    return res.status(200).json({ 
-      message: hasReplies ? "Comment masked successfully." : "Comment permanently erased from ecosystem." 
-    });
+    try {
+        const hasReplies = comment.replies && comment.replies.length > 0;
 
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    return res.status(500).json({ message: "Failed to cleanly execute comment deletion pipeline.", error: error.message });
-  }
+        if (hasReplies) {
+            // A. Soft Delete: Scrub sensitive data but preserve tree nodes for children
+            await Comment.findByIdAndUpdate(
+                commentId,
+                {
+                    $set: {
+                        comment: "This comment has been removed.",
+                        isDeleted: true
+                    },
+                    $unset: { user: "" }
+                },
+                { session }
+            );
+        } else {
+            // B. Hard Delete: No children exist, safe to erase completely
+            await Comment.findByIdAndDelete(commentId, { session });
+
+            // Unlink references in parallel
+            await Promise.all([
+                Book.findByIdAndUpdate(comment.book, { $pull: { comments: commentId } }, { session }),
+                User.findByIdAndUpdate(comment.user, { $pull: { comments: commentId } }, { session }),
+                comment.parentComment
+                    ? Comment.findByIdAndUpdate(comment.parentComment, { $pull: { replies: commentId } }, { session })
+                    : Promise.resolve()
+            ]);
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            message: hasReplies ? "Comment masked successfully." : "Comment permanently erased from ecosystem."
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).json({ message: "Failed to cleanly execute comment deletion pipeline.", error: error.message });
+    }
 });
 
-// get all comments of a book
-export const getCommentsByBook = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+export const getBookComments = asyncHandler(async (req, res) => {
+    const { id: bookId } = req.params;
 
     const result = await getPaginatedData({
         model: Comment,
-        query: { book: id, parentComment: null },
+        query: { book: bookId, parentComment: null },
         req,
         populate: [
             {

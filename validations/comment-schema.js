@@ -41,7 +41,7 @@ export const getAllCommentsSchema = z.object({
     }).optional()
 });
 
-export const getCommentsByBookSchema = z.object({
+export const getBookCommentsSchema = z.object({
     params: z.object({
         id: z.string()
             .min(1, "Book ID is required")
