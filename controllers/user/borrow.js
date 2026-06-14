@@ -3,18 +3,18 @@ import mongoose from "mongoose";
 import { BorrowBook } from "../../models/borrow.js"
 import { Book } from "../../models/book.js"
 import { User } from "../../models/user.js"
+
 import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension-warning.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
+
 import { checkBorrowEligibility } from "../../services/borrow-service.js";
 import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { checkUserSanctionStatus } from "../../services/borrow-service.js";
-
-
 
 export const borrowBook = asyncHandler(async (req, res) => {
 
   const { id: bookId } = req.params;
+
   const userId = req.user._id;
 
   const book = await Book.findById(bookId);
@@ -103,17 +103,16 @@ export const borrowBook = asyncHandler(async (req, res) => {
 export const returnBook = asyncHandler(async (req, res) => {
 
   const { id: borrowId } = req.params;
+
   const userId = req.user._id;
 
-  const [user, borrow] = await Promise.all([
-    User.findById(userId),
+  const borrow = await
     BorrowBook.findOne({
       _id: borrowId,
       user: userId
     }).populate("book")
-  ]);
 
-  if (!user || !borrow || !borrow.book) {
+  if (!borrow || !borrow.book) {
     return res.status(404).json({ message: "Borrow record or associated book not found." });
   }
 
@@ -156,7 +155,7 @@ export const returnBook = asyncHandler(async (req, res) => {
 
     // Asynchronous Side-Effects (Non-Blocking)
     if (penalty.action === "WARNING") {
-      sendSuspensionWarningEmail(user, book).catch(console.error);
+      sendSuspensionWarningEmail(req.user, book).catch(console.error);
     }
 
     return res.status(200).json({ message: penalty.clientMessage });
@@ -200,25 +199,20 @@ export const getBorrowingHistory = asyncHandler(async (req, res) => {
 
 export const renewBorrowedBook = asyncHandler(async (req, res) => {
   const { id: borrowId } = req.params;
+
   const userId = req.user._id;
 
-  const [user, borrow] = await Promise.all([
-    User.findById(userId),
-    BorrowBook.findOne({ _id: borrowId, user: userId }).populate("book")
-  ]);
+  const borrow = await
+    BorrowBook
+      .findOne({
+        _id: borrowId,
+        user: userId
+      }
+      )
+      .populate("book")
 
   if (!borrow || !borrow.book) {
     return res.status(404).json({ message: "Active borrow record or associated book not found." });
-  }
-
-  const sanction = checkUserSanctionStatus(user);
-  if (!sanction.status) {
-    return res
-      .status(403)
-      .json({
-        message: sanction.message,
-        ...(sanction.until && { until: sanction.until })
-      });
   }
 
   if (borrow.renewed) {

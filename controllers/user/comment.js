@@ -72,7 +72,6 @@ export const addComment = asyncHandler(async (req, res) => {
     }
 });
 
-// get specific comment
 export const getCommentById = asyncHandler(async (req, res) => {
 
     const { id: commentId } = req.params;

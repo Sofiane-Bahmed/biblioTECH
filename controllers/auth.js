@@ -8,7 +8,6 @@ import { sendPasswordResetEmail } from "../utils/email-service/reset-password.js
 
 import asyncHandler from "../utils/async-handler.js";
 
-// register 
 export const register = asyncHandler(async (req, res) => {
   const {
     fullName,
@@ -34,11 +33,11 @@ export const register = asyncHandler(async (req, res) => {
 
 });
 
-// log in 
 export const login = asyncHandler(async (req, res) => {
 
-  const { sign } = Jwt
   const { email, password } = req.body;
+
+  const { sign } = Jwt
 
   const user = await User.findOne({ email }).select('+password');
   if (!user) {
