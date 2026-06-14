@@ -5,7 +5,7 @@ import asyncHandler from "../../utils/async-handler.js";
 // Update profile
 export const updateProfile = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
-  
+
   const userId = req.user._id;
 
   const user = await User.findByIdAndUpdate(
@@ -22,12 +22,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
 // Get my profile
 export const getMyProfile = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
 
-  const user = await User.findById(userId);
-  if (!user) return res.status(404).json({ message: "user not found" });
-
-  res.status(200).json(user);
+  res.status(200).json(req.user);
 
 });
 
