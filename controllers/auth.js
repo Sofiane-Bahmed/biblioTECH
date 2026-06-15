@@ -110,7 +110,6 @@ export const login = asyncHandler(async (req, res) => {
 
 });
 
-// log out 
 export const logout = asyncHandler(async (req, res) => {
 
   const { refreshToken } = req.cookies;
@@ -123,7 +122,6 @@ export const logout = asyncHandler(async (req, res) => {
     );
   }
 
-  // Clear all auth cookies
   res.clearCookie('accessToken');
   res.clearCookie('refreshToken');
 
@@ -201,32 +199,49 @@ export const refresh = asyncHandler(async (req, res) => {
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
+  const successResponse = {
+    message: "If an account with that email exists, a password reset link has been dispatched shortly."
+  };
+
   const user = await User.findOne({ email });
   if (!user) {
-    return res.status(404).json({ message: "User not found" });
+    return res.status(200).json(successResponse);
   }
 
-  // Generate a password reset token and expiration
+  // Cryptographic Token Construction
   const resetToken = crypto
     .randomBytes(32)
     .toString('hex');
-  console.log("TESTING RESET TOKEN (PLAIN):", resetToken);
-  //hash the token before saving to DB for security
+  console.log("TESTING RESET TOKEN (PLAIN):", resetToken); // For testing purposes only, remove in production
+
   const hashedResetToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-  const resetExpires = Date.now() + 3600000; // 1 hour
+
+  const ONE_HOUR_IN_MS = 3600000;
+  const resetExpires = Date.now() + ONE_HOUR_IN_MS;
 
   user.passwordResetToken = hashedResetToken;
   user.passwordResetExpires = resetExpires;
-
   await user.save();
 
   // Send email with reset link 
-  await sendPasswordResetEmail(user, resetToken);
+  try {
+    await sendPasswordResetEmail(user, resetToken);
+  } catch (emailError) {
+    // Rollback DB states immediately if the transport layer fails 
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
 
-  res.status(200).json({ message: "Password reset link sent to your email" });
+    console.error(`Password reset email delivery failed for ${email}:`, emailError);
+    return res.status(500).json({
+      message: "An internal error occurred while dispatching recovery notifications. Please try again later."
+    });
+  }
+
+  res.status(200).json(successResponse);
 
 });
 

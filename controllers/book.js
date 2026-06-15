@@ -3,7 +3,6 @@ import { Category } from "../models/category.js";
 import { getPaginatedData } from "../utils/paginate.js";
 import asyncHandler from "../utils/async-handler.js";
 
-// read all books : 
 export const getAllBooks = asyncHandler(async (req, res) => {
 
   const result = await getPaginatedData({
@@ -35,7 +34,6 @@ export const getBook = asyncHandler(async (req, res) => {
 
 });
 
-// search books
 export const searchBooks = asyncHandler(async (req, res) => {
   const {
     title,
@@ -50,7 +48,6 @@ export const searchBooks = asyncHandler(async (req, res) => {
 
   const filters = {};
 
-  // Map Text Filter Query Strings
   if (title) filters.title = { $regex: title, $options: 'i' };
   if (author) filters.author = { $regex: author, $options: 'i' };
   if (description) filters.description = { $regex: description, $options: 'i' };
