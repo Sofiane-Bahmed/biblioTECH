@@ -11,6 +11,10 @@ import { getPaginatedData } from "../../utils/paginate.js";
 import { checkBorrowEligibility } from "../../services/borrow-service.js";
 import { calculateLatePenalty } from "../../services/penalty-service.js";
 
+import { BORROWING_RULES } from "../../constants/library-rules.js";
+
+const { BORROW_PERIOD_DAYS, RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
+
 export const borrowBook = asyncHandler(async (req, res) => {
 
   const { id: bookId } = req.params;
@@ -36,7 +40,6 @@ export const borrowBook = asyncHandler(async (req, res) => {
   session.startTransaction();
 
   try {
-    const BORROW_PERIOD_DAYS = 7;
     const borrowDate = new Date();
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
@@ -228,7 +231,6 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
       .json({ message: "Cannot renew a late book. Please return it to inventory first." });
   }
 
-  const RENEWAL_DAYS_EXTENSION = 7;
   const newDueDate = new Date(borrow.due_date);
   newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
 
