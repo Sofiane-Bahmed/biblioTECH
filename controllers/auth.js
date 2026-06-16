@@ -40,9 +40,20 @@ export const login = asyncHandler(async (req, res) => {
   const { sign } = Jwt
 
   const user = await User.findOne({ email }).select('+password');
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+
+  let isMatch = false;
+  if (user) {
+    isMatch = await user.comparePassword(password); 
+  } else {
+    // Fake comparison to mimic bcrypt computation time delay
+    const dummyHash = "$2b$10$Nx7K.1l6QAnA7V83rGgM7.u8jF.uMlz/5S2d/zYwFfH3yWBy7p7O.";
+    await bcrypt.compare(password, dummyHash);
   }
+
+  if (!user || !isMatch) {
+    return res.status(401).json({ message: "Invalid email or password credentials." });
+  }
+
   //check if user is suspended
   if (user.suspension_date && user.suspension_date > new Date()) {
     return res.status(403).json({
@@ -56,12 +67,6 @@ export const login = asyncHandler(async (req, res) => {
     return res.status(403).json({
       message: "Your account is blocked. Please contact support for more information."
     });
-  }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-
-  if (!isMatch) {
-    return res.status(401).json({ message: 'Invalid credentials' });
   }
 
   const accessToken = sign(
@@ -129,7 +134,6 @@ export const logout = asyncHandler(async (req, res) => {
 
 });
 
-// Refresh Access Token and Rotate it
 export const refresh = asyncHandler(async (req, res) => {
   const { sign, verify } = Jwt;
 
@@ -226,7 +230,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = resetExpires;
   await user.save();
 
-  // Send email with reset link 
   try {
     await sendPasswordResetEmail(user, resetToken);
   } catch (emailError) {
@@ -249,8 +252,11 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
 
-  // Hash the token from the URL to match the DB version
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
   // Find user with valid token that hasn't expired
   const user = await User.findOne({
     passwordResetToken: hashedToken,
@@ -259,7 +265,6 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   if (!user) return res.status(400).json({ message: "Token is invalid or has expired" });
 
-  // Set new password 
   user.password = password;
   await user.save();
 
