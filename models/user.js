@@ -94,7 +94,24 @@ userSchema.set("toJSON", {
 
 // Custom Instance Method to verify passwords safely
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to generate a password reset token
+userSchema.methods.generatePasswordResetToken = function () {
+   const resetToken = crypto
+      .randomBytes(32)
+      .toString("hex");
+
+   this.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+   const ONE_HOUR_IN_MS = 3600000;
+   this.passwordResetExpires = Date.now() + ONE_HOUR_IN_MS;
+
+   return resetToken;
 };
 
 export const User = mongoose.model("user", userSchema);

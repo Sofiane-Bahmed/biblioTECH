@@ -43,7 +43,7 @@ export const login = asyncHandler(async (req, res) => {
 
   let isMatch = false;
   if (user) {
-    isMatch = await user.comparePassword(password); 
+    isMatch = await user.comparePassword(password);
   } else {
     // Fake comparison to mimic bcrypt computation time delay
     const dummyHash = "$2b$10$Nx7K.1l6QAnA7V83rGgM7.u8jF.uMlz/5S2d/zYwFfH3yWBy7p7O.";
@@ -212,22 +212,8 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     return res.status(200).json(successResponse);
   }
 
-  // Cryptographic Token Construction
-  const resetToken = crypto
-    .randomBytes(32)
-    .toString('hex');
-  console.log("TESTING RESET TOKEN (PLAIN):", resetToken); // For testing purposes only, remove in production
+  const resetToken = user.generatePasswordResetToken();
 
-  const hashedResetToken = crypto
-    .createHash('sha256')
-    .update(resetToken)
-    .digest('hex');
-
-  const ONE_HOUR_IN_MS = 3600000;
-  const resetExpires = Date.now() + ONE_HOUR_IN_MS;
-
-  user.passwordResetToken = hashedResetToken;
-  user.passwordResetExpires = resetExpires;
   await user.save();
 
   try {
