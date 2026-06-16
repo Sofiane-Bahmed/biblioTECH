@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
-import crypto from "crypto"
 
 import { User } from "../models/user.js"
 import { sendWelcomeEmail } from "../utils/email-service/welcome.js";
@@ -238,17 +237,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
 
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(token)
-    .digest('hex');
-
-  // Find user with valid token that hasn't expired
-  const user = await User.findOne({
-    passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() }
-  });
-
+  const user = await User.findByResetToken(token);
   if (!user) return res.status(400).json({ message: "Token is invalid or has expired" });
 
   user.password = password;

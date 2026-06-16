@@ -114,5 +114,21 @@ userSchema.methods.generatePasswordResetToken = function () {
    return resetToken;
 };
 
+// Static method to find a user by a valid reset token
+userSchema.statics.findByResetToken = async function (plainToken) {
+  if (!plainToken) return null;
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(plainToken)
+    .digest("hex");
+
+  // Query for a user where the token matches AND is not expired
+  return await this.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() } 
+  });
+};
+
 export const User = mongoose.model("user", userSchema);
 
