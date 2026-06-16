@@ -1,19 +1,23 @@
+import { PENALTY_RULES, TIME_CONSTANTS } from "../constants/library-rules.js";
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-const WARNING_THRESHOLD_DAYS = 3;
-const SUSPENSION_DURATION_DAYS = 10;
+const { MS_PER_DAY } = TIME_CONSTANTS;
+const {
+    WARNING_THRESHOLD_DAYS,
+    SUSPENSION_DURATION_DAYS } = PENALTY_RULES;
 
 export const calculateLatePenalty = (returnDate, dueDate) => {
-    if (returnDate <= dueDate) {
+    const d1 = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    const d2 = new Date(returnDate.getFullYear(), returnDate.getMonth(), returnDate.getDate());
+
+    if (d2 <= d1) {
         return {
             action: "NONE",
             clientMessage: "The book was successfully returned on time."
         };
     }
 
-    // Calculate distinct calendar day differences
-    const millisecondsDiff = returnDate - dueDate;
-    const daysLate = Math.ceil(millisecondsDiff / MS_PER_DAY);
+    const millisecondsDiff = d2.getTime() - d1.getTime();
+    const daysLate = Math.round(millisecondsDiff / MS_PER_DAY);
 
     if (daysLate <= WARNING_THRESHOLD_DAYS) {
         return {
