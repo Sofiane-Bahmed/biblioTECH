@@ -1,4 +1,5 @@
 import { BorrowBook } from "../models/borrow.js";
+import { Book } from "../models/book.js";
 
 export const checkBorrowEligibility = async (userId, bookId) => {
 
@@ -36,4 +37,43 @@ export const checkBorrowEligibility = async (userId, bookId) => {
 
     return { status: true };
 };
+
+// export const createBorrowRequest = async (userId, bookId) => {
+
+//     const eligibility = await checkBorrowEligibility(userId, bookId);
+//     if (!eligibility.status) return eligibility;
+
+//     const existingRequest = await BorrowBook.findOne(
+//         {
+//             user: userId,
+//             book: bookId,
+//             status: 'PENDING'
+//         });
+//     if (existingRequest) {
+//         return {
+//             status: false,
+//             code: 400,
+//             message: "You already have a pending request for this book."
+//         };
+//     }
+
+//     const book = await Book.findById(bookId);
+//     if (book.availableCopies <= 0) {
+//         return {
+//             status: false,
+//             code: 400,
+//             message: "This book is currently out of stock."
+//         };
+//     }
+
+//     const newRequest = await BorrowBook.create({
+//         user: userId,
+//         book: bookId,
+//         status: 'PENDING'
+//     });
+//     return {
+//         status: true,
+//         data: newRequest
+//     };
+// };
 

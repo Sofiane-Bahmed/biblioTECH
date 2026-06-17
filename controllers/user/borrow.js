@@ -15,7 +15,95 @@ import { BORROWING_RULES } from "../../constants/library-rules.js";
 
 const { BORROW_PERIOD_DAYS, RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
-export const borrowBook = asyncHandler(async (req, res) => {
+// export const borrowBook = asyncHandler(async (req, res) => {
+
+//   const { id: bookId } = req.params;
+
+//   const userId = req.user._id;
+
+//   const book = await Book.findById(bookId);
+//   if (!book || book.copies_available <= 0) {
+//     return res
+//       .status(404)
+//       .json({ message: "Book is currently unavailable." });
+//   }
+
+//   const eligibility = await checkBorrowEligibility(userId, bookId);
+//   if (!eligibility.status) {
+//     return res
+//       .status(eligibility.code)
+//       .json({ message: eligibility.message });
+//   }
+
+//   // Execute State Updates inside an Atomic Transaction
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     const borrowDate = new Date();
+//     const dueDate = new Date();
+//     dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
+
+//     const [newBorrow] = await BorrowBook.create(
+//       [{
+//         user: userId,
+//         book: bookId,
+//         borrow_date: borrowDate,
+//         due_date: dueDate
+//       }
+//       ],
+//       { session }
+//     );
+
+//     // Atomically decrement stock ONLY if it's still above 0 (Handles race conditions)
+//     const updatedBook = await Book.findOneAndUpdate(
+//       {
+//         _id: bookId,
+//         copies_available: { $gt: 0 }
+//       },
+//       {
+//         $inc: { copies_available: -1 },
+//         $push: { borrows: newBorrow._id }
+//       },
+//       {
+//         session,
+//         new: true
+//       }
+//     );
+
+//     if (!updatedBook) {
+//       throw new Error("Book inventory depleted during processing.");
+//     }
+
+//     // Append history tracking to User profile
+//     await User.findByIdAndUpdate(
+//       userId,
+//       { $push: { borrows: newBorrow._id } },
+//       { session }
+//     );
+
+//     // Commit all changes across collections cleanly
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     return res.status(201).json({
+//       message: "Book borrowed successfully",
+//       borrow: newBorrow
+//     });
+
+//   } catch (error) {
+//     // If anything fails, undo all changes cleanly
+//     await session.abortTransaction();
+//     session.endSession();
+
+//     return res.status(500).json({
+//       message: "Failed to process transaction securely.",
+//       error: error.message
+//     });
+//   }
+// });
+
+export const requestBorrow = asyncHandler(async (req, res) => {
 
   const { id: bookId } = req.params;
 
@@ -23,84 +111,35 @@ export const borrowBook = asyncHandler(async (req, res) => {
 
   const book = await Book.findById(bookId);
   if (!book || book.copies_available <= 0) {
-    return res
-      .status(404)
-      .json({ message: "Book is currently unavailable." });
+    return res.status(404).json({ message: "This book is currently out of stock or unavailable." });
   }
 
   const eligibility = await checkBorrowEligibility(userId, bookId);
   if (!eligibility.status) {
-    return res
-      .status(eligibility.code)
-      .json({ message: eligibility.message });
+    return res.status(eligibility.code).json({ message: eligibility.message });
   }
 
-  // Execute State Updates inside an Atomic Transaction
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const alreadyRequested = await BorrowBook.findOne({
+    user: userId,
+    book: bookId,
+    status: "PENDING"
+  });
 
-  try {
-    const borrowDate = new Date();
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
-
-    const [newBorrow] = await BorrowBook.create(
-      [{
-        user: userId,
-        book: bookId,
-        borrow_date: borrowDate,
-        due_date: dueDate
-      }
-      ],
-      { session }
-    );
-
-    // Atomically decrement stock ONLY if it's still above 0 (Handles race conditions)
-    const updatedBook = await Book.findOneAndUpdate(
-      {
-        _id: bookId,
-        copies_available: { $gt: 0 }
-      },
-      {
-        $inc: { copies_available: -1 },
-        $push: { borrows: newBorrow._id }
-      },
-      {
-        session,
-        new: true
-      }
-    );
-
-    if (!updatedBook) {
-      throw new Error("Book inventory depleted during processing.");
-    }
-
-    // Append history tracking to User profile
-    await User.findByIdAndUpdate(
-      userId,
-      { $push: { borrows: newBorrow._id } },
-      { session }
-    );
-
-    // Commit all changes across collections cleanly
-    await session.commitTransaction();
-    session.endSession();
-
-    return res.status(201).json({
-      message: "Book borrowed successfully",
-      borrow: newBorrow
-    });
-
-  } catch (error) {
-    // If anything fails, undo all changes cleanly
-    await session.abortTransaction();
-    session.endSession();
-
-    return res.status(500).json({
-      message: "Failed to process transaction securely.",
-      error: error.message
-    });
+  if (alreadyRequested) {
+    return res.status(400).json({ message: "You already have a pending request for this book." });
   }
+
+  const newRequest = await BorrowBook.create({
+    user: userId,
+    book: bookId,
+    status: "PENDING",
+    request_date: new Date()
+  });
+
+  return res.status(201).json({
+    message: "Your borrow request has been submitted successfully and is awaiting admin approval.",
+    request: newRequest
+  });
 });
 
 export const returnBook = asyncHandler(async (req, res) => {

@@ -4,7 +4,6 @@ import { Book } from "../../models/book.js"
 import { Category } from "../../models/category.js";
 import { User } from "../../models/user.js"
 import { BorrowBook } from "../../models/borrow.js"
-import { sendBookAddedEmail } from "../../utils/email-service/book-added.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { notifySubscribersAboutNewBook } from "../../services/notification-service.js";
 import { fetchBookMetadataByIsbn } from "../../services/googleBooks-service.js";

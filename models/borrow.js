@@ -12,13 +12,20 @@ const borrowBookSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "book"
     },
+    status: {
+      type: String,
+      enum: ['PENDING', 'ACTIVE', 'REJECTED', 'RETURNED'],
+      default: 'PENDING'
+    },
+    request_date: {
+      type: Date,
+      default: Date.now
+    },
     borrow_date: {
       type: Date,
-      required: true
     },
     due_date: {
       type: Date,
-      required: true
     },
     return_date: {
       type: Date,
@@ -27,7 +34,7 @@ const borrowBookSchema = new Schema(
       type: Boolean,
       default: false
     },
-  }
-)
+  }, { timestamps: true }
+);
 
 export const BorrowBook = mongoose.model("borrowBook", borrowBookSchema)

@@ -1,6 +1,79 @@
+import mongoose from "mongoose";
+
 import { BorrowBook } from "../../models/borrow.js";
+import { Book } from "../../models/book.js";
+import { User } from "../../models/user.js";
+
 import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
+
+import { BORROWING_RULES } from "../../constants/library-rules.js";
+
+const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
+
+export const approveBorrowRequest = asyncHandler(async (req, res) => {
+  const { id: borrowId } = req.params;
+
+  const borrowRequest = await BorrowBook.findById(borrowId);
+  if (!borrowRequest || borrowRequest.status !== "PENDING") {
+    return res.status(400).json({ message: "Borrow request not found or has already been processed." });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const borrowDate = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
+
+    borrowRequest.status = "ACTIVE";
+    borrowRequest.borrow_date = borrowDate;
+    borrowRequest.due_date = dueDate;
+    await borrowRequest.save({ session });
+
+    const updatedBook = await Book.findOneAndUpdate(
+      {
+        _id: borrowRequest.book,
+        copies_available: { $gt: 0 }
+      },
+      {
+        $inc: { copies_available: -1 },
+        $push: { borrows: borrowRequest._id }
+      },
+      { session, new: true }
+    );
+
+    if (!updatedBook) {
+      return res
+        .status(400)
+        .json({ message: "Book inventory depleted at the moment of approval processing." });
+    }
+
+    await User.findByIdAndUpdate(
+      borrowRequest.user,
+      { $push: { borrows: borrowRequest._id } },
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json({
+      message: "Borrow request approved. Book is now active.",
+      borrow: borrowRequest
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    return res.status(500).json({
+      message: "Transaction safety failure while processing admin approval.",
+      error: error.message
+    });
+  }
+});
 
 export const getAllBorrows = asyncHandler(async (req, res) => {
 
@@ -33,6 +106,24 @@ export const getBorrowById = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Borrow record not found" });
   }
   res.status(200).json({ data: borrow });
+});
+
+export const getPendingBorrows = asyncHandler(async (req, res) => {
+
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    req,
+    query: { status: "PENDING" },
+    populate: [
+      { path: 'user', select: 'fullName email' },
+      { path: 'book', select: 'title author' }
+    ]
+  });
+
+  if (!result.data.length) {
+    return res.status(200).json({ message: "No pending borrows found", data: [] });
+  }
+  res.status(200).json(result);
 });
 
 export const getActiveBorrows = asyncHandler(async (req, res) => {
@@ -73,7 +164,7 @@ export const getOverdueBorrows = asyncHandler(async (req, res) => {
 
 export const deleteBorrowById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  
+
   const borrow = await BorrowBook.findByIdAndDelete(id);
   if (!borrow) {
     return res.status(404).json({ message: "Borrow record not found" });
