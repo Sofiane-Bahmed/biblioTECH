@@ -9,6 +9,15 @@ export const approveBorrowRequestSchema = z.object({
     }),
 })
 
+export const rejectBorrowRequestSchema = z.object({
+    params: z.object({
+        id: z
+            .string()
+            .min(1, "Borrow ID is required")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
+    }),
+})
+
 export const getBorrowByIdSchema = z.object({
     params: z.object({
         id: z

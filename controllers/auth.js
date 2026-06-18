@@ -7,6 +7,8 @@ import { sendPasswordResetEmail } from "../utils/email-service/reset-password.js
 
 import asyncHandler from "../utils/async-handler.js";
 
+  const { sign, verify } = Jwt;
+
 export const register = asyncHandler(async (req, res) => {
   const {
     fullName,
@@ -35,8 +37,6 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
 
   const { email, password } = req.body;
-
-  const { sign } = Jwt
 
   const user = await User.findOne({ email }).select('+password');
 
@@ -134,7 +134,6 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const refresh = asyncHandler(async (req, res) => {
-  const { sign, verify } = Jwt;
 
   const { refreshToken } = req.cookies;
   if (!refreshToken) return res.status(401).json({ message: "No refresh token" });

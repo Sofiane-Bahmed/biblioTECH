@@ -8,11 +8,13 @@ import {
     getBorrowById,
     getOverdueBorrows,
     getPendingBorrows,
-    getUserBorrowingHistory
+    getUserBorrowingHistory,
+    rejectBorrowRequest
 } from "../../controllers/admin/borrow.js"
 import { validate } from "../../middlewares/validate.js";
 import {
     approveBorrowRequestSchema,
+    rejectBorrowRequestSchema,
     getActiveBorrowsSchema,
     getPendingBorrowsSchema,
     deleteBorrowByIdSchema,
@@ -27,6 +29,7 @@ adminBorrowRouter.get("/pending", validate(getPendingBorrowsSchema), getPendingB
 adminBorrowRouter.get("/active", validate(getActiveBorrowsSchema), getActiveBorrows);
 adminBorrowRouter.get("/overdue", getOverdueBorrows);
 adminBorrowRouter.patch("/:id/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
+adminBorrowRouter.patch("/:id/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
 adminBorrowRouter.get("/:id/history", validate(getUserBorrowingHistorySchema), getUserBorrowingHistory);
 adminBorrowRouter.get("/:id", validate(getBorrowByIdSchema), getBorrowById);
 adminBorrowRouter.delete("/:id", validate(deleteBorrowByIdSchema), deleteBorrowById);

@@ -75,6 +75,31 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
   }
 });
 
+export const rejectBorrowRequest = asyncHandler(async (req, res) => {
+  const { id: borrowId } = req.params;
+
+  const borrowRequest = await BorrowBook.findById(borrowId);
+  
+  if (!borrowRequest) {
+    return res.status(404).json({ message: "Borrow request not found." });
+  }
+
+  if (borrowRequest.status !== "PENDING") {
+    return res.status(400).json({ 
+      message: `Cannot reject this request. It is already marked as ${borrowRequest.status}.` 
+    });
+  }
+
+  borrowRequest.status = "REJECTED";
+  
+  await borrowRequest.save();
+
+  return res.status(200).json({
+    message: "Borrow request has been rejected successfully.",
+    borrow: borrowRequest
+  });
+});
+
 export const getAllBorrows = asyncHandler(async (req, res) => {
 
   const result = await getPaginatedData({

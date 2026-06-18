@@ -6,15 +6,14 @@ import { User } from "../models/user.js";
 const { verify } = Jwt;
 
 export const authenticate = asyncHandler(async (req, res, next) => {
+    console.log(req.headers.cookie)
     const token = req.cookies.accessToken;
-
     if (!token) {
         return res.status(401).json({ message: "Access token missing. Authentication required." });
     }
 
     try {
         const decoded = verify(token, process.env.JWT_ACCESS_SECRET);
-
         const liveUser = await User.findById(decoded._id);
 
         if (!liveUser) {
