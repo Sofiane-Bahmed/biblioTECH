@@ -79,19 +79,19 @@ export const rejectBorrowRequest = asyncHandler(async (req, res) => {
   const { id: borrowId } = req.params;
 
   const borrowRequest = await BorrowBook.findById(borrowId);
-  
+
   if (!borrowRequest) {
     return res.status(404).json({ message: "Borrow request not found." });
   }
 
   if (borrowRequest.status !== "PENDING") {
-    return res.status(400).json({ 
-      message: `Cannot reject this request. It is already marked as ${borrowRequest.status}.` 
+    return res.status(400).json({
+      message: `Cannot reject this request. It is already marked as ${borrowRequest.status}.`
     });
   }
 
   borrowRequest.status = "REJECTED";
-  
+
   await borrowRequest.save();
 
   return res.status(200).json({
@@ -120,10 +120,10 @@ export const getAllBorrows = asyncHandler(async (req, res) => {
 });
 
 export const getBorrowById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id: borrowId } = req.params;
 
   const borrow = await BorrowBook
-    .findById(id)
+    .findById(borrowId)
     .populate('user', 'fullName email')
     .populate('book', 'title author');
 
@@ -170,6 +170,24 @@ export const getActiveBorrows = asyncHandler(async (req, res) => {
 
 });
 
+export const getRejectedBorrows = asyncHandler(async (req, res) => {
+
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    req,
+    query: { status: "REJECTED" },
+    populate: [
+      { path: 'user', select: 'fullName email' },
+      { path: 'book', select: 'title author' }
+    ]
+  });
+
+  if (!result.data.length) {
+    return res.status(200).json({ message: "No rejected borrows found", data: [] });
+  }
+  res.status(200).json(result);
+});
+
 export const getOverdueBorrows = asyncHandler(async (req, res) => {
 
   const overdueBorrows = await BorrowBook
@@ -188,9 +206,9 @@ export const getOverdueBorrows = asyncHandler(async (req, res) => {
 });
 
 export const deleteBorrowById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id: borrowId } = req.params;
 
-  const borrow = await BorrowBook.findByIdAndDelete(id);
+  const borrow = await BorrowBook.findByIdAndDelete(borrowId);
   if (!borrow) {
     return res.status(404).json({ message: "Borrow record not found" });
   }
@@ -198,12 +216,12 @@ export const deleteBorrowById = asyncHandler(async (req, res) => {
 });
 
 export const getUserBorrowingHistory = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id: userId } = req.params;
 
   const result = await getPaginatedData({
     model: BorrowBook,
     req,
-    query: { user: id },
+    query: { user: userId },
     populate: [
       { path: "user", select: "fullName email" },
       { path: "book", select: "title author" }

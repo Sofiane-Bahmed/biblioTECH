@@ -8,6 +8,7 @@ import {
     getBorrowById,
     getOverdueBorrows,
     getPendingBorrows,
+    getRejectedBorrows,
     getUserBorrowingHistory,
     rejectBorrowRequest
 } from "../../controllers/admin/borrow.js"
@@ -19,7 +20,8 @@ import {
     getPendingBorrowsSchema,
     deleteBorrowByIdSchema,
     getBorrowByIdSchema,
-    getUserBorrowingHistorySchema
+    getUserBorrowingHistorySchema,
+    getRejectedBorrowsSchema
 } from "../../validations/admin-borrow-schema.js";
 
 export const adminBorrowRouter = express.Router();
@@ -27,6 +29,7 @@ export const adminBorrowRouter = express.Router();
 adminBorrowRouter.get("/", getAllBorrows);
 adminBorrowRouter.get("/pending", validate(getPendingBorrowsSchema), getPendingBorrows);
 adminBorrowRouter.get("/active", validate(getActiveBorrowsSchema), getActiveBorrows);
+adminBorrowRouter.get("/rejected", validate(getRejectedBorrowsSchema), getRejectedBorrows);
 adminBorrowRouter.get("/overdue", getOverdueBorrows);
 adminBorrowRouter.patch("/:id/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
 adminBorrowRouter.patch("/:id/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
