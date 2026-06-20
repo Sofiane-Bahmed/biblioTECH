@@ -158,8 +158,14 @@ export const returnBook = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Borrow record or associated book not found." });
   }
 
-  if (borrow.return_date) {
+  if (borrow.status === "RETURNED" || borrow.return_date) {
     return res.status(400).json({ message: "This book has already been returned." });
+  }
+
+  if (borrow.status !== "ACTIVE") {
+    return res.status(400).json({
+      message: `Cannot process return. Current log track status is marked as: ${borrow.status}`
+    });
   }
 
   const book = borrow.book;
@@ -175,7 +181,12 @@ export const returnBook = asyncHandler(async (req, res) => {
     // Acknowledge Return Status
     await BorrowBook.findByIdAndUpdate(
       borrowId,
-      { $set: { return_date: currentDate } },
+      {
+        $set: {
+          status: "RETURNED",
+          return_date: currentDate
+        }
+      },
       { session });
 
     // Restock Inventory safely
