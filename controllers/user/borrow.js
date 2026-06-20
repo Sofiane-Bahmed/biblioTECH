@@ -268,6 +268,12 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Active borrow record or associated book not found." });
   }
 
+  if (borrow.status !== "ACTIVE") {
+    return res.status(400).json({
+      message: `Cannot renew book. Current log track status is marked as: ${borrow.status}`
+    });
+  }
+
   if (borrow.renewed) {
     return res
       .status(400)
@@ -286,6 +292,7 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
 
   borrow.due_date = newDueDate;
   borrow.renewed = true;
+
   await borrow.save();
 
   return res.status(200).json({
