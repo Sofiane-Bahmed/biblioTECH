@@ -9,6 +9,7 @@ import {
     getOverdueBorrows,
     getPendingBorrows,
     getRejectedBorrows,
+    getReturnedBorrows,
     getUserBorrowingHistory,
     rejectBorrowRequest
 } from "../../controllers/admin/borrow.js"
@@ -21,19 +22,24 @@ import {
     deleteBorrowByIdSchema,
     getBorrowByIdSchema,
     getUserBorrowingHistorySchema,
-    getRejectedBorrowsSchema
+    getRejectedBorrowsSchema,
+    getReturnedBorrowsSchema
 } from "../../validations/admin-borrow-schema.js";
 
 export const adminBorrowRouter = express.Router();
 
 adminBorrowRouter.get("/", getAllBorrows);
+
 adminBorrowRouter.get("/pending", validate(getPendingBorrowsSchema), getPendingBorrows);
 adminBorrowRouter.get("/active", validate(getActiveBorrowsSchema), getActiveBorrows);
 adminBorrowRouter.get("/rejected", validate(getRejectedBorrowsSchema), getRejectedBorrows);
+adminBorrowRouter.get("/returned", validate(getReturnedBorrowsSchema), getReturnedBorrows);
 adminBorrowRouter.get("/overdue", getOverdueBorrows);
+
 adminBorrowRouter.patch("/:id/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
 adminBorrowRouter.patch("/:id/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
 adminBorrowRouter.get("/:id/history", validate(getUserBorrowingHistorySchema), getUserBorrowingHistory);
+
 adminBorrowRouter.get("/:id", validate(getBorrowByIdSchema), getBorrowById);
 adminBorrowRouter.delete("/:id", validate(deleteBorrowByIdSchema), deleteBorrowById);
 

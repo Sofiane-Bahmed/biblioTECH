@@ -188,6 +188,27 @@ export const getRejectedBorrows = asyncHandler(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const getReturnedBorrows = asyncHandler(async (req, res) => {
+
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    req,
+    query: {
+      status: "RETURNED",
+      return_date: { $exists: true },
+    },
+    populate: [
+      { path: 'user', select: 'fullName email' },
+      { path: 'book', select: 'title author' }
+    ]
+  });
+
+  if (!result.data.length) {
+    return res.status(200).json({ message: "No returned borrows found", data: [] });
+  }
+  res.status(200).json(result);
+});
+
 export const getOverdueBorrows = asyncHandler(async (req, res) => {
 
   const overdueBorrows = await BorrowBook
