@@ -24,7 +24,7 @@ export const checkBorrowEligibility = async (userId, bookId) => {
     const activeBorrow = await BorrowBook.findOne({
         user: userId,
         book: bookId,
-        return_date: null
+        status: "ACTIVE"
     });
 
     if (activeBorrow) {

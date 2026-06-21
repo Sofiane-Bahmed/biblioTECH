@@ -7,7 +7,7 @@ import { sendPasswordResetEmail } from "../utils/email-service/reset-password.js
 
 import asyncHandler from "../utils/async-handler.js";
 
-  const { sign, verify } = Jwt;
+const { sign, verify } = Jwt;
 
 export const register = asyncHandler(async (req, res) => {
   const {
@@ -174,7 +174,10 @@ export const refresh = asyncHandler(async (req, res) => {
     { expiresIn: '7d' }
   )
 
-  await User.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
+  await User.findByIdAndUpdate(
+    user._id,
+    { refreshToken: newRefreshToken }
+  );
 
   const cookieOptions = {
     httpOnly: true,
