@@ -1,24 +1,27 @@
 import { User } from "../../models/user.js"
 import { BorrowBook } from "../../models/borrow.js"
 
+import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
 
 export const getMyBorrowingHistory = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const borrows = await BorrowBook.find({ user: userId })
-    .populate("book", "title author")
-    .select("-__v")
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    query: {
+      user: userId,
+      status: { $in: ["ACTIVE", "RETURNED", "REJECTED"] }
+    },
+    populate: [{ path: "book", select: "title author" }],
+    req
+  })
 
-  if (!borrows.length) {
+  if (!result.data.length) {
     return res.status(200).json({ message: "No borrowing history found", borrows: [] });
   }
 
-  res.status(200)
-    .json({
-      message: "Borrowing history retrieved successfully",
-      borrows
-    });
+  res.status(200).json(result);
 
 });
 
@@ -48,24 +51,24 @@ export const getMyActiveBorrows = asyncHandler(async (req, res) => {
 export const getMyPendingBorrows = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const pendingBorrows = await BorrowBook.find({
-    user: userId,
-    status: "PENDING"
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    query: {
+      user: userId,
+      status: "PENDING"
+    },
+    populate: [{ path: "book", select: "title author " }],
+    req
   })
-    .populate("book", "title author")
-    .select("-__v");
 
-  if (!pendingBorrows.length) {
+  if (!result.data.length) {
     return res.status(200).json({
       message: "No pending borrowed books found",
       books: []
     });
   }
 
-  return res.status(200).json({
-    message: "Current pending borrowed books retrieved successfully",
-    books: pendingBorrows
-  });
+  return res.status(200).json(result);
 });
 
 export const getMyRejectedBorrows = asyncHandler(async (req, res) => {

@@ -10,6 +10,7 @@ export const checkBorrowEligibility = async (userId, bookId) => {
 
     const monthlyCount = await BorrowBook.countDocuments({
         user: userId,
+        status: { $in: ["ACTIVE", "RETURNED"] },
         borrow_date: { $gte: firstDay, $lte: lastDay },
     });
 
@@ -19,6 +20,20 @@ export const checkBorrowEligibility = async (userId, bookId) => {
             code: 400,
             message: "You have already reached your limit of 3 borrowed books this month."
         };
+    }
+
+    const pendingCount = await BorrowBook.countDocuments({
+        user: userId,
+        status: "PENDING",
+        request_date: { $gte: firstDay, $lte: lastDay }
+    })
+
+    if (pendingCount >= 5) {
+        return {
+            status: false,
+            code: 400,
+            message: "You have already reached your quota of 5 pending borrow requests for this month."
+        }
     }
 
     const activeBorrow = await BorrowBook.findOne({
@@ -35,45 +50,8 @@ export const checkBorrowEligibility = async (userId, bookId) => {
         };
     }
 
+
+
     return { status: true };
 };
-
-// export const createBorrowRequest = async (userId, bookId) => {
-
-//     const eligibility = await checkBorrowEligibility(userId, bookId);
-//     if (!eligibility.status) return eligibility;
-
-//     const existingRequest = await BorrowBook.findOne(
-//         {
-//             user: userId,
-//             book: bookId,
-//             status: 'PENDING'
-//         });
-//     if (existingRequest) {
-//         return {
-//             status: false,
-//             code: 400,
-//             message: "You already have a pending request for this book."
-//         };
-//     }
-
-//     const book = await Book.findById(bookId);
-//     if (book.availableCopies <= 0) {
-//         return {
-//             status: false,
-//             code: 400,
-//             message: "This book is currently out of stock."
-//         };
-//     }
-
-//     const newRequest = await BorrowBook.create({
-//         user: userId,
-//         book: bookId,
-//         status: 'PENDING'
-//     });
-//     return {
-//         status: true,
-//         data: newRequest
-//     };
-// };
 
