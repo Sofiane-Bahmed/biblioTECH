@@ -13,6 +13,13 @@ export const getMyActiveBorrows = asyncHandler(async (req, res) => {
     .populate("book", "title author")
     .select("-__v");
 
+  if (activeBorrows.length === 0) {
+    return res.status(200).json({
+      message: "No active borrowed books found",
+      books: []
+    });
+  }
+
   return res.status(200).json({
     message: "Current active borrowed books retrieved successfully",
     books: activeBorrows
@@ -29,13 +36,41 @@ export const getMyPendingBorrows = asyncHandler(async (req, res) => {
     .populate("book", "title author")
     .select("-__v");
 
+  if (pendingBorrows.length === 0) {
+    return res.status(200).json({
+      message: "No pending borrowed books found",
+      books: []
+    });
+  }
+
   return res.status(200).json({
     message: "Current pending borrowed books retrieved successfully",
     books: pendingBorrows
   });
 });
 
+export const getMyRejectedBorrows = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
+  const rejectedBorrows = await BorrowBook.find({
+    user: userId,
+    status: "REJECTED"
+  })
+    .populate("book", "title author")
+    .select("-__v");
+
+  if (rejectedBorrows.length === 0) {
+    return res.status(200).json({
+      message: "No rejected borrowed books found",
+      books: []
+    });
+  }
+
+  return res.status(200).json({
+    message: "Current rejected borrowed books retrieved successfully",
+    books: rejectedBorrows
+  });
+});
 
 export const updateProfile = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
