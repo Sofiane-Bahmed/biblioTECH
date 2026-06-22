@@ -1,0 +1,17 @@
+$kind: http-request
+name: Update Comment
+method: PUT
+url: '{{baseUrl}}/user/comments/{{commentId}}'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "content": "Updated comment",
+      "rating": 4
+    }

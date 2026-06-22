@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Borrowing History
+method: GET
+url: '{{baseUrl}}/user/borrows/history'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

@@ -1,0 +1,8 @@
+$kind: http-request
+name: Delete Comment
+method: DELETE
+url: '{{baseUrl}}/user/comments/{{commentId}}'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

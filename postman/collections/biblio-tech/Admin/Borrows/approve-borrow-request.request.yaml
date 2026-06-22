@@ -1,0 +1,8 @@
+$kind: http-request
+name: Approve Borrow Request
+method: PATCH
+url: '{{baseUrl}}/admin/borrows/{{borrowId}}/approve'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

@@ -1,0 +1,16 @@
+$kind: http-request
+name: Reject Borrow Request
+method: PATCH
+url: '{{baseUrl}}/admin/borrows/{{borrowId}}/reject'
+order: 8000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Book not available"
+    }

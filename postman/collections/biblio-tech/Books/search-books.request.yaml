@@ -1,0 +1,8 @@
+$kind: http-request
+name: Search Books
+method: GET
+url: '{{baseUrl}}/books/search'
+order: 2000
+queryParams:
+  - key: q
+    value: harry potter

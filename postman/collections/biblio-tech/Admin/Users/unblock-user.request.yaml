@@ -1,0 +1,8 @@
+$kind: http-request
+name: Unblock User
+method: PUT
+url: '{{baseUrl}}/admin/users/{{userId}}/unblock'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

@@ -1,0 +1,8 @@
+$kind: http-request
+name: Request Borrow
+method: POST
+url: '{{baseUrl}}/user/borrows/{{borrowId}}/request-borrow'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

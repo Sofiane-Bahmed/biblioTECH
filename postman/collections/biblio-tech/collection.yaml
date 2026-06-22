@@ -1,0 +1,6 @@
+$kind: collection
+name: biblio-tech
+variables:
+  - key: baseUrl
+    value: 'http://localhost:8080/api'
+    enabled: true

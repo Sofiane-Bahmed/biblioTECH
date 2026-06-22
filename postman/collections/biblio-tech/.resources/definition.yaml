@@ -1,0 +1,11 @@
+$kind: collection
+name: biblio-tech
+variables:
+  baseUrl: http://localhost:8080/api
+  accessToken: ""
+  bookId: 6a3399bc2d5bf7a75b0692ea
+  borrowId: 6a3399bc2d5bf7a75b0692ee
+  commentId: ""
+  categoryId: ""
+  userId: ""
+  resetToken: ""

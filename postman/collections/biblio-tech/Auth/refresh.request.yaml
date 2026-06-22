@@ -1,0 +1,5 @@
+$kind: http-request
+name: Refresh
+method: POST
+url: '{{baseUrl}}/auth/refresh'
+order: 3000

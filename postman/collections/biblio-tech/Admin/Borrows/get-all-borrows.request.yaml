@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get All Borrows
+method: GET
+url: '{{baseUrl}}/admin/borrows'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Library Statistics
+method: GET
+url: '{{baseUrl}}/admin/stats'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

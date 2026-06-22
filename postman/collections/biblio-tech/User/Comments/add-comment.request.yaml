@@ -1,0 +1,17 @@
+$kind: http-request
+name: Add Comment
+method: POST
+url: '{{baseUrl}}/user/comments/book/{{bookId}}'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "content": "Great book!",
+      "rating": 5
+    }

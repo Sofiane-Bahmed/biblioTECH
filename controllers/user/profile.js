@@ -1,8 +1,24 @@
 import { User } from "../../models/user.js"
+import { BorrowBook } from "../../models/borrow.js"
 
 import asyncHandler from "../../utils/async-handler.js";
 
-// Update profile
+export const getMyActiveBorrows = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const activeBorrows = await BorrowBook.find({
+    user: userId,
+    status: "ACTIVE"
+  })
+    .populate("book", "title author")
+    .select("-__v");
+
+  return res.status(200).json({
+    message: "Current active borrowed books retrieved successfully",
+    books: activeBorrows
+  });
+});
+
 export const updateProfile = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
 

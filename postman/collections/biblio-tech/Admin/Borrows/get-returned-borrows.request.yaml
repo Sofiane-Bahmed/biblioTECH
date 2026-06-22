@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Returned Borrows
+method: GET
+url: '{{baseUrl}}/admin/borrows/returned'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

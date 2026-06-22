@@ -1,0 +1,8 @@
+$kind: http-request
+name: Return Book
+method: PATCH
+url: '{{baseUrl}}/user/borrows/{{borrowId}}/return'
+order: 3000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

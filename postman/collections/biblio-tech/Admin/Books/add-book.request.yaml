@@ -1,0 +1,21 @@
+$kind: http-request
+name: Add Book
+method: POST
+url: '{{baseUrl}}/admin/books'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Book Title",
+      "author": "Author Name",
+      "isbn": "978-3-16-148410-0",
+      "categoryId": "{{categoryId}}",
+      "description": "Book description",
+      "totalCopies": 5
+    }

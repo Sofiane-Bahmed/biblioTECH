@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Rejected Borrows
+method: GET
+url: '{{baseUrl}}/admin/borrows/rejected'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'

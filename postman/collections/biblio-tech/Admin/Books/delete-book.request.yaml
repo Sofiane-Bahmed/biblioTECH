@@ -1,0 +1,8 @@
+$kind: http-request
+name: Delete Book
+method: DELETE
+url: '{{baseUrl}}/admin/books/{{bookId}}'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
