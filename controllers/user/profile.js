@@ -13,7 +13,10 @@ export const getMyBorrowingHistory = asyncHandler(async (req, res) => {
       user: userId,
       status: { $in: ["ACTIVE", "RETURNED", "REJECTED"] }
     },
-    populate: [{ path: "book", select: "title author" }],
+    populate: [{
+      path: "book",
+      select: "title author"
+    }],
     req
   })
 
@@ -57,7 +60,10 @@ export const getMyPendingBorrows = asyncHandler(async (req, res) => {
       user: userId,
       status: "PENDING"
     },
-    populate: [{ path: "book", select: "title author " }],
+    populate: [{
+      path: "book",
+      select: "title author"
+    }],
     req
   })
 

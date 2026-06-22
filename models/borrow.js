@@ -14,7 +14,7 @@ const borrowBookSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'ACTIVE', 'REJECTED', 'RETURNED'],
+      enum: ['PENDING', 'ACTIVE', 'REJECTED', 'RETURNED',"CANCELED"],
       default: 'PENDING'
     },
     request_date: {

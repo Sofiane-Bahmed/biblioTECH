@@ -54,6 +54,36 @@ export const requestBorrow = asyncHandler(async (req, res) => {
   });
 });
 
+export const cancelBorrowRequest = asyncHandler(async (req, res) => {
+
+  const { id: borrowId } = req.params;
+
+  const userId = req.user._id;
+
+  const borrowRequest = await BorrowBook.findOne({
+    _id: borrowId,
+    user: userId,
+  })
+
+  if (!borrowRequest) {
+    return res.status(404).json({ message: "borrow not found" })
+  }
+
+  if (borrowRequest.status !== "PENDING") {
+    return res.status(400).json({
+      message: `Cannot cancel this request. It has already been processed as ${borrowRequest.status}.`
+    });
+  }
+
+  borrowRequest.status = "CANCELED"
+  await borrowRequest.save();
+
+  return res.status(200).json({
+    message: "Your borrow request has been cancelled successfully.",
+    borrow: borrowRequest
+  });
+});
+
 export const returnBook = asyncHandler(async (req, res) => {
 
   const { id: borrowId } = req.params;

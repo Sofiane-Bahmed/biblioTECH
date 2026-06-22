@@ -17,6 +17,15 @@ export const requestBorrowSchema = z.object({
     }),
 });
 
+export const cancelBorrowRequestSchema = z.object({
+    params: z.object({
+        id: z.string()
+            .min(1, "borrow ID is required")
+            .max(24, "borrow ID must be 24 characters")
+            .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
+    }),
+});
+
 export const returnBookSchema = z.object({
     params: z.object({
         id: z
