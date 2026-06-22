@@ -2,6 +2,7 @@ import express from "express";
 
 import {
     getMyActiveBorrows,
+    getMyOverdueBorrows,
     getMyPendingBorrows,
     getMyProfile,
     getMyRejectedBorrows,
@@ -17,5 +18,7 @@ profileRouter.get("/me/borrows/active", getMyActiveBorrows);
 profileRouter.get("/me/borrows/pending", getMyPendingBorrows);
 profileRouter.get("/me/borrows/rejected", getMyRejectedBorrows);
 profileRouter.get("/me/borrows/returned", getMyReturnedBorrows);
+profileRouter.get("/me/borrows/overdue", getMyOverdueBorrows);
+
 profileRouter.get("/me", getMyProfile);
-profileRouter.put("/me", validate(updateProfileSchema), updateProfile);
+profileRouter.put("/me/update-me", validate(updateProfileSchema), updateProfile);
