@@ -13,7 +13,7 @@ export const getMyActiveBorrows = asyncHandler(async (req, res) => {
     .populate("book", "title author")
     .select("-__v");
 
-  if (activeBorrows.length === 0) {
+  if (!activeBorrows.length) {
     return res.status(200).json({
       message: "No active borrowed books found",
       books: []
@@ -36,7 +36,7 @@ export const getMyPendingBorrows = asyncHandler(async (req, res) => {
     .populate("book", "title author")
     .select("-__v");
 
-  if (pendingBorrows.length === 0) {
+  if (!pendingBorrows.length) {
     return res.status(200).json({
       message: "No pending borrowed books found",
       books: []
@@ -59,7 +59,7 @@ export const getMyRejectedBorrows = asyncHandler(async (req, res) => {
     .populate("book", "title author")
     .select("-__v");
 
-  if (rejectedBorrows.length === 0) {
+  if (!rejectedBorrows.length) {
     return res.status(200).json({
       message: "No rejected borrowed books found",
       books: []
@@ -82,7 +82,7 @@ export const getMyReturnedBorrows = asyncHandler(async (req, res) => {
     .populate("book", "title author")
     .select("-__v");
 
-  if (returnedBorrows.length === 0) {
+  if (!returnedBorrows.length) {
     return res.status(200).json({
       message: "No returned borrowed books found",
       books: []
@@ -92,6 +92,30 @@ export const getMyReturnedBorrows = asyncHandler(async (req, res) => {
   return res.status(200).json({
     message: "Current returned borrowed books retrieved successfully",
     books: returnedBorrows
+  });
+});
+
+export const getMyOverdueBorrows = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const overdueBorrows = await BorrowBook.find({
+    user: userId,
+    return_date: { $exists: false },
+    due_date: { $lt: new Date() }
+  })
+    .populate("book", "title author")
+    .select("-__v");
+
+  if (!overdueBorrows.length) {
+    return res.status(200).json({
+      message: "No overdue borrowed books found",
+      books: []
+    });
+  }
+
+  return res.status(200).json({
+    message: "Current overdue borrowed books retrieved successfully",
+    books: overdueBorrows
   });
 });
 
