@@ -3,6 +3,25 @@ import { BorrowBook } from "../../models/borrow.js"
 
 import asyncHandler from "../../utils/async-handler.js";
 
+export const getMyBorrowingHistory = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const borrows = await BorrowBook.find({ user: userId })
+    .populate("book", "title author")
+    .select("-__v")
+
+  if (!borrows.length) {
+    return res.status(200).json({ message: "No borrowing history found", borrows: [] });
+  }
+
+  res.status(200)
+    .json({
+      message: "Borrowing history retrieved successfully",
+      borrows
+    });
+
+});
+
 export const getMyActiveBorrows = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 

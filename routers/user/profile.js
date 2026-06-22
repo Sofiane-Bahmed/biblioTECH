@@ -2,6 +2,7 @@ import express from "express";
 
 import {
     getMyActiveBorrows,
+    getMyBorrowingHistory,
     getMyOverdueBorrows,
     getMyPendingBorrows,
     getMyProfile,
@@ -14,6 +15,7 @@ import { updateProfileSchema } from "../../validations/profile-schema.js";
 
 export const profileRouter = express.Router();
 
+profileRouter.get("/me/borrows/history", getMyBorrowingHistory);
 profileRouter.get("/me/borrows/active", getMyActiveBorrows);
 profileRouter.get("/me/borrows/pending", getMyPendingBorrows);
 profileRouter.get("/me/borrows/rejected", getMyRejectedBorrows);
