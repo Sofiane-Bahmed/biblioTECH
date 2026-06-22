@@ -74,47 +74,53 @@ export const getMyPendingBorrows = asyncHandler(async (req, res) => {
 export const getMyRejectedBorrows = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const rejectedBorrows = await BorrowBook.find({
-    user: userId,
-    status: "REJECTED"
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    query: {
+      user: userId,
+      status: "REJECTED"
+    },
+    populate: [{
+      path: "book",
+      select: "title author"
+    }],
+    req
   })
-    .populate("book", "title author")
-    .select("-__v");
 
-  if (!rejectedBorrows.length) {
+  if (!result.data.length) {
     return res.status(200).json({
       message: "No rejected borrowed books found",
       books: []
     });
   }
 
-  return res.status(200).json({
-    message: "Current rejected borrowed books retrieved successfully",
-    books: rejectedBorrows
-  });
+  return res.status(200).json(result);
 });
 
 export const getMyReturnedBorrows = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const returnedBorrows = await BorrowBook.find({
-    user: userId,
-    status: "RETURNED"
-  })
-    .populate("book", "title author")
-    .select("-__v");
+  const result = await getPaginatedData({
+    model: BorrowBook,
+    query: {
+      user: userId,
+      status: "RETURNED"
+    },
+    populate: [{
+      path: "book",
+      select: "title author"
+    }],
+    req
+  });
 
-  if (!returnedBorrows.length) {
+  if (!result.data.length) {
     return res.status(200).json({
       message: "No returned borrowed books found",
       books: []
     });
   }
 
-  return res.status(200).json({
-    message: "Current returned borrowed books retrieved successfully",
-    books: returnedBorrows
-  });
+  return res.status(200).json(result);
 });
 
 export const getMyOverdueBorrows = asyncHandler(async (req, res) => {

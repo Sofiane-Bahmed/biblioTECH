@@ -188,30 +188,5 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
   });
 });
 
-export const getBorrowingHistory = asyncHandler(async (req, res) => {
-
-  const userId = req.user._id;
-
-  const result = await getPaginatedData({
-    model: BorrowBook,
-    query: { user: userId },
-    req,
-    populate: [{
-      path: "book",
-      select: "title author"
-    }]
-  })
-
-  if (!result.data.length) {
-    return res.status(200).json({
-      message: "No borrowing history found",
-      history: []
-    });
-  }
-
-  res.status(200).json(result);
-
-});
-
 
 
