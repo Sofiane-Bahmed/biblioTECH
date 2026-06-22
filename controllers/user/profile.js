@@ -72,6 +72,29 @@ export const getMyRejectedBorrows = asyncHandler(async (req, res) => {
   });
 });
 
+export const getMyReturnedBorrows = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const returnedBorrows = await BorrowBook.find({
+    user: userId,
+    status: "RETURNED"
+  })
+    .populate("book", "title author")
+    .select("-__v");
+
+  if (returnedBorrows.length === 0) {
+    return res.status(200).json({
+      message: "No returned borrowed books found",
+      books: []
+    });
+  }
+
+  return res.status(200).json({
+    message: "Current returned borrowed books retrieved successfully",
+    books: returnedBorrows
+  });
+});
+
 export const updateProfile = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
 
