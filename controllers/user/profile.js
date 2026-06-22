@@ -19,6 +19,24 @@ export const getMyActiveBorrows = asyncHandler(async (req, res) => {
   });
 });
 
+export const getMyPendingBorrows = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const pendingBorrows = await BorrowBook.find({
+    user: userId,
+    status: "PENDING"
+  })
+    .populate("book", "title author")
+    .select("-__v");
+
+  return res.status(200).json({
+    message: "Current pending borrowed books retrieved successfully",
+    books: pendingBorrows
+  });
+});
+
+
+
 export const updateProfile = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
 
