@@ -170,7 +170,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
 });
 
-// Get my profile
 export const getMyProfile = asyncHandler(async (req, res) => {
 
   res.status(200).json(req.user);

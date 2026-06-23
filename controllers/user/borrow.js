@@ -8,12 +8,19 @@ import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
 
-import { checkBorrowEligibility } from "../../services/borrow-service.js";
+import {
+  checkBorrowEligibility,
+  checkCancellationEligibility
+} from "../../services/borrow-service.js";
 import { calculateLatePenalty } from "../../services/penalty-service.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 
-const { BORROW_PERIOD_DAYS, RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
+const {
+  BORROW_PERIOD_DAYS,
+  RENEWAL_DAYS_EXTENSION,
+  CANCEL_BORROWS_PER_MONTH
+} = BORROWING_RULES;
 
 export const requestBorrow = asyncHandler(async (req, res) => {
 
@@ -62,11 +69,10 @@ export const cancelBorrowRequest = asyncHandler(async (req, res) => {
 
   const borrowRequest = await BorrowBook.findOne({
     _id: borrowId,
-    user: userId,
-  })
-
+    user: userId
+  });
   if (!borrowRequest) {
-    return res.status(404).json({ message: "borrow not found" })
+    return res.status(404).json({ message: "Borrow request not found." });
   }
 
   if (borrowRequest.status !== "PENDING") {
@@ -75,13 +81,19 @@ export const cancelBorrowRequest = asyncHandler(async (req, res) => {
     });
   }
 
-  borrowRequest.status = "CANCELED"
+  const eligibility = await checkCancellationEligibility(userId);
+  if (!eligibility.status) {
+    return res.status(eligibility.code).json({ message: eligibility.message });
+  }
+
+  borrowRequest.status = "CANCELED";
   await borrowRequest.save();
 
   return res.status(200).json({
     message: "Your borrow request has been cancelled successfully.",
     borrow: borrowRequest
   });
+  
 });
 
 export const returnBook = asyncHandler(async (req, res) => {
