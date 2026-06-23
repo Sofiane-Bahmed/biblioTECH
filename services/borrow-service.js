@@ -1,6 +1,10 @@
 import { BorrowBook } from "../models/borrow.js";
 import { Book } from "../models/book.js";
 
+import { BORROWING_RULES } from "../constants/library-rules.js";
+
+const { BORROWS_PER_MONTH, PENDING_BORROWS_PER_MONTH } = BORROWING_RULES
+
 export const checkBorrowEligibility = async (userId, bookId) => {
 
     // Calculate clean month limits
@@ -14,7 +18,7 @@ export const checkBorrowEligibility = async (userId, bookId) => {
         borrow_date: { $gte: firstDay, $lte: lastDay },
     });
 
-    if (monthlyCount >= 3) {
+    if (monthlyCount >= BORROWS_PER_MONTH) {
         return {
             status: false,
             code: 400,
@@ -28,7 +32,7 @@ export const checkBorrowEligibility = async (userId, bookId) => {
         request_date: { $gte: firstDay, $lte: lastDay }
     })
 
-    if (pendingCount >= 5) {
+    if (pendingCount >= PENDING_BORROWS_PER_MONTH) {
         return {
             status: false,
             code: 400,
@@ -49,8 +53,6 @@ export const checkBorrowEligibility = async (userId, bookId) => {
             message: "You are currently borrowing an unreturned copy of this book."
         };
     }
-
-
 
     return { status: true };
 };

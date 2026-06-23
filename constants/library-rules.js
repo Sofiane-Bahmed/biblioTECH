@@ -14,4 +14,6 @@ export const PENALTY_RULES = Object.freeze({
 export const BORROWING_RULES = Object.freeze({
     BORROW_PERIOD_DAYS: 7,
     RENEWAL_DAYS_EXTENSION: 7,
+    BORROWS_PER_MONTH: 3,
+    PENDING_BORROWS_PER_MONTH: 5,
 });
