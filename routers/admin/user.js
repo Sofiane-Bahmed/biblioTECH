@@ -20,7 +20,7 @@ import {
 
 export const adminUserRouter = express.Router();
 
-adminUserRouter.get("/getAll", validate(getAllUsersSchema), getAllUsers);
+adminUserRouter.get("/get-all", validate(getAllUsersSchema), getAllUsers);
 adminUserRouter.put("/:id/role", validate(updateUserRoleSchema), updateUserRole);
 adminUserRouter.put("/:id/block", validate(blockUserSchema), blockUser);
 adminUserRouter.put("/:id/unblock", validate(unblockUserSchema), unblockUser);

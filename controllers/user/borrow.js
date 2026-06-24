@@ -16,11 +16,7 @@ import { calculateLatePenalty } from "../../services/penalty-service.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 
-const {
-  BORROW_PERIOD_DAYS,
-  RENEWAL_DAYS_EXTENSION,
-  CANCEL_BORROWS_PER_MONTH
-} = BORROWING_RULES;
+const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
 export const requestBorrow = asyncHandler(async (req, res) => {
 
@@ -93,7 +89,7 @@ export const cancelBorrowRequest = asyncHandler(async (req, res) => {
     message: "Your borrow request has been cancelled successfully.",
     borrow: borrowRequest
   });
-  
+
 });
 
 export const returnBook = asyncHandler(async (req, res) => {
