@@ -18,8 +18,9 @@ export const getMyBorrowsQuerySchema = z.object({
             .coerce
             .number()
             .int()
-            .min(1).
-            default(1),
+            .min(1)
+            .default(1),
+
         limit: z
             .coerce
             .number()
@@ -27,21 +28,19 @@ export const getMyBorrowsQuerySchema = z.object({
             .min(1)
             .max(50)
             .default(10),
+
         status: z
             .string()
-            .toUpperCase() // Automatically handles lowercase/uppercase inputs gracefully
             .optional()
+            // Use native Zod transform to safely convert to uppercase if val exists
+            .transform((val) => val?.toUpperCase())
             .pipe(
-                z.enum([
-                    "PENDING",
-                    "ACTIVE",
-                    "REJECTED",
-                    "RETURNED",
-                    "CANCELED"
-                ])),
+                z.enum(["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"]).optional()
+            ),
+
         overdue: z
             .string()
             .optional()
-            .transform((val) => val === "true") // Casts string "true" directly into a Boolean
+            .transform((val) => val === "true")
     })
 });
