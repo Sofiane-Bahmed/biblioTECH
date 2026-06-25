@@ -100,15 +100,28 @@ export const rejectBorrowRequest = asyncHandler(async (req, res) => {
   });
 });
 
-export const getAllBorrows = asyncHandler(async (req, res) => {
+export const getBorrows = asyncHandler(async (req, res) => {
+  const { status, overdue } = req.query;
+
+  const dbQuery = {};
+
+  if (status) {
+    dbQuery.status = status
+  }
+
+  if (overdue) {
+    dbQuery.status = "ACTIVE";
+    dbQuery.due_date = { $lt: new Date() };
+  }
 
   const result = await getPaginatedData({
     model: BorrowBook,
-    req,
+    query: dbQuery,
     populate: [
       { path: 'user', select: 'fullName email' },
       { path: 'book', select: 'title author' }
     ],
+    req,
   });
 
   if (!result.data.length) {
@@ -131,99 +144,6 @@ export const getBorrowById = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Borrow record not found" });
   }
   res.status(200).json({ data: borrow });
-});
-
-export const getPendingBorrows = asyncHandler(async (req, res) => {
-
-  const result = await getPaginatedData({
-    model: BorrowBook,
-    req,
-    query: { status: "PENDING" },
-    populate: [
-      { path: 'user', select: 'fullName email' },
-      { path: 'book', select: 'title author' }
-    ]
-  });
-
-  if (!result.data.length) {
-    return res.status(200).json({ message: "No pending borrows found", data: [] });
-  }
-  res.status(200).json(result);
-});
-
-export const getActiveBorrows = asyncHandler(async (req, res) => {
-
-  const result = await getPaginatedData({
-    model: BorrowBook,
-    req,
-    populate: [
-      { path: 'user', select: 'fullName email' },
-      { path: 'book', select: 'title author' }
-    ],
-    query: { return_date: { $exists: false } }
-  })
-
-  if (!result.data.length) {
-    return res.status(200).json({ message: "No active borrows found", data: [] });
-  }
-  res.status(200).json(result);
-
-});
-
-export const getRejectedBorrows = asyncHandler(async (req, res) => {
-
-  const result = await getPaginatedData({
-    model: BorrowBook,
-    req,
-    query: { status: "REJECTED" },
-    populate: [
-      { path: 'user', select: 'fullName email' },
-      { path: 'book', select: 'title author' }
-    ]
-  });
-
-  if (!result.data.length) {
-    return res.status(200).json({ message: "No rejected borrows found", data: [] });
-  }
-  res.status(200).json(result);
-});
-
-export const getReturnedBorrows = asyncHandler(async (req, res) => {
-
-  const result = await getPaginatedData({
-    model: BorrowBook,
-    req,
-    query: {
-      status: "RETURNED",
-      return_date: { $exists: true },
-    },
-    populate: [
-      { path: 'user', select: 'fullName email' },
-      { path: 'book', select: 'title author' }
-    ]
-  });
-
-  if (!result.data.length) {
-    return res.status(200).json({ message: "No returned borrows found", data: [] });
-  }
-  res.status(200).json(result);
-});
-
-export const getOverdueBorrows = asyncHandler(async (req, res) => {
-
-  const overdueBorrows = await BorrowBook
-    .find({
-      return_date: { $exists: false },
-      due_date: { $lt: new Date() }
-    })
-    .populate('user', 'fullName email')
-    .populate('book', 'title author');
-
-  if (!overdueBorrows.length) {
-    return res.status(200).json({ message: "No overdue borrows found", data: [] });
-  }
-  res.status(200).json({ data: overdueBorrows });
-
 });
 
 export const deleteBorrowById = asyncHandler(async (req, res) => {

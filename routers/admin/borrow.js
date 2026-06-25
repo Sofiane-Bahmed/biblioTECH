@@ -2,39 +2,25 @@ import express from "express"
 
 import {
     approveBorrowRequest,
+    rejectBorrowRequest,
     deleteBorrowById,
-    getActiveBorrows,
-    getAllBorrows,
     getBorrowById,
-    getOverdueBorrows,
-    getPendingBorrows,
-    getRejectedBorrows,
-    getReturnedBorrows,
-    getUserBorrowingHistory,
-    rejectBorrowRequest
+    getBorrows,
+    getUserBorrowingHistory
 } from "../../controllers/admin/borrow.js"
 import { validate } from "../../middlewares/validate.js";
 import {
+    getBorrowsQuerySchema,
     approveBorrowRequestSchema,
     rejectBorrowRequestSchema,
-    getActiveBorrowsSchema,
-    getPendingBorrowsSchema,
     deleteBorrowByIdSchema,
     getBorrowByIdSchema,
     getUserBorrowingHistorySchema,
-    getRejectedBorrowsSchema,
-    getReturnedBorrowsSchema
 } from "../../validations/admin-borrow-schema.js";
 
 export const adminBorrowRouter = express.Router();
 
-adminBorrowRouter.get("/", getAllBorrows);
-
-adminBorrowRouter.get("/pending", validate(getPendingBorrowsSchema), getPendingBorrows);
-adminBorrowRouter.get("/active", validate(getActiveBorrowsSchema), getActiveBorrows);
-adminBorrowRouter.get("/rejected", validate(getRejectedBorrowsSchema), getRejectedBorrows);
-adminBorrowRouter.get("/returned", validate(getReturnedBorrowsSchema), getReturnedBorrows);
-adminBorrowRouter.get("/overdue", getOverdueBorrows);
+adminBorrowRouter.get("/", validate(getBorrowsQuerySchema), getBorrows);
 
 adminBorrowRouter.patch("/:id/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
 adminBorrowRouter.patch("/:id/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);

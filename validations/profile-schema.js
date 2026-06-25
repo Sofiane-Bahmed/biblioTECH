@@ -32,7 +32,6 @@ export const getMyBorrowsQuerySchema = z.object({
         status: z
             .string()
             .optional()
-            // Use native Zod transform to safely convert to uppercase if val exists
             .transform((val) => val?.toUpperCase())
             .pipe(
                 z.enum(["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"]).optional()

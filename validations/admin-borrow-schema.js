@@ -60,93 +60,36 @@ export const getUserBorrowingHistorySchema = z.object({
     }).optional()
 });
 
-export const getPendingBorrowsSchema = z.object({
+export const getBorrowsQuerySchema = z.object({
     query: z.object({
         page: z
             .coerce
             .number()
             .int()
-            .min(1).
-            default(1),
+            .min(1)
+            .default(1),
+
         limit: z
             .coerce
             .number()
             .int()
             .min(1)
-            .max(100)
+            .max(50)
             .default(10),
-    }).optional()
-});
 
-export const getRejectedBorrowsSchema = z.object({
-    query: z.object({
-        page: z
-            .coerce
-            .number()
-            .int()
-            .min(1).
-            default(1),
-        limit: z
-            .coerce
-            .number()
-            .int()
-            .min(1)
-            .max(100)
-            .default(10),
-    }).optional()
+        status: z
+            .string()
+            .optional()
+            .transform((val) => val?.toUpperCase())
+            .pipe(
+                z.enum(["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"]).optional()
+            ),
+
+        overdue: z
+            .string()
+            .optional()
+            .transform((val) => val === "true")
+    })
 });
 
 
-export const getActiveBorrowsSchema = z.object({
-    query: z.object({
-        page: z
-            .coerce
-            .number()
-            .int()
-            .min(1).
-            default(1),
-        limit: z
-            .coerce
-            .number()
-            .int()
-            .min(1)
-            .max(100)
-            .default(10),
-    }).optional()
-});
-
-export const getReturnedBorrowsSchema = z.object({
-    query: z.object({
-        page: z
-            .coerce
-            .number()
-            .int()
-            .min(1).
-            default(1),
-        limit: z
-            .coerce
-            .number()
-            .int()
-            .min(1)
-            .max(100)
-            .default(10),
-    }).optional()
-});
-
-// export const getOverdueBorrowsSchema = z.object({
-//     query: z.object({
-//         page: z
-//             .coerce
-//             .number()
-//             .int()
-//             .min(1).
-//             default(1),
-//         limit: z
-//             .coerce
-//             .number()
-//             .int()
-//             .min(1)
-//             .max(100)
-//             .default(10),
-//     }).optional()
-// });
