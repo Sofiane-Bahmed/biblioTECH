@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const updateProfileSchema = z.object({
+export const updateMyProfileSchema = z.object({
     body: z.object({
         fullName: z
             .string()

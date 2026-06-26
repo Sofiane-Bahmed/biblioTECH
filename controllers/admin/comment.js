@@ -2,7 +2,7 @@ import { Comment } from "../../models/comment.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
 
-export const getAllComments = asyncHandler(async (req, res) => {
+export const getComments = asyncHandler(async (req, res) => {
 
     const result = await getPaginatedData({
         model: Comment,

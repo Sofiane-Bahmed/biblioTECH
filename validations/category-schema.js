@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const createBookCategorySchema = z.object({
+export const addCategorySchema = z.object({
     body: z.object({
         title: z
             .string()
@@ -13,7 +13,7 @@ export const createBookCategorySchema = z.object({
     }),
 });
 
-export const showBookCategorySchema = z.object({
+export const getCategorySchema = z.object({
     params: z.object({
         id: z
             .string()
@@ -23,7 +23,7 @@ export const showBookCategorySchema = z.object({
     }),
 });
 
-export const updateBookCategorySchema = z.object({
+export const updateCategorySchema = z.object({
     params: z.object({
         id: z
             .string()
@@ -43,7 +43,7 @@ export const updateBookCategorySchema = z.object({
     }).partial(),
 });
 
-export const deleteBookCategorySchema = z.object({
+export const deleteCategorySchema = z.object({
     params: z.object({
         id: z
             .string()

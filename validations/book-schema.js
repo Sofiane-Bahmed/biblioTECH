@@ -59,7 +59,7 @@ export const autoImportBookSchema = z.object({
     }),
 });
 
-export const getAllBooksSchema = z.object({
+export const getBooksSchema = z.object({
     query: z.object({
         page: z
             .coerce

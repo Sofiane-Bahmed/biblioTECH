@@ -1,7 +1,7 @@
 import { Category } from "../../models/category.js"
 import asyncHandler from "../../utils/async-handler.js";
 
-export const createBookCategory = asyncHandler(async (req, res) => {
+export const addCategory = asyncHandler(async (req, res) => {
 
   const { title, description } = req.body;
 
@@ -11,7 +11,7 @@ export const createBookCategory = asyncHandler(async (req, res) => {
 
 });
 
-export const showBookCategory = asyncHandler(async (req, res) => {
+export const getCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
 
@@ -21,13 +21,13 @@ export const showBookCategory = asyncHandler(async (req, res) => {
 
 });
 
-export const showBookCategories = asyncHandler(async (req, res) => {
+export const getCategories = asyncHandler(async (req, res) => {
   const categories = await Category.find().lean().exec();
 
   res.status(200).json(categories);
 });
 
-export const updateBookCategory = asyncHandler(async (req, res) => {
+export const updateCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
 
@@ -54,7 +54,7 @@ export const updateBookCategory = asyncHandler(async (req, res) => {
 
 });
 
-export const deleteBookCategory = asyncHandler(async (req, res) => {
+export const deleteCategory = asyncHandler(async (req, res) => {
 
   const { id } = req.params;
 

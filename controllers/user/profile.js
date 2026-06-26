@@ -37,7 +37,7 @@ export const getMyBorrows = asyncHandler(async (req, res) => {
   });
 });
 
-export const updateProfile = asyncHandler(async (req, res) => {
+export const updateMyProfile = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
 
   const userId = req.user._id;

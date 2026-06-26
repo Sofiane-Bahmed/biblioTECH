@@ -1,25 +1,25 @@
 import express from "express"
 
 import {
-    createBookCategory,
-    showBookCategory,
-    updateBookCategory,
-    deleteBookCategory,
-    showBookCategories
+    addCategory,
+    getCategories,
+    getCategory,
+    updateCategory,
+    deleteCategory
 } from "../../controllers/admin/category.js"
 import {
-    createBookCategorySchema,
-    deleteBookCategorySchema,
-    showBookCategorySchema,
-    updateBookCategorySchema
+    addCategorySchema,
+    deleteCategorySchema,
+    getCategorySchema,
+    updateCategorySchema
 } from "../../validations/category-schema.js";
 import { validate } from "../../middlewares/validate.js";
 
 export const adminCategoryRouter = express.Router()
 
-adminCategoryRouter.post("/", validate(createBookCategorySchema), createBookCategory)
-adminCategoryRouter.get("/", showBookCategories)
+adminCategoryRouter.post("/", validate(addCategorySchema), addCategory)
+adminCategoryRouter.get("/", getCategories)
 
-adminCategoryRouter.get("/:id", validate(showBookCategorySchema), showBookCategory)
-adminCategoryRouter.patch("/:id", validate(updateBookCategorySchema), updateBookCategory)
-adminCategoryRouter.delete("/:id", validate(deleteBookCategorySchema), deleteBookCategory)
+adminCategoryRouter.get("/:id", validate(getCategorySchema), getCategory)
+adminCategoryRouter.patch("/:id", validate(updateCategorySchema), updateCategory)
+adminCategoryRouter.delete("/:id", validate(deleteCategorySchema), deleteCategory)

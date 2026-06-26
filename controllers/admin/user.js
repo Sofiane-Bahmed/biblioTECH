@@ -36,7 +36,7 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
 });
 
-export const getUserById = asyncHandler(async (req, res) => {
+export const getUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const user = await User.findById(id)
@@ -46,7 +46,7 @@ export const getUserById = asyncHandler(async (req, res) => {
   res.status(200).json(user);
 });
 
-export const getAllUsers = asyncHandler(async (req, res) => {
+export const getUsers = asyncHandler(async (req, res) => {
 
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;

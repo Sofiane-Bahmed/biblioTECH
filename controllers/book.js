@@ -3,7 +3,7 @@ import { Category } from "../models/category.js";
 import { getPaginatedData } from "../utils/paginate.js";
 import asyncHandler from "../utils/async-handler.js";
 
-export const getAllBooks = asyncHandler(async (req, res) => {
+export const getBooks = asyncHandler(async (req, res) => {
 
   const result = await getPaginatedData({
     model: Book,

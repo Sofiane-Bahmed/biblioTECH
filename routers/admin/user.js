@@ -3,8 +3,8 @@ import express from "express";
 import {
     blockUser,
     deleteUser,
-    getAllUsers,
-    getUserById,
+    getUser,
+    getUsers,
     unblockUser,
     updateUserRole
 } from "../../controllers/admin/user.js";
@@ -12,18 +12,19 @@ import { validate } from "../../middlewares/validate.js";
 import {
     blockUserSchema,
     deleteUserSchema,
-    getAllUsersSchema,
-    getUserByIdSchema,
+    getUserSchema,
+    getUsersSchema,
     unblockUserSchema,
     updateUserRoleSchema,
 } from "../../validations/admin-user-schema.js";
 
 export const adminUserRouter = express.Router();
 
-adminUserRouter.get("/get-all", validate(getAllUsersSchema), getAllUsers);
+adminUserRouter.get("/get-all", validate(getUsersSchema), getUsers);
 adminUserRouter.put("/:id/role", validate(updateUserRoleSchema), updateUserRole);
 adminUserRouter.put("/:id/block", validate(blockUserSchema), blockUser);
 adminUserRouter.put("/:id/unblock", validate(unblockUserSchema), unblockUser);
-adminUserRouter.get("/:id", validate(getUserByIdSchema), getUserById);
+adminUserRouter.get("/:id", validate(getUserSchema), getUser);
 adminUserRouter.delete("/:id", validate(deleteUserSchema), deleteUser);
+
 

@@ -23,7 +23,7 @@ export const commentSchema = z.object({
 
 });
 
-export const getAllCommentsSchema = z.object({
+export const getCommentsSchema = z.object({
     query: z.object({
         page: z
             .coerce
@@ -65,7 +65,7 @@ export const getBookCommentsSchema = z.object({
     }).optional()
 });
 
-export const getCommentsByIdSchema = z.object({
+export const getCommentSchema = z.object({
     params: z.object({
         id: z.string()
             .min(1, "Comment ID is required")

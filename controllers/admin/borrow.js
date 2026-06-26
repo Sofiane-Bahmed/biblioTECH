@@ -132,7 +132,7 @@ export const getBorrows = asyncHandler(async (req, res) => {
 
 });
 
-export const getBorrowById = asyncHandler(async (req, res) => {
+export const getBorrow = asyncHandler(async (req, res) => {
   const { id: borrowId } = req.params;
 
   const borrow = await BorrowBook
@@ -146,7 +146,7 @@ export const getBorrowById = asyncHandler(async (req, res) => {
   res.status(200).json({ data: borrow });
 });
 
-export const deleteBorrowById = asyncHandler(async (req, res) => {
+export const deleteBorrow = asyncHandler(async (req, res) => {
   const { id: borrowId } = req.params;
 
   const borrow = await BorrowBook.findByIdAndDelete(borrowId);

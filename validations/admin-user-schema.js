@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const getUserByIdSchema = z.object({
+export const getUserSchema = z.object({
     params: z.object({
         id: z
             .string()
@@ -9,7 +9,7 @@ export const getUserByIdSchema = z.object({
     }),
 });
 
-export const getAllUsersSchema = z.object({
+export const getUsersSchema = z.object({
     query: z.object({
         page: z
             .coerce

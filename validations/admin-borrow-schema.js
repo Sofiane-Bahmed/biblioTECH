@@ -18,7 +18,7 @@ export const rejectBorrowRequestSchema = z.object({
     }),
 })
 
-export const getBorrowByIdSchema = z.object({
+export const getBorrowSchema = z.object({
     params: z.object({
         id: z
             .string()
@@ -27,7 +27,7 @@ export const getBorrowByIdSchema = z.object({
     }),
 });
 
-export const deleteBorrowByIdSchema = z.object({
+export const deleteBorrowSchema = z.object({
     params: z.object({
         id: z
             .string()
