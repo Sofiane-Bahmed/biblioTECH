@@ -2,7 +2,7 @@ import z from "zod";
 
 export const approveBorrowRequestSchema = z.object({
     params: z.object({
-        id: z
+        borrowId: z
             .string()
             .min(1, "Borrow ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
@@ -11,7 +11,7 @@ export const approveBorrowRequestSchema = z.object({
 
 export const rejectBorrowRequestSchema = z.object({
     params: z.object({
-        id: z
+        borrowId: z
             .string()
             .min(1, "Borrow ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
@@ -20,7 +20,7 @@ export const rejectBorrowRequestSchema = z.object({
 
 export const getBorrowSchema = z.object({
     params: z.object({
-        id: z
+        borrowId: z
             .string()
             .min(1, "Borrow ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
@@ -29,7 +29,7 @@ export const getBorrowSchema = z.object({
 
 export const deleteBorrowSchema = z.object({
     params: z.object({
-        id: z
+        borrowId: z
             .string()
             .min(1, "Borrow ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid borrow ID format"),
@@ -38,7 +38,7 @@ export const deleteBorrowSchema = z.object({
 
 export const getUserBorrowingHistorySchema = z.object({
     params: z.object({
-        id: z
+        userId: z
             .string()
             .min(1, "User ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),

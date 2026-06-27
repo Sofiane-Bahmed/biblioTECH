@@ -22,12 +22,12 @@ export const adminBorrowRouter = express.Router();
 
 adminBorrowRouter.get("/", validate(getBorrowsQuerySchema), getBorrows);
 
-adminBorrowRouter.patch("/:id/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
-adminBorrowRouter.patch("/:id/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
-adminBorrowRouter.get("/:id/history", validate(getUserBorrowingHistorySchema), getUserBorrowingHistory);
+adminBorrowRouter.patch("/:borrowId/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
+adminBorrowRouter.patch("/:borrowId/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
+adminBorrowRouter.get("/:userId/history", validate(getUserBorrowingHistorySchema), getUserBorrowingHistory);
 
-adminBorrowRouter.get("/:id", validate(getBorrowSchema), getBorrow);
-adminBorrowRouter.delete("/:id", validate(deleteBorrowSchema), deleteBorrow);
+adminBorrowRouter.get("/:borrowId", validate(getBorrowSchema), getBorrow);
+adminBorrowRouter.delete("/:borrowId", validate(deleteBorrowSchema), deleteBorrow);
 
 
 

@@ -12,7 +12,7 @@ import { BORROWING_RULES } from "../../constants/library-rules.js";
 const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
 
 export const approveBorrowRequest = asyncHandler(async (req, res) => {
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const borrowRequest = await BorrowBook.findById(borrowId);
   if (!borrowRequest || borrowRequest.status !== "PENDING") {
@@ -76,7 +76,7 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
 });
 
 export const rejectBorrowRequest = asyncHandler(async (req, res) => {
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const borrowRequest = await BorrowBook.findById(borrowId);
 
@@ -133,7 +133,7 @@ export const getBorrows = asyncHandler(async (req, res) => {
 });
 
 export const getBorrow = asyncHandler(async (req, res) => {
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const borrow = await BorrowBook
     .findById(borrowId)
@@ -147,7 +147,7 @@ export const getBorrow = asyncHandler(async (req, res) => {
 });
 
 export const deleteBorrow = asyncHandler(async (req, res) => {
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const borrow = await BorrowBook.findByIdAndDelete(borrowId);
   if (!borrow) {
@@ -157,7 +157,7 @@ export const deleteBorrow = asyncHandler(async (req, res) => {
 });
 
 export const getUserBorrowingHistory = asyncHandler(async (req, res) => {
-  const { id: userId } = req.params;
+  const { userId } = req.params;
 
   const result = await getPaginatedData({
     model: BorrowBook,
