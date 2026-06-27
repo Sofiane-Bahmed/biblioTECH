@@ -16,7 +16,7 @@ export const publicBookRouter = express.Router();
 
 publicBookRouter.get("/", validate(getBooksSchema), getBooks);
 publicBookRouter.get("/search", validate(searchBookSchema), searchBooks);
-publicBookRouter.get("/:id", validate(getBookSchema), getBook);
+publicBookRouter.get("/:bookId", validate(getBookSchema), getBook);
 
 
 
