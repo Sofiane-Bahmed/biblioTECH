@@ -16,7 +16,8 @@ import {
 
 export const userBorrowRouter = express.Router();
 
-userBorrowRouter.post("/:id/request", validate(requestBorrowSchema), requestBorrow)
-userBorrowRouter.patch("/:id/cancel", validate(cancelBorrowRequestSchema), cancelBorrowRequest)
-userBorrowRouter.patch("/:id/return", validate(returnBookSchema), returnBook)
-userBorrowRouter.patch("/:id/renew", validate(renewBorrowedBookSchema), renewBorrowedBook)
+userBorrowRouter.post("/:bookId/request", validate(requestBorrowSchema), requestBorrow)
+
+userBorrowRouter.patch("/:borrowId/cancel", validate(cancelBorrowRequestSchema), cancelBorrowRequest)
+userBorrowRouter.patch("/:borrowId/return", validate(returnBookSchema), returnBook)
+userBorrowRouter.patch("/:borrowId/renew", validate(renewBorrowedBookSchema), renewBorrowedBook)

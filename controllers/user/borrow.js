@@ -20,7 +20,7 @@ const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
 export const requestBorrow = asyncHandler(async (req, res) => {
 
-  const { id: bookId } = req.params;
+  const { bookId } = req.params;
 
   const userId = req.user._id;
 
@@ -59,7 +59,7 @@ export const requestBorrow = asyncHandler(async (req, res) => {
 
 export const cancelBorrowRequest = asyncHandler(async (req, res) => {
 
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const userId = req.user._id;
 
@@ -94,7 +94,7 @@ export const cancelBorrowRequest = asyncHandler(async (req, res) => {
 
 export const returnBook = asyncHandler(async (req, res) => {
 
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const userId = req.user._id;
 
@@ -176,7 +176,7 @@ export const returnBook = asyncHandler(async (req, res) => {
 });
 
 export const renewBorrowedBook = asyncHandler(async (req, res) => {
-  const { id: borrowId } = req.params;
+  const { borrowId } = req.params;
 
   const userId = req.user._id;
 
