@@ -6,7 +6,7 @@ export const updateUserRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
 
   const userId = req.user._id;
-  
+
   if (userId === id) {
     return res.status(400).json({ message: "You cannot change your own administrative role" });
   }
@@ -27,9 +27,9 @@ export const updateUserRole = asyncHandler(async (req, res) => {
 });
 
 export const deleteUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.params;
 
-  const user = await User.findByIdAndDelete(id);
+  const user = await User.findByIdAndDelete(userId);
   if (!user) return res.status(404).json({ message: "user not found" });
 
   res.status(200).json({ message: "user deleted successfully" })
@@ -37,9 +37,9 @@ export const deleteUser = asyncHandler(async (req, res) => {
 });
 
 export const getUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.params;
 
-  const user = await User.findById(id)
+  const user = await User.findById(userId)
 
   if (!user) return res.status(404).json({ message: "user not found" });
 
@@ -74,10 +74,10 @@ export const getUsers = asyncHandler(async (req, res) => {
 });
 
 export const blockUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.params;
 
   const user = await User.findByIdAndUpdate(
-    id,
+    userId,
     { $set: { isBlocked: true } },
     { new: true, runValidators: true }
   );
@@ -88,10 +88,10 @@ export const blockUser = asyncHandler(async (req, res) => {
 });
 
 export const unblockUser = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { userId } = req.params;
 
   const user = await User.findByIdAndUpdate(
-    id,
+    userId,
     { $set: { isBlocked: false } },
     { new: true, runValidators: true }
   );

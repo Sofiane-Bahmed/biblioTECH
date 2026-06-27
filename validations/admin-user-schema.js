@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const getUserSchema = z.object({
     params: z.object({
-        id: z
+        userId: z
             .string()
             .min(1, "User ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
@@ -29,7 +29,7 @@ export const getUsersSchema = z.object({
 
 export const deleteUserSchema = z.object({
     params: z.object({
-        id: z
+        userId: z
             .string()
             .min(1, "User ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
@@ -51,7 +51,7 @@ export const updateUserRoleSchema = z.object({
 
 export const blockUserSchema = z.object({
     params: z.object({
-        id: z
+        userId: z
             .string()
             .min(1, "User ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
@@ -60,7 +60,7 @@ export const blockUserSchema = z.object({
 
 export const unblockUserSchema = z.object({
     params: z.object({
-        id: z
+        userId: z
             .string()
             .min(1, "User ID is required")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid user ID format"),
