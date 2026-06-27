@@ -15,7 +15,7 @@ export const addCategorySchema = z.object({
 
 export const getCategorySchema = z.object({
     params: z.object({
-        id: z
+        categoryId: z
             .string()
             .min(1, "category ID is required")
             .max(24, "category ID must be 24 characters")
@@ -25,7 +25,7 @@ export const getCategorySchema = z.object({
 
 export const updateCategorySchema = z.object({
     params: z.object({
-        id: z
+        categoryId: z
             .string()
             .min(1, "category ID is required")
             .max(24, "category ID must be 24 characters")
@@ -45,7 +45,7 @@ export const updateCategorySchema = z.object({
 
 export const deleteCategorySchema = z.object({
     params: z.object({
-        id: z
+        categoryId: z
             .string()
             .min(1, "category ID is required")
             .max(24, "category ID must be 24 characters")

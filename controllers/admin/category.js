@@ -13,9 +13,9 @@ export const addCategory = asyncHandler(async (req, res) => {
 
 export const getCategory = asyncHandler(async (req, res) => {
 
-  const { id } = req.params;
+  const { categoryId } = req.params;
 
-  const category = await Category.findById(id);
+  const category = await Category.findById(categoryId);
 
   res.status(200).json(category);
 
@@ -29,7 +29,7 @@ export const getCategories = asyncHandler(async (req, res) => {
 
 export const updateCategory = asyncHandler(async (req, res) => {
 
-  const { id } = req.params;
+  const { categoryId } = req.params;
 
   const updateData = { ...req.body };
 
@@ -56,7 +56,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
 
 export const deleteCategory = asyncHandler(async (req, res) => {
 
-  const { id } = req.params;
+  const { categoryId } = req.params;
 
   const category = await Category.findByIdAndDelete(id);
   if (!category) {
