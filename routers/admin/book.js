@@ -19,8 +19,8 @@ export const adminBookRouter = express.Router();
 
 adminBookRouter.post("/", uploadBookCover, validate(addBookSchema), addBook);
 adminBookRouter.get("/auto-import", validate(autoImportBookSchema), autoAddBookByIsbn);
-adminBookRouter.put("/:id", uploadBookCover, validate(updateBookSchema), updateBook);
-adminBookRouter.delete("/:id", validate(deleteBookSchema), deleteBook);
+adminBookRouter.put("/:bookId", uploadBookCover, validate(updateBookSchema), updateBook);
+adminBookRouter.delete("/:bookId", validate(deleteBookSchema), deleteBook);
 
 
 

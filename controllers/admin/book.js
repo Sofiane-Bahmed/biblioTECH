@@ -110,7 +110,7 @@ export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
 });
 
 export const updateBook = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { bookId } = req.params;
   const { category, ...allowedUpdates } = req.body;
 
   const updateData = { ...allowedUpdates };
@@ -149,9 +149,9 @@ export const updateBook = asyncHandler(async (req, res) => {
 
 export const deleteBook = asyncHandler(async (req, res) => {
 
-  const { id } = req.params;
+  const { bookId } = req.params;
 
-  const book = await Book.findByIdAndDelete(id);
+  const book = await Book.findByIdAndDelete(bookId);
   if (!book) {
     return res.status(404).json({ message: "book not found" })
   }

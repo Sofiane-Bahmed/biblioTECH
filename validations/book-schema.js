@@ -79,7 +79,7 @@ export const getBooksSchema = z.object({
 
 export const updateBookSchema = z.object({
     params: z.object({
-        id: z
+        bookId: z
             .string()
             .min(1, "Book ID is required")
             .max(24, "Book ID must be 24 characters")
@@ -128,7 +128,7 @@ export const updateBookSchema = z.object({
 
 export const deleteBookSchema = z.object({
     params: z.object({
-        id: z
+        bookId: z
             .string()
             .min(1, "Book ID is required")
             .max(24, "Book ID must be 24 characters")
