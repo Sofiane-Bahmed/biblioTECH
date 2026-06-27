@@ -19,10 +19,10 @@ import {
 export const userCommentRouter = express.Router()
 
 userCommentRouter.post("/book/:bookId", validate(commentSchema), addComment);
-userCommentRouter.get("/book/:id", validate(getBookCommentsSchema), getBookComments);
-userCommentRouter.get("/:id", validate(getCommentSchema), getComment);
-userCommentRouter.put("/:id", validate(updateCommentSchema), updateComment);
-userCommentRouter.delete("/:id", validate(deleteCommentSchema), deleteComment);
+userCommentRouter.get("/book/:bookId", validate(getBookCommentsSchema), getBookComments);
+userCommentRouter.get("/:commentId", validate(getCommentSchema), getComment);
+userCommentRouter.put("/:commentId", validate(updateCommentSchema), updateComment);
+userCommentRouter.delete("/:commentId", validate(deleteCommentSchema), deleteComment);
 
 
 

@@ -43,7 +43,7 @@ export const getCommentsSchema = z.object({
 
 export const getBookCommentsSchema = z.object({
     params: z.object({
-        id: z.string()
+        bookId: z.string()
             .min(1, "Book ID is required")
             .max(24, "Book ID must be 24 characters")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid book ID format"),
@@ -67,7 +67,7 @@ export const getBookCommentsSchema = z.object({
 
 export const getCommentSchema = z.object({
     params: z.object({
-        id: z.string()
+        commentId: z.string()
             .min(1, "Comment ID is required")
             .max(24, "Comment ID must be 24 characters")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
@@ -76,7 +76,7 @@ export const getCommentSchema = z.object({
 
 export const updateCommentSchema = z.object({
     params: z.object({
-        id: z.string()
+        commentId: z.string()
             .min(1, "Comment ID is required")
             .max(24, "Comment ID must be 24 characters")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),
@@ -91,7 +91,7 @@ export const updateCommentSchema = z.object({
 
 export const deleteCommentSchema = z.object({
     params: z.object({
-        id: z.string()
+        commentId: z.string()
             .min(1, "Comment ID is required")
             .max(24, "Comment ID must be 24 characters")
             .regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"),

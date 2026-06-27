@@ -75,7 +75,7 @@ export const addComment = asyncHandler(async (req, res) => {
 
 export const getComment = asyncHandler(async (req, res) => {
 
-    const { id: commentId } = req.params;
+    const { commentId } = req.params;
     const comment = await Comment
         .findById(commentId)
         .populate('user', 'fullName email')
@@ -100,7 +100,7 @@ export const getComment = asyncHandler(async (req, res) => {
 });
 
 export const updateComment = asyncHandler(async (req, res) => {
-    const { id: commentId } = req.params;
+    const { commentId } = req.params;
     const { comment } = req.body;
 
     const userId = req.user._id;
@@ -134,7 +134,7 @@ export const updateComment = asyncHandler(async (req, res) => {
 });
 
 export const deleteComment = asyncHandler(async (req, res) => {
-    const { id: commentId } = req.params;
+    const { commentId } = req.params;
 
     const userId = req.user._id;
     const userRole = req.user.role;
@@ -197,7 +197,7 @@ export const deleteComment = asyncHandler(async (req, res) => {
 });
 
 export const getBookComments = asyncHandler(async (req, res) => {
-    const { id: bookId } = req.params;
+    const { bookId } = req.params;
 
     const result = await getPaginatedData({
         model: Comment,
