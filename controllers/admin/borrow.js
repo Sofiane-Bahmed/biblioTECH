@@ -27,10 +27,27 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
 
-    borrowRequest.status = "ACTIVE";
-    borrowRequest.borrow_date = borrowDate;
-    borrowRequest.due_date = dueDate;
-    await borrowRequest.save({ session });
+    const updatedBorrow = await BorrowBook.findOneAndUpdate({
+      _id: borrowRequest._id,
+      status: "PENDING",
+    },
+      {
+        $set: {
+          status: "ACTIVE",
+          borrow_date: borrowDate,
+          due_date: dueDate
+        }
+      },
+      {
+        session,
+        new: true
+      });
+
+    if (!updatedBorrow) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "This request was already processed by another session." });
+    }
 
     const updatedBook = await Book.findOneAndUpdate(
       {
@@ -52,7 +69,11 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
 
     await User.findByIdAndUpdate(
       borrowRequest.user,
-      { $push: { borrows: borrowRequest._id } },
+      {
+        $push: {
+          borrows: borrowRequest._id
+        }
+      },
       { session }
     );
 
@@ -61,7 +82,7 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
 
     return res.status(200).json({
       message: "Borrow request approved. Book is now active.",
-      borrow: borrowRequest
+      borrow: updatedBorrow
     });
 
   } catch (error) {
