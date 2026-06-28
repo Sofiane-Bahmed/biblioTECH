@@ -132,7 +132,7 @@ export const updateBook = asyncHandler(async (req, res) => {
   }
 
   const updatedBook = await Book.findByIdAndUpdate(
-    id,
+    bookId,
     { $set: updateData },
     { new: true, runValidators: true }
   ).populate("category");
