@@ -57,16 +57,16 @@ export const requestBorrow = asyncHandler(async (req, res) => {
   });
 });
 
+// PATCH /api/books/requests/:borrowId/cancel
 export const cancelBorrowRequest = asyncHandler(async (req, res) => {
-
   const { borrowId } = req.params;
-
   const userId = req.user._id;
 
   const borrowRequest = await BorrowBook.findOne({
     _id: borrowId,
     user: userId
   });
+
   if (!borrowRequest) {
     return res.status(404).json({ message: "Borrow request not found." });
   }
@@ -82,14 +82,31 @@ export const cancelBorrowRequest = asyncHandler(async (req, res) => {
     return res.status(eligibility.code).json({ message: eligibility.message });
   }
 
-  borrowRequest.status = "CANCELED";
-  await borrowRequest.save();
+  const canceledRequest = await BorrowBook.findOneAndUpdate(
+    {
+      _id: borrowId,
+      user: userId,
+      status: "PENDING"
+    },
+    {
+      $set: { status: "CANCELED" }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  if (!canceledRequest) {
+    return res.status(400).json({
+      message: "Cancellation failed. The request may have just been processed by an administrator."
+    });
+  }
 
   return res.status(200).json({
     message: "Your borrow request has been cancelled successfully.",
-    borrow: borrowRequest
+    borrow: canceledRequest
   });
-
 });
 
 export const returnBook = asyncHandler(async (req, res) => {
