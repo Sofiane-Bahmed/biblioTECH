@@ -57,7 +57,6 @@ export const requestBorrow = asyncHandler(async (req, res) => {
   });
 });
 
-// PATCH /api/books/requests/:borrowId/cancel
 export const cancelBorrowRequest = asyncHandler(async (req, res) => {
   const { borrowId } = req.params;
   const userId = req.user._id;
@@ -232,14 +231,34 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
   const newDueDate = new Date(borrow.due_date);
   newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
 
-  borrow.due_date = newDueDate;
-  borrow.renewed = true;
+  const renewedBorrow = await BorrowBook.findOneAndUpdate(
+    {
+      _id: borrowId,
+      user: userId,
+      status: "ACTIVE",
+      renewed: false
+    },
+    {
+      $set: {
+        due_date: newDueDate,
+        renewed: true
+      }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  ).populate("book");
 
-  await borrow.save();
+  if (!renewedBorrow) {
+    return res
+      .status(400)
+      .json({ message: "Renewal processing failed. The record state may have changed in a parallel session." })
+  }
 
   return res.status(200).json({
     message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
-    borrow
+    borrow: renewedBorrow
   });
 });
 
