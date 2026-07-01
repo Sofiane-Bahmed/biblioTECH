@@ -111,13 +111,30 @@ export const rejectBorrowRequest = asyncHandler(async (req, res) => {
     });
   }
 
-  borrowRequest.status = "REJECTED";
+  const rejectedBorrow = await BorrowBook.findOneAndUpdate(
+    {
+      _id: borrowRequest._id,
+      status: "PENDING"
+    }, {
+    $set: {
+      status: "REJECTED"
+    }
+  },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
 
-  await borrowRequest.save();
+  if (!rejectedBorrow) {
+    return res.status(400).json({
+      message: "Rejection failed. The request may have just been processed by another admin."
+    });
+  }
 
   return res.status(200).json({
     message: "Borrow request has been rejected successfully.",
-    borrow: borrowRequest
+    borrow: rejectedBorrow
   });
 });
 
