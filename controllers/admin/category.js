@@ -34,7 +34,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
   const updateData = { ...req.body };
 
   const category = await Category.findByIdAndUpdate(
-    id,
+    categoryId,
     {
       $set: updateData
     },

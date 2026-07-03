@@ -23,7 +23,6 @@ export const updateUserRole = asyncHandler(async (req, res) => {
     message: `User role successfully updated to ${role}`,
     user
   });
-
 });
 
 export const deleteUser = asyncHandler(async (req, res) => {

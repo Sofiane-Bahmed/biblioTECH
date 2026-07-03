@@ -191,6 +191,7 @@ export const deleteBorrow = asyncHandler(async (req, res) => {
   if (!borrow) {
     return res.status(404).json({ message: "Borrow record not found" });
   }
+
   res.status(200).json({ message: "Borrow record deleted successfully" });
 });
 
