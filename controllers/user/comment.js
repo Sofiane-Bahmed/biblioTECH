@@ -76,6 +76,7 @@ export const addComment = asyncHandler(async (req, res) => {
 export const getComment = asyncHandler(async (req, res) => {
 
     const { commentId } = req.params;
+    
     const comment = await Comment
         .findById(commentId)
         .populate('user', 'fullName email')

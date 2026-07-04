@@ -40,7 +40,7 @@ export const searchBooks = asyncHandler(async (req, res) => {
     author,
     category,
     description,
-    available_copies,
+    copies_available,
     pages,
     language,
     publication_year
@@ -76,7 +76,7 @@ export const searchBooks = asyncHandler(async (req, res) => {
   }
 
   // Map Slider/Numeric Floor Metrics
-  if (available_copies) filters.copies_available = { $gte: parseInt(available_copies, 10) };
+  if (copies_available) filters.copies_available = { $gte: parseInt(copies_available, 10) };
   if (pages) filters.pages = { $lte: parseInt(pages, 10) };
   if (publication_year) filters.publication_year = parseInt(publication_year, 10);
 
