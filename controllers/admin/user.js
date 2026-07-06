@@ -126,15 +126,52 @@ export const blockUser = asyncHandler(async (req, res) => {
 export const unblockUser = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
-  const user = await User.findByIdAndUpdate(
-    userId,
+  const user = await User.findById(userId);
+
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  if (user.isBlocked) {
+    res.status(400).json({ message: "User is already blocked" });
+    return;
+  }
+
+  if (user.role === "admin") {
+    res.status(400).json({ message: "You cannot unblock an admin user" });
+    return;
+  }
+
+  if (user.suspension_date && user.suspension_date > new Date()) {
+    res.status(400).json({ message: "User is already suspended until " + user.suspension_date.toISOString() });
+    return;
+  }
+
+  const unblockedUser = await User.findOneAndUpdate(
+    {
+      _id: userId,
+      isBlocked: true,
+      role: { $ne: "admin" },
+      $or: [
+        { suspension_date: { $exists: false } },
+        { suspension_date: { $lte: new Date() } }
+      ]
+    },
     { $set: { isBlocked: false } },
-    { new: true, runValidators: true }
-  );
+    {
+      new: true,
+      runValidators: true
+    },
+  )
 
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!unblockedUser) {
+    res.status(400).json({ message: "User could not be unblocked. Please check the user status and try again." });
+    return;
+  }
 
-  res.status(200).json({ message: "User unblocked successfully", user });
+
+  res.status(200).json({ message: "User unblocked successfully", unblockedUser });
 });
 
 
