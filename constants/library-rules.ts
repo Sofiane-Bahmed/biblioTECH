@@ -2,14 +2,15 @@
 export const TIME_CONSTANTS = Object.freeze({
     MS_PER_DAY: 1000 * 60 * 60 * 24,
     HOURS_PER_DAY: 24,
-});
+    ONE_HOUR_IN_MS: 3600000,
+} as const);
 
 export const PENALTY_RULES = Object.freeze({
     WARNING_THRESHOLD_DAYS: 3,
     SUSPENSION_DURATION_DAYS: 10,
     MAX_RENEWALS_ALLOWED: 1,
     RENEWAL_EXTENSION_DAYS: 7,
-});
+} as const);
 
 export const BORROWING_RULES = Object.freeze({
     BORROW_PERIOD_DAYS: 7,
@@ -17,4 +18,4 @@ export const BORROWING_RULES = Object.freeze({
     BORROWS_PER_MONTH: 3,
     PENDING_BORROWS_PER_MONTH: 5,
     CANCEL_BORROWS_PER_MONTH: 5
-});
+} as const);

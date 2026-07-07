@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "lib": [
+            "ES2022"
+        ],
+        "outDir": "./dist",
+        "rootDir": "./",
+        "strict": false, // <-- SHORTCUT: Keeps compiler loose initially
+        "allowJs": true, // <-- CRITICAL: Lets JS and TS coexist
+        "checkJs": false, // <-- Prevents TS from breaking on un-migrated JS files
+        "esModuleInterop": true,
+        "skipLibCheck": true, // <-- Prevents type errors inside node_modules
+        "resolveJsonModule": true
+    },
+    "include": [
+        "**/*.ts",
+        "**/*.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "coverage"
+    ]
+}
