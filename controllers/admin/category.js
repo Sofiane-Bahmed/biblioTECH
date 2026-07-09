@@ -1,5 +1,6 @@
 import { Category } from "../../models/category.js"
 import asyncHandler from "../../utils/async-handler.js";
+import { getPaginatedData } from "../../utils/paginate.js";
 
 export const addCategory = asyncHandler(async (req, res) => {
 
@@ -22,9 +23,16 @@ export const getCategory = asyncHandler(async (req, res) => {
 });
 
 export const getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find().lean().exec();
+  const result = await getPaginatedData({
+    model: Category,
+    req
+  })
 
-  res.status(200).json(categories);
+  if (!result.data.length) {
+    return res.status(404).json({ message: "No categories found" })
+  }
+
+  res.status(200).json(result);
 });
 
 export const updateCategory = asyncHandler(async (req, res) => {
