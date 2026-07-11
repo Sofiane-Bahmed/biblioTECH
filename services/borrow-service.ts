@@ -1,19 +1,43 @@
+import { Types } from "mongoose";
 import { BorrowBook } from "../models/borrow.js";
 import { BORROWING_RULES } from "../constants/library-rules.js";
 
 const {
     BORROWS_PER_MONTH,
     PENDING_BORROWS_PER_MONTH,
-    CANCEL_BORROWS_PER_MONTH } = BORROWING_RULES;
+    CANCEL_BORROWS_PER_MONTH
+} = BORROWING_RULES;
 
-const getMonthlyBoundaries = () => {
+interface EligibilitySuccess {
+    status: true;
+    code: number;
+    message: string;
+}
+
+interface EligibilityFailure {
+    status: false;
+    code: number;
+    message: string;
+}
+
+export type EligibilityResult = EligibilitySuccess | EligibilityFailure;
+
+interface MonthlyBoundaries {
+    firstDay: Date;
+    lastDay: Date;
+}
+
+const getMonthlyBoundaries = (): MonthlyBoundaries => {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     return { firstDay, lastDay };
 };
 
-export const checkBorrowEligibility = async (userId, bookId) => {
+export const checkBorrowEligibility = async (
+    userId: string | Types.ObjectId,
+    bookId: string | Types.ObjectId
+): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
 
     const monthlyCount = await BorrowBook.countDocuments({
@@ -58,10 +82,16 @@ export const checkBorrowEligibility = async (userId, bookId) => {
         };
     }
 
-    return { status: true };
+    return {
+        status: true,
+        code: 200,
+        message: "Eligible for borrowing."
+    };
 };
 
-export const checkCancellationEligibility = async (userId) => {
+export const checkCancellationEligibility = async (
+    userId: string | Types.ObjectId
+): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
 
     const cancelCount = await BorrowBook.countDocuments({
@@ -78,5 +108,9 @@ export const checkCancellationEligibility = async (userId) => {
         };
     }
 
-    return { status: true };
+    return {
+        status: true,
+        code: 200,
+        message: "Eligible for cancellation."
+    };
 };
