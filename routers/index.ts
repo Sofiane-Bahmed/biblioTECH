@@ -1,7 +1,7 @@
-import express from "express"
+import express, { Router } from "express"
 
-import { authRouter } from "./auth.js"
-import { publicBookRouter } from "./book.js"
+import { authRouter } from "./common/auth.js"
+import { publicBookRouter } from "./common/book.js"
 
 import { profileRouter } from "./user/profile.js"
 import { userBorrowRouter } from "./user/borrow.js"
@@ -17,7 +17,7 @@ import { adminCommentRouter } from "./admin/comment.js"
 import { authenticate } from "../middlewares/authenticate.js"
 import { authorize } from "../middlewares/authorize.js"
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.use("/auth", authRouter)
 router.use("/books", publicBookRouter)

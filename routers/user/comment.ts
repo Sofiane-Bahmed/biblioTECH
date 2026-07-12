@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Router } from "express"
 
 import {
     addComment,
@@ -14,9 +14,9 @@ import {
     getBookCommentsSchema,
     getCommentSchema,
     updateCommentSchema
-} from "../../validations/comment-schema.js";
+} from "../../validations/user/comment/comment-schema.js";
 
-export const userCommentRouter = express.Router()
+export const userCommentRouter: Router = express.Router();
 
 userCommentRouter.post("/book/:bookId", validate(commentSchema), addComment);
 userCommentRouter.get("/book/:bookId", validate(getBookCommentsSchema), getBookComments);

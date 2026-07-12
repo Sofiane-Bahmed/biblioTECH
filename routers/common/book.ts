@@ -1,18 +1,18 @@
-import express from "express"
+import express, { Router } from "express"
 
 import {
        getBook,
        getBooks,
        searchBooks,
-} from "../controllers/book.js"
+} from "../../controllers/common/book.js"
 import {
        getBookSchema,
        getBooksSchema,
        searchBookSchema,
-} from "../validations/book-schema.js";
-import { validate } from "../middlewares/validate.js";
+} from "../../validations/common/book/book-schema.js";
+import { validate } from "../../middlewares/validate.js";
 
-export const publicBookRouter = express.Router();
+export const publicBookRouter: Router = express.Router();
 
 publicBookRouter.get("/", validate(getBooksSchema), getBooks);
 publicBookRouter.get("/search", validate(searchBookSchema), searchBooks);

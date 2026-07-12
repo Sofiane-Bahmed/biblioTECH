@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 
 import {
     blockUser,
@@ -16,9 +16,9 @@ import {
     getUsersSchema,
     unblockUserSchema,
     updateUserRoleSchema,
-} from "../../validations/admin-user-schema.js";
+} from "../../validations/admin/user/user-schema.js";
 
-export const adminUserRouter = express.Router();
+export const adminUserRouter: Router = express.Router();
 
 adminUserRouter.get("/get-all", validate(getUsersSchema), getUsers);
 

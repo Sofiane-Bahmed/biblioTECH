@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Router } from "express"
 
 import {
     approveBorrowRequest,
@@ -16,9 +16,9 @@ import {
     getUserBorrowingHistorySchema,
     getBorrowSchema,
     deleteBorrowSchema,
-} from "../../validations/admin-borrow-schema.js";
+} from "../../validations/admin/borrow/borrow-schema.js";
 
-export const adminBorrowRouter = express.Router();
+export const adminBorrowRouter: Router = express.Router();
 
 adminBorrowRouter.get("/", validate(getBorrowsQuerySchema), getBorrows);
 

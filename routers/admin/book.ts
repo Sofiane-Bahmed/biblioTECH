@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Router } from "express"
 
 import {
        addBook,
@@ -11,11 +11,11 @@ import {
        autoImportBookSchema,
        deleteBookSchema,
        updateBookSchema
-} from "../../validations/book-schema.js";
+} from "../../validations/admin/book/book-schema.js";
 import { validate } from "../../middlewares/validate.js";
 import { uploadBookCover } from "../../middlewares/upload.js";
 
-export const adminBookRouter = express.Router();
+export const adminBookRouter: Router = express.Router();
 
 adminBookRouter.post("/", uploadBookCover, validate(addBookSchema), addBook);
 adminBookRouter.get("/auto-import", validate(autoImportBookSchema), autoAddBookByIsbn);

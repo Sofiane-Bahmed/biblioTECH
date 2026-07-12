@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Router } from "express"
 
 import {
     register,
@@ -7,18 +7,17 @@ import {
     refresh,
     forgotPassword,
     resetPassword
-} from "../controllers/auth.js"
+} from "../../controllers/common/auth.js"
 
-import { validate } from "../middlewares/validate.js"
+import { validate } from "../../middlewares/validate.js"
 import {
     forgotPasswordSchema,
     loginSchema,
     registerSchema,
     resetPasswordSchema
-} from "../validations/auth-schema.js"
-import { authenticate } from "../middlewares/authenticate.js"
+} from "../../validations/common/auth/auth-schema.js"
 
-export const authRouter = express.Router()
+export const authRouter: Router = express.Router()
 
 authRouter.post("/register", validate(registerSchema), register)
 authRouter.post("/login", validate(loginSchema), login)

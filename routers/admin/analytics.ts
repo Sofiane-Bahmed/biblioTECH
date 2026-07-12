@@ -1,7 +1,6 @@
-import express from "express";
-
+import express, { Router } from "express";
 import { getLibraryStatistics } from "../../controllers/admin/analytics.js";
 
-export const adminstatisticsRouter = express.Router();
+export const adminstatisticsRouter: Router = express.Router();
 
 adminstatisticsRouter.get("/", getLibraryStatistics);
