@@ -1,8 +1,31 @@
-import mongoose from "mongoose";
+import mongoose, {
+    Schema,
+    Document,
+    Model,
+    Types
+} from "mongoose";
 
-const Schema = mongoose.Schema
+export interface IBook {
+    _id: Types.ObjectId;
+    category: Types.ObjectId[];
+    title: string;
+    author: string[];
+    description: string;
+    copies_available: number;
+    pages: number;
+    language: string;
+    publication_year: number;
+    cover_image: string;
+    isbn: string;
+    borrows?: Types.ObjectId[];
+    comments?: Types.ObjectId[];
+    createdAt?: Date;
+    updatedAt?: Date;
+}
 
-const bookSchema = new Schema(
+export type BookDocument = IBook & Document;
+
+const bookSchema = new Schema<IBook>(
     {
         category: [{
             type: Schema.Types.ObjectId,
@@ -51,20 +74,21 @@ const bookSchema = new Schema(
         },
         borrows: [{
             type: Schema.Types.ObjectId,
-            ref: 'borrowBook'
+            ref: "Borrow"
         }],
         comments: [{
             type: Schema.Types.ObjectId,
-            ref: 'comment'
+            ref: "comment"
         }]
-
+    },
+    {
+        timestamps: true
     }
-).index({
-    title: 'text',
-    author: 'text'
+);
+
+bookSchema.index({
+    title: "text",
+    author: "text"
 });
 
-export const Book = mongoose.model("book", bookSchema)
-
-
-
+export const Book: Model<IBook> = mongoose.model<IBook>("book", bookSchema);
