@@ -1,9 +1,8 @@
-import axios from "axios";
+import { Request, Response } from "express";
+import { Types } from "mongoose";
 
 import { Book } from "../../models/book.js"
-import { Category } from "../../models/category.js";
-import { User } from "../../models/user.js"
-import { BorrowBook } from "../../models/borrow.js"
+
 import asyncHandler from "../../utils/async-handler.js";
 import { notifySubscribersAboutNewBook } from "../../services/notification-service.js";
 import { fetchBookMetadataByIsbn } from "../../services/googleBooks-service.js";
@@ -12,7 +11,24 @@ import {
   validateExistingCategories
 } from "../../services/category-service.js";
 
-export const addBook = asyncHandler(async (req, res) => {
+import {
+  AddBookBody,
+  AutoImportBookBody,
+  DeleteBookParams,
+  UpdateBookBody,
+  UpdateBookParams
+} from "../../validations/admin/book/book-types.js";
+import { AuthenticatedRequest } from "../../types/auth.js";
+
+interface BookUpdatePayload extends Omit<UpdateBookBody, "category"> {
+  category?: Types.ObjectId[];
+  cover_image?: string;
+}
+
+export const addBook = asyncHandler(async (
+  req: AuthenticatedRequest<any, AddBookBody, any>,
+  res: Response
+): Promise<void> => {
 
   const {
     title,
@@ -24,25 +40,27 @@ export const addBook = asyncHandler(async (req, res) => {
     pages,
     language,
     publication_year,
-    cover_image
   } = req.body;
 
   if (!req.file) {
-    return res.status(400).json({ message: "Book cover image is required" });
+    res.status(400).json({ message: "Book cover image is required" });
+    return;
   }
 
   const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
   const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
   if (duplicateBook) {
-    return res.status(400).json({ message: "A book version with this ISBN already exists in inventory." });
+    res.status(400).json({ message: "A book version with this ISBN already exists in inventory." });
+    return;
   }
 
   const { categoryIds, missingCategories } = await validateExistingCategories(category);
   if (missingCategories.length > 0) {
-    return res.status(400).json({
+    res.status(400).json({
       message: "Validation failed: Some specified categories do not exist.",
       missingCategories
     });
+    return;
   }
 
   const authorNames = Array.isArray(author) ? author : [author];
@@ -67,23 +85,29 @@ export const addBook = asyncHandler(async (req, res) => {
 
 });
 
-export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
+export const autoAddBookByIsbn = asyncHandler(async (
+  req: AuthenticatedRequest<any, AutoImportBookBody, any>,
+  res: Response
+): Promise<void> => {
   const { isbn } = req.body;
 
   if (!isbn) {
-    return res.status(400).json({ message: "ISBN code is required to auto-populate fields." });
+    res.status(400).json({ message: "ISBN code is required to auto-populate fields." });
+    return;
   }
 
   const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
 
   const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
   if (duplicateBook) {
-    return res.status(400).json({ message: "This book version already exists in inventory." });
+    res.status(400).json({ message: "This book version already exists in inventory." });
+    return;
   }
 
   const metadata = await fetchBookMetadataByIsbn(normalizedIsbn);
   if (!metadata) {
-    return res.status(404).json({ message: "No book records found on Google Books API for this ISBN." });
+    res.status(404).json({ message: "No book records found on Google Books API for this ISBN." });
+    return;
   }
 
   const categoryIds = await getOrCreateCategories(metadata.categories);
@@ -109,20 +133,24 @@ export const autoAddBookByIsbn = asyncHandler(async (req, res) => {
   notifySubscribersAboutNewBook({ title: metadata.title, author: metadata.authors }).catch(console.error);
 });
 
-export const updateBook = asyncHandler(async (req, res) => {
+export const updateBook = asyncHandler(async (
+  req: AuthenticatedRequest<UpdateBookParams, UpdateBookBody, any>,
+  res: Response
+): Promise<void> => {
   const { bookId } = req.params;
   const { category, ...allowedUpdates } = req.body;
 
-  const updateData = { ...allowedUpdates };
+  const updateData: BookUpdatePayload = { ...allowedUpdates };
 
   if (category) {
     const { categoryIds, missingCategories } = await validateExistingCategories(category);
 
     if (missingCategories.length > 0) {
-      return res.status(400).json({
+      res.status(400).json({
         message: "Validation failed: Some specified categories do not exist.",
         missingCategories
       });
+      return;
     }
     updateData.category = categoryIds;
   }
@@ -138,7 +166,8 @@ export const updateBook = asyncHandler(async (req, res) => {
   ).populate("category");
 
   if (!updatedBook) {
-    return res.status(404).json({ message: "Book not found" });
+    res.status(404).json({ message: "Book not found" });
+    return;
   }
 
   res.status(200).json({
@@ -147,15 +176,19 @@ export const updateBook = asyncHandler(async (req, res) => {
   });
 });
 
-export const deleteBook = asyncHandler(async (req, res) => {
+export const deleteBook = asyncHandler(async (
+  req: AuthenticatedRequest<DeleteBookParams, any, any>,
+  res: Response
+): Promise<void> => {
 
-  const { bookId } = req.params;
+  const { bookId } = req.params ;
 
   const book = await Book.findByIdAndDelete(bookId);
   if (!book) {
-    return res.status(404).json({ message: "book not found" })
+    res.status(404).json({ message: "book not found" });
+    return;
   }
 
-  res.status(200).json({ message: "book deleted successfully" })
+  res.status(200).json({ message: "book deleted successfully" });
 
 });

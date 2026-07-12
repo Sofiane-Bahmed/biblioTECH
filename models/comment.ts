@@ -1,33 +1,64 @@
 import mongoose, {
     Schema,
     Document,
-    Model
+    Model,
+    Types
 } from "mongoose";
 
-export interface ICategory {
-    title: string;
-    description?: string;
+export interface IComment {
+    user: Types.ObjectId;
+    book: Types.ObjectId;
+    comment: string;
+    parentComment: Types.ObjectId | null;
+    date: Date;
+    isDeleted: boolean;
+    replies: Types.ObjectId[];
     createdAt?: Date;
     updatedAt?: Date;
 }
 
-export type CategoryDocument = ICategory & Document;
+export type CommentDocument = IComment & Document;
 
-const categorySchema = new Schema<ICategory>(
+const commentSchema = new Schema<IComment>(
     {
-        title: {
+        user: {
+            type: Schema.Types.ObjectId,
+            ref: "user",
+            required: true
+        },
+        book: {
+            type: Schema.Types.ObjectId,
+            ref: "book",
+            required: true
+        },
+        comment: {
             type: String,
             required: true,
-            trim: true,
+            trim: true
         },
-        description: {
-            type: String,
-            trim: true,
-        }
+        parentComment: {
+            type: Schema.Types.ObjectId,
+            ref: "comment",
+            default: null
+        },
+        date: {
+            type: Date,
+            default: Date.now,
+            required: true
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
+            required: true
+        },
+        replies: [{
+            type: Schema.Types.ObjectId,
+            ref: "comment"
+        }],
     },
     {
         timestamps: true
     }
 );
 
-export const Category: Model<ICategory> = mongoose.model<ICategory>("category", categorySchema);
+export const Comment: Model<IComment> = mongoose.model<IComment>("comment", commentSchema);

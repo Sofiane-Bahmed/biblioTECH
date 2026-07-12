@@ -1,12 +1,12 @@
+import { Response } from "express";
 import mongoose from "mongoose";
 
-import { BorrowBook } from "../../models/borrow.js"
-import { Book } from "../../models/book.js"
+import { Borrow } from "../../models/borrow.js"
+import { Book, IBook } from "../../models/book.js"
 import { User } from "../../models/user.js"
 
 import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension-warning.js";
 import asyncHandler from "../../utils/async-handler.js";
-import { getPaginatedData } from "../../utils/paginate.js";
 
 import {
   checkBorrowEligibility,
@@ -15,73 +15,96 @@ import {
 import { calculateLatePenalty } from "../../services/penalty-service.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
+import {
+  CancelBorrowParams,
+  RenewBorrowParams,
+  RequestBorrowParams,
+  ReturnBookParams
+} from "../../validations/user/borrow/borrow-types.js";
+import { AuthenticatedRequest } from "../../types/auth.js";
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
-export const requestBorrow = asyncHandler(async (req, res) => {
+export const requestBorrow = asyncHandler(async (
+  req: AuthenticatedRequest<RequestBorrowParams, any, any>,
+  res: Response
+): Promise<void> => {
 
   const { bookId } = req.params;
 
-  const userId = req.user._id;
+  const userId = req.user!._id;
 
   const book = await Book.findById(bookId);
   if (!book || book.copies_available <= 0) {
-    return res.status(404).json({ message: "This book is currently out of stock or unavailable." });
+    res.status(404)
+      .json({ message: "This book is currently out of stock or unavailable." });
+    return;
   }
 
-  const alreadyRequested = await BorrowBook.findOne({
+  const alreadyRequested = await Borrow.findOne({
     user: userId,
     book: bookId,
     status: "PENDING"
   });
 
   if (alreadyRequested) {
-    return res.status(400).json({ message: "You already have a pending request for this book." });
+    res.status(400)
+      .json({ message: "You already have a pending request for this book." });
+    return;
   }
 
   const eligibility = await checkBorrowEligibility(userId, bookId);
   if (!eligibility.status) {
-    return res.status(eligibility.code).json({ message: eligibility.message });
+    res.status(eligibility.code).json({ message: eligibility.message });
+    return;
   }
 
-  const newRequest = await BorrowBook.create({
+  const newRequest = await Borrow.create({
     user: userId,
     book: bookId,
     status: "PENDING",
     request_date: new Date()
   });
 
-  return res.status(201).json({
+  res.status(201).json({
     message: "Your borrow request has been submitted successfully and is awaiting admin approval.",
     request: newRequest
   });
 });
 
-export const cancelBorrowRequest = asyncHandler(async (req, res) => {
-  const { borrowId } = req.params;
-  const userId = req.user._id;
+export const cancelBorrowRequest = asyncHandler(async (
+  req: AuthenticatedRequest<CancelBorrowParams, any, any>,
+  res: Response
+): Promise<void> => {
 
-  const borrowRequest = await BorrowBook.findOne({
+  const { borrowId } = req.params;
+
+  const userId = req.user!._id;
+
+  const borrowRequest = await Borrow.findOne({
     _id: borrowId,
     user: userId
   });
 
   if (!borrowRequest) {
-    return res.status(404).json({ message: "Borrow request not found." });
+    res.status(404).json({ message: "Borrow request not found." });
+    return;
   }
 
   if (borrowRequest.status !== "PENDING") {
-    return res.status(400).json({
+    res.status(400).json({
       message: `Cannot cancel this request. It has already been processed as ${borrowRequest.status}.`
     });
+    return;
   }
 
   const eligibility = await checkCancellationEligibility(userId);
   if (!eligibility.status) {
-    return res.status(eligibility.code).json({ message: eligibility.message });
+    res.status(eligibility.code).json({ message: eligibility.message });
+    return;
   }
 
-  const canceledRequest = await BorrowBook.findOneAndUpdate(
+  const canceledRequest = await Borrow.findOneAndUpdate(
     {
       _id: borrowId,
       user: userId,
@@ -97,55 +120,65 @@ export const cancelBorrowRequest = asyncHandler(async (req, res) => {
   );
 
   if (!canceledRequest) {
-    return res.status(400).json({
+    res.status(400).json({
       message: "Cancellation failed. The request may have just been processed by an administrator."
     });
+    return;
   }
 
-  return res.status(200).json({
+  res.status(200).json({
     message: "Your borrow request has been cancelled successfully.",
     borrow: canceledRequest
   });
 });
 
-export const returnBook = asyncHandler(async (req, res) => {
+export const returnBook = asyncHandler(async (
+  req: AuthenticatedRequest<ReturnBookParams, any, any>,
+  res: Response
+): Promise<void> => {
 
   const { borrowId } = req.params;
 
-  const userId = req.user._id;
+  const userId = req.user!._id;
 
-  const borrow = await
-    BorrowBook.findOne({
-      _id: borrowId,
-      user: userId
-    }).populate("book")
+  const borrow = await Borrow.findOne({
+    _id: borrowId,
+    user: userId
+  }).populate<{ book: IBook }>("book")
 
   if (!borrow || !borrow.book) {
-    return res.status(404).json({ message: "Borrow record or associated book not found." });
+    res.status(404).json({ success: false, message: "Borrow record or associated book not found." });
+    return;
   }
 
   if (borrow.status === "RETURNED" || borrow.return_date) {
-    return res.status(400).json({ message: "This book has already been returned." });
+    res.status(400)
+      .json({
+        success: false,
+        message: "This book has already been returned."
+      });
+    return;
   }
 
   if (borrow.status !== "ACTIVE") {
-    return res.status(400).json({
+    res.status(400).json({
+      success: false,
       message: `Cannot process return. Current log track status is marked as: ${borrow.status}`
     });
+    return;
   }
 
   const book = borrow.book;
   const currentDate = new Date();
-
   const penalty = calculateLatePenalty(currentDate, borrow.due_date);
 
-  // Atomic Database Changes
+  // Multi-Document Transaction Initialization for State Alignment
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     // Acknowledge Return Status
-    await BorrowBook.findByIdAndUpdate(
+    await Borrow.findByIdAndUpdate(
       borrowId,
       {
         $set: {
@@ -153,20 +186,23 @@ export const returnBook = asyncHandler(async (req, res) => {
           return_date: currentDate
         }
       },
-      { session });
+      { session }
+    );
 
     // Restock Inventory safely
     await Book.findByIdAndUpdate(
       book._id,
       { $inc: { copies_available: 1 } },
-      { session });
+      { session }
+    );
 
     // Apply Penalties across relevant streams conditionally
     if (penalty.action === "SUSPEND") {
       await User.findByIdAndUpdate(
         userId,
         { $set: { suspension_date: penalty.suspensionDate } },
-        { session });
+        { session }
+      );
     }
 
     await session.commitTransaction();
@@ -174,30 +210,36 @@ export const returnBook = asyncHandler(async (req, res) => {
 
     // Asynchronous Side-Effects (Non-Blocking)
     if (penalty.action === "WARNING") {
-      sendSuspensionWarningEmail(req.user, book).catch(console.error);
+      sendSuspensionWarningEmail(
+        { name: req.user!.name || "Valued Member", email: req.user!.email },
+        { title: book.title }
+      ).catch(console.error);
     }
 
-    return res.status(200).json({ message: penalty.clientMessage });
+    res.status(200).json({ success: true, message: penalty.clientMessage });
 
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
     session.endSession();
-    return res
-      .status(500)
-      .json({
-        message: "Failed to process book return transaction safely.",
-        error: error.message
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to process book return transaction safely.",
+      error: error.message
+    });
   }
 });
 
-export const renewBorrowedBook = asyncHandler(async (req, res) => {
+export const renewBorrow = asyncHandler(async (
+  req: AuthenticatedRequest<RenewBorrowParams, any, any>,
+  res: Response
+): Promise<void> => {
+
   const { borrowId } = req.params;
 
-  const userId = req.user._id;
+  const userId = req.user!._id;
 
   const borrow = await
-    BorrowBook
+    Borrow
       .findOne({
         _id: borrowId,
         user: userId
@@ -206,42 +248,45 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
       .populate("book")
 
   if (!borrow || !borrow.book) {
-    return res.status(404).json({ message: "Active borrow record or associated book not found." });
+    res.status(404).json({ message: "Active borrow record or associated book not found." });
+    return;
   }
 
   if (borrow.status !== "ACTIVE") {
-    return res.status(400).json({
+    res.status(400).json({
       message: `Cannot renew book. Current log track status is marked as: ${borrow.status}`
     });
+    return;
   }
 
   if (borrow.renewed) {
-    return res
+    res
       .status(400)
       .json({ message: "The maximum number of renewals (1) has been reached." });
+    return;
   }
 
   const currentDate = new Date();
   if (currentDate > borrow.due_date) {
-    return res
+    res
       .status(400)
       .json({ message: "Cannot renew a late book. Please return it to inventory first." });
+    return;
   }
 
   const newDueDate = new Date(borrow.due_date);
   newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
 
-  const renewedBorrow = await BorrowBook.findOneAndUpdate(
-    {
-      _id: borrowId,
-      user: userId,
-      status: "ACTIVE",
-      renewed: false
-    },
+  const renewedBorrow = await Borrow.findOneAndUpdate({
+    _id: borrowId,
+    user: userId,
+    status: "ACTIVE",
+    renewed: false
+  },
     {
       $set: {
-        due_date: newDueDate,
-        renewed: true
+        renewed: true,
+        due_date: newDueDate
       }
     },
     {
@@ -251,12 +296,13 @@ export const renewBorrowedBook = asyncHandler(async (req, res) => {
   ).populate("book");
 
   if (!renewedBorrow) {
-    return res
-      .status(400)
-      .json({ message: "Renewal processing failed. The record state may have changed in a parallel session." })
+    res.status(400).json({
+      message: "Renewal failed. The borrow record may have just been processed or is no longer eligible for renewal."
+    });
+    return;
   }
 
-  return res.status(200).json({
+  res.status(200).json({
     message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
     borrow: renewedBorrow
   });

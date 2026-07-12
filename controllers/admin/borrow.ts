@@ -1,6 +1,11 @@
+import { Request, Response } from "express";
 import mongoose from "mongoose";
+import { FilterQuery } from "mongoose";
 
-import { BorrowBook } from "../../models/borrow.js";
+import {
+  Borrow,
+  IBorrow,
+} from "../../models/borrow.js";
 import { Book } from "../../models/book.js";
 import { User } from "../../models/user.js";
 
@@ -8,15 +13,29 @@ import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
+import {
+  ApproveBorrowParams,
+  DeleteBorrowParams,
+  GetBorrowParams,
+  GetBorrowsQuery,
+  GetUserBorrowingHistoryParams,
+  GetUserBorrowingHistoryQuery,
+  RejectBorrowParams
+} from "../../validations/admin/borrow/borrow-types.js";
+import { AuthenticatedRequest } from "../../types/auth.js";
 
 const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
 
-export const approveBorrowRequest = asyncHandler(async (req, res) => {
+export const approveBorrowRequest = asyncHandler(async (
+  req: AuthenticatedRequest<ApproveBorrowParams>,
+  res: Response
+): Promise<void> => {
   const { borrowId } = req.params;
 
-  const borrowRequest = await BorrowBook.findById(borrowId);
+  const borrowRequest = await Borrow.findById(borrowId);
   if (!borrowRequest || borrowRequest.status !== "PENDING") {
-    return res.status(400).json({ message: "Borrow request not found or has already been processed." });
+    res.status(400).json({ message: "Borrow request not found or has already been processed." });
+    return;
   }
 
   const session = await mongoose.startSession();
@@ -27,7 +46,7 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
 
-    const updatedBorrow = await BorrowBook.findOneAndUpdate({
+    const updatedBorrow = await Borrow.findOneAndUpdate({
       _id: borrowRequest._id,
       status: "PENDING",
     },
@@ -46,7 +65,8 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
     if (!updatedBorrow) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: "This request was already processed by another session." });
+      res.status(400).json({ message: "This request was already processed by another session." });
+      return;
     }
 
     const updatedBook = await Book.findOneAndUpdate(
@@ -62,9 +82,12 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
     );
 
     if (!updatedBook) {
-      return res
+      await session.abortTransaction();
+      session.endSession();
+      res
         .status(400)
         .json({ message: "Book inventory depleted at the moment of approval processing." });
+      return;
     }
 
     await User.findByIdAndUpdate(
@@ -80,68 +103,75 @@ export const approveBorrowRequest = asyncHandler(async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return res.status(200).json({
+    res.status(200).json({
+      success: true,
       message: "Borrow request approved. Book is now active.",
       borrow: updatedBorrow
     });
 
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
     session.endSession();
 
-    return res.status(500).json({
+    res.status(500).json({
+      success: false,
       message: "Transaction safety failure while processing admin approval.",
       error: error.message
     });
   }
 });
 
-export const rejectBorrowRequest = asyncHandler(async (req, res) => {
+export const rejectBorrowRequest = asyncHandler(async (
+  req: AuthenticatedRequest<RejectBorrowParams, any, any>,
+  res: Response
+): Promise<void> => {
   const { borrowId } = req.params;
 
-  const borrowRequest = await BorrowBook.findById(borrowId);
+  const borrowRequest = await Borrow.findById(borrowId);
 
   if (!borrowRequest) {
-    return res.status(404).json({ message: "Borrow request not found." });
+    res.status(404).json({ message: "Borrow request not found." });
+    return;
   }
 
   if (borrowRequest.status !== "PENDING") {
-    return res.status(400).json({
+    res.status(400).json({
       message: `Cannot reject this request. It is already marked as ${borrowRequest.status}.`
     });
+    return;
   }
 
-  const rejectedBorrow = await BorrowBook.findOneAndUpdate(
+  const updatedBorrow = await Borrow.findOneAndUpdate(
     {
       _id: borrowRequest._id,
       status: "PENDING"
     }, {
-    $set: {
-      status: "REJECTED"
-    }
+    $set: { status: "REJECTED" }
   },
     {
       new: true,
       runValidators: true
     }
-  );
+  )
 
-  if (!rejectedBorrow) {
-    return res.status(400).json({
-      message: "Rejection failed. The request may have just been processed by another admin."
-    });
+  if (!updatedBorrow) {
+    res.status(400).json({ message: "This request was already processed by another session." });
+    return;
   }
 
-  return res.status(200).json({
+  res.status(200).json({
     message: "Borrow request has been rejected successfully.",
-    borrow: rejectedBorrow
+    borrow: updatedBorrow
   });
 });
 
-export const getBorrows = asyncHandler(async (req, res) => {
+export const getBorrows = asyncHandler(async (
+  req: AuthenticatedRequest<any, any, GetBorrowsQuery>,
+  res: Response
+): Promise<void> => {
   const { status, overdue } = req.query;
 
-  const dbQuery = {};
+  const dbQuery: FilterQuery<IBorrow> = {};
 
   if (status) {
     dbQuery.status = status
@@ -153,7 +183,7 @@ export const getBorrows = asyncHandler(async (req, res) => {
   }
 
   const result = await getPaginatedData({
-    model: BorrowBook,
+    model: Borrow,
     query: dbQuery,
     populate: [
       { path: 'user', select: 'fullName email' },
@@ -162,44 +192,59 @@ export const getBorrows = asyncHandler(async (req, res) => {
     req,
   });
 
-  if (!result.data.length) {
-    return res.status(200).json({ message: "No borrowing history found", data: [] });
+  if (!result.data || !result.data.length) {
+    res.status(200)
+      .json({
+        message: "No borrowing history found",
+        data: []
+      });
+    return;
   }
 
   res.status(200).json(result);
 
 });
 
-export const getBorrow = asyncHandler(async (req, res) => {
+export const getBorrow = asyncHandler(async (
+  req: AuthenticatedRequest<GetBorrowParams, any, any>,
+  res: Response
+): Promise<void> => {
   const { borrowId } = req.params;
 
-  const borrow = await BorrowBook
+  const borrow = await Borrow
     .findById(borrowId)
     .populate('user', 'fullName email')
     .populate('book', 'title author');
 
   if (!borrow) {
-    return res.status(404).json({ message: "Borrow record not found" });
+    res.status(404).json({ message: "Borrow record not found" });
+    return;
   }
   res.status(200).json({ data: borrow });
 });
 
-export const deleteBorrow = asyncHandler(async (req, res) => {
+export const deleteBorrow = asyncHandler(async (
+  req: AuthenticatedRequest<DeleteBorrowParams>,
+  res: Response
+): Promise<void> => {
   const { borrowId } = req.params;
 
-  const borrow = await BorrowBook.findByIdAndDelete(borrowId);
+  const borrow = await Borrow.findByIdAndDelete(borrowId);
   if (!borrow) {
-    return res.status(404).json({ message: "Borrow record not found" });
+    res.status(404).json({ message: "Borrow record not found" });
+    return;
   }
-
   res.status(200).json({ message: "Borrow record deleted successfully" });
 });
 
-export const getUserBorrowingHistory = asyncHandler(async (req, res) => {
+export const getUserBorrowingHistory = asyncHandler(async (
+  req: AuthenticatedRequest<GetUserBorrowingHistoryParams, any, GetUserBorrowingHistoryQuery>,
+  res: Response
+): Promise<void> => {
   const { userId } = req.params;
 
   const result = await getPaginatedData({
-    model: BorrowBook,
+    model: Borrow,
     req,
     query: { user: userId },
     populate: [
@@ -209,7 +254,8 @@ export const getUserBorrowingHistory = asyncHandler(async (req, res) => {
   });
 
   if (!result.data.length) {
-    return res.status(200).json({ message: "No borrowing history found for this user", data: [] });
+    res.status(200).json({ message: "No borrowing history found for this user", data: [] });
+    return;
   }
 
   res.status(200).json(result);

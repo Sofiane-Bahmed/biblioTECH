@@ -1,28 +1,52 @@
+import { Request, Response } from "express";
 import { Book } from "../../models/book.js";
 import { User } from "../../models/user.js";
-import { BorrowBook } from "../../models/borrow.js";
+import { Borrow } from "../../models/borrow.js";
 import asyncHandler from "../../utils/async-handler.js";
 
-export const getLibraryStatistics = asyncHandler(async (req, res) => {
-    
+interface ILoanStatusMetric {
+    activeBorrows: number;
+    overdueBorrows: number;
+}
+
+interface ITopBorrowerMetric {
+    userId: string;
+    borrowCount: number;
+    name: string;
+    email: string;
+}
+
+interface ICategoryPopularityMetric {
+    categoryName: string;
+    borrowCount: number;
+}
+
+interface ILibraryFacetResult {
+    loanStatuses: ILoanStatusMetric[];
+    topBorrowers: ITopBorrowerMetric[];
+    categoryPopularity: ICategoryPopularityMetric[];
+}
+
+export const getLibraryStatistics = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+
     const [totalBooks, totalUsers, advancedMetrics, outOfStockBooks] = await Promise.all([
         Book.countDocuments(),
         User.countDocuments({ subscribed: true }),
-        BorrowBook.aggregate([
+
+        Borrow.aggregate<ILibraryFacetResult>([
             {
                 $facet: {
                     "loanStatuses": [
                         {
                             $group: {
                                 _id: null,
-                                // 1. Active: Counts documents where return_date is missing or null
                                 activeBorrows: {
                                     $sum: {
                                         $cond: [
                                             {
-                                                $or: [
-                                                    { $eq: [{ $type: "$return_date" }, "missing"] },
-                                                    { $eq: ["$return_date", null] }
+                                                $and: [
+                                                    { $eq: ["$status", "ACTIVE"] },
+                                                    { $or: [{ $eq: [{ $type: "$return_date" }, "missing"] }, { $eq: ["$return_date", null] }] }
                                                 ]
                                             },
                                             1,
@@ -35,13 +59,9 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                                         $cond: [
                                             {
                                                 $and: [
-                                                    {
-                                                        $or: [
-                                                            { $eq: [{ $type: "$return_date" }, "missing"] },
-                                                            { $eq: ["$return_date", null] }
-                                                        ]
-                                                    },
-                                                    { $lt: ["$due_date", new Date()] } // Due date is in the past
+                                                    { $eq: ["$status", "ACTIVE"] },
+                                                    { $or: [{ $eq: [{ $type: "$return_date" }, "missing"] }, { $eq: ["$return_date", null] }] },
+                                                    { $lt: ["$due_date", new Date()] }
                                                 ]
                                             },
                                             1,
@@ -53,6 +73,7 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                         }
                     ],
                     "topBorrowers": [
+                        { $match: { status: { $in: ["ACTIVE", "RETURNED"] } } },
                         { $group: { _id: "$user", borrowCount: { $sum: 1 } } },
                         { $sort: { borrowCount: -1 } },
                         { $limit: 5 },
@@ -76,6 +97,7 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                         }
                     ],
                     "categoryPopularity": [
+                        { $match: { status: { $in: ["ACTIVE", "RETURNED"] } } },
                         {
                             $lookup: {
                                 from: "books",
@@ -85,16 +107,16 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
                             }
                         },
                         { $unwind: "$bookDetails" },
-                        { $unwind: "$bookDetails.category" }, // Unwind category array since a book has multiple categories
+                        { $unwind: "$bookDetails.category" },
                         {
                             $group: {
-                                _id: "$bookDetails.category", // Group by the category ObjectId
+                                _id: "$bookDetails.category",
                                 borrowCount: { $sum: 1 }
                             }
                         },
                         {
                             $lookup: {
-                                from: "categories", // Join to resolve ObjectId into a text string title
+                                from: "categories",
                                 localField: "_id",
                                 foreignField: "_id",
                                 as: "categoryDetails"
@@ -116,13 +138,14 @@ export const getLibraryStatistics = asyncHandler(async (req, res) => {
         Book.countDocuments({ copies_available: 0 })
     ]);
 
-    // Extract variables out of the $facet array result securely safely matching defaults
-    const facetResult = advancedMetrics[0] || {};
-    const loanStats = facetResult.loanStatuses?.[0] || { activeBorrows: 0, overdueBorrows: 0 };
-    const topBorrowers = facetResult.topBorrowers || [];
-    const categoryPopularity = facetResult.categoryPopularity || [];
+    const facetResult: Partial<ILibraryFacetResult> = advancedMetrics[0] || {};
+
+    const loanStats: ILoanStatusMetric = facetResult.loanStatuses?.[0] || { activeBorrows: 0, overdueBorrows: 0 };
+    const topBorrowers: ITopBorrowerMetric[] = facetResult.topBorrowers || [];
+    const categoryPopularity: ICategoryPopularityMetric[] = facetResult.categoryPopularity || [];
 
     res.status(200).json({
+        success: true,
         summaryCards: {
             totalBooks,
             totalUsers,

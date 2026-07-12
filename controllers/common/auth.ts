@@ -1,21 +1,38 @@
+import { Request, Response } from "express";
 import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
 
-import { User } from "../models/user.js"
-import { sendWelcomeEmail } from "../utils/email-service/welcome.js";
-import { sendPasswordResetEmail } from "../utils/email-service/reset-password.js";
+import { User } from "../../models/user.js"
+import { sendWelcomeEmail } from "../../utils/email-service/welcome.js";
+import { sendPasswordResetEmail } from "../../utils/email-service/reset-password.js";
 
-import asyncHandler from "../utils/async-handler.js";
+import asyncHandler from "../../utils/async-handler.js";
+import {
+  ForgotPasswordBody,
+  LoginBody,
+  RegisterBody,
+  ResetPasswordBody,
+  ResetPasswordParams
+} from "../../validations/common/auth/auth-types.js";
 
 const { sign, verify } = Jwt;
 
-export const register = asyncHandler(async (req, res) => {
+interface cookieOptions {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "lax" | "strict" | "none";
+}
+
+export const register = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const {
     fullName,
     password,
     email,
     confirmPassword
-  } = req.body;
+  } = req.body as RegisterBody;
 
   // Check if this is the first user to register and assign admin role if so
   const isFirstUser = (await User.countDocuments()) === 0;
@@ -34,9 +51,9 @@ export const register = asyncHandler(async (req, res) => {
 
 });
 
-export const login = asyncHandler(async (req, res) => {
+export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
-  const { email, password } = req.body;
+  const { email, password } = req.body as LoginBody;
 
   const user = await User.findOne({ email }).select('+password');
 
@@ -50,22 +67,25 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   if (!user || !isMatch) {
-    return res.status(401).json({ message: "Invalid email or password credentials." });
+    res.status(401).json({ message: "Invalid email or password credentials." });
+    return;
   }
 
   //check if user is suspended
   if (user.suspension_date && user.suspension_date > new Date()) {
-    return res.status(403).json({
+    res.status(403).json({
       message: "Your account is suspended",
       until: user.suspension_date.toString()
     });
+    return;
   }
 
   //check if user is blocked
   if (user.isBlocked) {
-    return res.status(403).json({
+    res.status(403).json({
       message: "Your account is blocked. Please contact support for more information."
     });
+    return;
   }
 
   const accessToken = sign(
@@ -89,22 +109,28 @@ export const login = asyncHandler(async (req, res) => {
   user.subscribed = true;
   await user.save();
 
-  const cookieOptions = {
+  const baseCookieOptions = {
     httpOnly: true,
     secure: true,
-    sameSite: 'lax'
+    sameSite: 'lax' as const
   };
 
   res.cookie(
     'accessToken',
     accessToken,
-    cookieOptions
+    {
+      ...baseCookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes in milliseconds
+    }
   );
 
   res.cookie(
     'refreshToken',
     refreshToken,
-    cookieOptions
+    {
+      ...baseCookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds   
+    }
   );
 
   res.status(200).json({
@@ -114,7 +140,7 @@ export const login = asyncHandler(async (req, res) => {
 
 });
 
-export const logout = asyncHandler(async (req, res) => {
+export const logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
   const { refreshToken } = req.cookies;
 
@@ -133,16 +159,20 @@ export const logout = asyncHandler(async (req, res) => {
 
 });
 
-export const refresh = asyncHandler(async (req, res) => {
+export const refresh = asyncHandler(async (req: Request, res: Response): Promise<void> => {
 
   const { refreshToken } = req.cookies;
-  if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
+  if (!refreshToken) {
+    res.status(401).json({ message: "No refresh token" });
+    return;
+  }
 
-  let decoded;
+  let decoded: any;
   try {
     decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired refresh token" });
+    res.status(401).json({ message: "Invalid or expired refresh token" });
+    return;
   }
 
   const user = await User
@@ -153,7 +183,8 @@ export const refresh = asyncHandler(async (req, res) => {
     if (user) {
       await User.findByIdAndUpdate(user._id, { refreshToken: null });
     }
-    return res.status(403).json({ message: "Invalid refresh token / Potential theft detected" });
+    res.status(403).json({ message: "Invalid refresh token / Potential theft detected" });
+    return;
   }
 
   // Generate new Pair (Rotate refresh token)
@@ -179,7 +210,7 @@ export const refresh = asyncHandler(async (req, res) => {
     { refreshToken: newRefreshToken }
   );
 
-  const cookieOptions = {
+  const cookieOptions: cookieOptions = {
     httpOnly: true,
     secure: true,
     sameSite: 'strict'
@@ -201,8 +232,8 @@ export const refresh = asyncHandler(async (req, res) => {
 
 });
 
-export const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+export const forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.body as ForgotPasswordBody;
 
   const successResponse = {
     message: "If an account with that email exists, a password reset link has been dispatched shortly."
@@ -210,11 +241,12 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email });
   if (!user) {
-    return res.status(200).json(successResponse);
+    res.status(200).json(successResponse);
+    return;
   }
 
   const resetToken = user.generatePasswordResetToken();
-
+  console.log(`Generated reset token for ${email}: ${resetToken}`); // Log the token for testing purposes
   await user.save();
 
   try {
@@ -226,21 +258,25 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     await user.save();
 
     console.error(`Password reset email delivery failed for ${email}:`, emailError);
-    return res.status(500).json({
+    res.status(500).json({
       message: "An internal error occurred while dispatching recovery notifications. Please try again later."
     });
+    return;
   }
 
   res.status(200).json(successResponse);
 
 });
 
-export const resetPassword = asyncHandler(async (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
+export const resetPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { token } = req.params as ResetPasswordParams;
+  const { password } = req.body as ResetPasswordBody;
 
   const user = await User.findByResetToken(token);
-  if (!user) return res.status(400).json({ message: "Token is invalid or has expired" });
+  if (!user) {
+    res.status(400).json({ message: "Token is invalid or has expired" });
+    return;
+  }
 
   user.password = password;
   await user.save();

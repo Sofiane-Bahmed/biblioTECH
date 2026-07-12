@@ -1,8 +1,16 @@
+import { Request, Response } from "express";
+
 import { Comment } from "../../models/comment.js";
+
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
+import { GetCommentsQuery } from "../../validations/user/comment/comment-types.js";
+import { AuthenticatedRequest } from "../../types/auth.js";
 
-export const getComments = asyncHandler(async (req, res) => {
+export const getComments = asyncHandler(async (
+    req: AuthenticatedRequest<any, any, GetCommentsQuery>,
+    res: Response
+): Promise<void> => {
 
     const result = await getPaginatedData({
         model: Comment,
@@ -21,7 +29,8 @@ export const getComments = asyncHandler(async (req, res) => {
     })
 
     if (!result.data.length) {
-        return res.status(404).json({ message: 'No comments found' });
+        res.status(404).json({ message: 'No comments found' });
+        return;
     }
 
     res.status(200).json(result);

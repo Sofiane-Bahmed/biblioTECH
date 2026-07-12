@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { BorrowBook } from "../models/borrow.js";
+import { Borrow } from "../models/borrow.js";
 import { BORROWING_RULES } from "../constants/library-rules.js";
 
 const {
@@ -40,7 +40,7 @@ export const checkBorrowEligibility = async (
 ): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
 
-    const monthlyCount = await BorrowBook.countDocuments({
+    const monthlyCount = await Borrow.countDocuments({
         user: userId,
         status: { $in: ["ACTIVE", "RETURNED"] },
         borrow_date: { $gte: firstDay, $lte: lastDay },
@@ -54,7 +54,7 @@ export const checkBorrowEligibility = async (
         };
     }
 
-    const pendingCount = await BorrowBook.countDocuments({
+    const pendingCount = await Borrow.countDocuments({
         user: userId,
         status: "PENDING",
         request_date: { $gte: firstDay, $lte: lastDay }
@@ -68,7 +68,7 @@ export const checkBorrowEligibility = async (
         };
     }
 
-    const activeBorrow = await BorrowBook.findOne({
+    const activeBorrow = await Borrow.findOne({
         user: userId,
         book: bookId,
         status: "ACTIVE"
@@ -94,7 +94,7 @@ export const checkCancellationEligibility = async (
 ): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
 
-    const cancelCount = await BorrowBook.countDocuments({
+    const cancelCount = await Borrow.countDocuments({
         user: userId,
         status: "CANCELED",
         updatedAt: { $gte: firstDay, $lte: lastDay }

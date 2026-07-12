@@ -1,3 +1,4 @@
+import { Response } from "express";
 import mongoose from "mongoose";
 
 import { Book } from "../../models/book.js"
@@ -6,15 +7,33 @@ import { User } from "../../models/user.js";
 
 import asyncHandler from "../../utils/async-handler.js";
 import { getPaginatedData } from "../../utils/paginate.js";
+import {
+    CreateCommentBody,
+    CreateCommentParams,
+    DeleteCommentParams,
+    GetBookCommentsParams,
+    GetBookCommentsQuery,
+    GetCommentParams,
+    UpdateCommentBody,
+    UpdateCommentParams
+} from "../../validations/user/comment/comment-types.js";
+import { AuthenticatedRequest } from "../../types/auth.js";
 
-export const addComment = asyncHandler(async (req, res) => {
+export const addComment = asyncHandler(async (
+    req: AuthenticatedRequest<CreateCommentParams, CreateCommentBody, any>,
+    res: Response
+): Promise<void> => {
+
     const { bookId } = req.params;
     const { comment, parentCommentId } = req.body;
 
-    const userId = req.user._id;
+    const userId = req.user!._id;
 
     const bookExists = await Book.exists({ _id: bookId });
-    if (!bookExists) return res.status(404).json({ message: "Book not found" });
+    if (!bookExists) {
+        res.status(404).json({ message: "Book not found" });
+        return;
+    };
 
     const commentData = {
         user: userId,
@@ -33,7 +52,8 @@ export const addComment = asyncHandler(async (req, res) => {
                 .exists({ _id: parentCommentId })
                 .session(session);
             if (!parentExists) {
-                return res.status(404).json({ message: "Parent comment not found" });
+                res.status(404).json({ message: "Parent comment not found" });
+                return;
             }
         }
 
@@ -64,19 +84,21 @@ export const addComment = asyncHandler(async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        return res.status(201).json(savedComment);
+        res.status(201).json(savedComment);
 
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        return res.status(500).json({ message: "Failed to persist comment entry safely.", error: error.message });
+        res.status(500).json({ message: "Failed to persist comment entry safely.", error: error.message });
     }
 });
 
-export const getComment = asyncHandler(async (req, res) => {
+export const getComment = asyncHandler(async (
+    req: AuthenticatedRequest<GetCommentParams, any, any>,
+    res: Response
+): Promise<void> => {
 
     const { commentId } = req.params;
-    
     const comment = await Comment
         .findById(commentId)
         .populate('user', 'fullName email')
@@ -93,21 +115,27 @@ export const getComment = asyncHandler(async (req, res) => {
         });
 
     if (!comment) {
-        return res.status(404).json({ message: 'comment not found' });
+        res.status(404).json({ message: 'comment not found' });
+        return;
     }
 
     res.status(200).json(comment);
 
 });
 
-export const updateComment = asyncHandler(async (req, res) => {
+export const updateComment = asyncHandler(async (
+    req: AuthenticatedRequest<UpdateCommentParams, UpdateCommentBody, any>,
+    res: Response
+): Promise<void> => {
+
     const { commentId } = req.params;
     const { comment } = req.body;
 
-    const userId = req.user._id;
+    const userId = req.user!._id;
 
     if (!comment) {
-        return res.status(400).json({ message: "Comment content is required for updates." });
+        res.status(400).json({ message: "Comment content is required for updates." });
+        return;
     }
 
     const updatedComment = await Comment.findOneAndUpdate(
@@ -123,31 +151,40 @@ export const updateComment = asyncHandler(async (req, res) => {
     );
 
     if (!updatedComment) {
-        return res.status(404).json({
+        res.status(404).json({
             message: "Comment not found or you are not authorized to edit this resource."
         });
+        return;
     }
 
-    return res.status(200).json({
+    res.status(200).json({
         message: "Comment updated successfully",
         comment: updatedComment
     });
 });
 
-export const deleteComment = asyncHandler(async (req, res) => {
+export const deleteComment = asyncHandler(async (
+    req: AuthenticatedRequest<DeleteCommentParams, any, any>,
+    res: Response
+): Promise<void> => {
+
     const { commentId } = req.params;
 
-    const userId = req.user._id;
-    const userRole = req.user.role;
+    const userId = req.user!._id;
+    const userRole = req.user!.role;
 
     const comment = await Comment.findById(commentId);
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
+    if (!comment) {
+        res.status(404).json({ message: "Comment not found" })
+        return;
+    };
 
     const isOwner = comment.user.toString() === userId.toString();
     const isAdmin = userRole === "admin";
 
     if (!isOwner && !isAdmin) {
-        return res.status(403).json({ message: "Unauthorized: You cannot remove this resource." });
+        res.status(403).json({ message: "Unauthorized: You cannot remove this resource." });
+        return;
     }
 
     const session = await mongoose.startSession();
@@ -186,18 +223,21 @@ export const deleteComment = asyncHandler(async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
-        return res.status(200).json({
+        res.status(200).json({
             message: hasReplies ? "Comment masked successfully." : "Comment permanently erased from ecosystem."
         });
 
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        return res.status(500).json({ message: "Failed to cleanly execute comment deletion pipeline.", error: error.message });
+        res.status(500).json({ message: "Failed to cleanly execute comment deletion pipeline.", error: error.message });
     }
 });
 
-export const getBookComments = asyncHandler(async (req, res) => {
+export const getBookComments = asyncHandler(async (
+    req: AuthenticatedRequest<GetBookCommentsParams, any, GetBookCommentsQuery>,
+    res: Response
+): Promise<void> => {
     const { bookId } = req.params;
 
     const result = await getPaginatedData({
@@ -229,7 +269,9 @@ export const getBookComments = asyncHandler(async (req, res) => {
     })
 
     if (!result.data.length) {
-        return res.status(404).json({ message: 'No comments found for this book' });
+        res.status(404).json({ message: 'No comments found for this book' });
+        return;
+
     }
 
     res.status(200).json(result);
