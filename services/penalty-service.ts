@@ -3,9 +3,31 @@ import { PENALTY_RULES, TIME_CONSTANTS } from "../constants/library-rules.js";
 const { MS_PER_DAY } = TIME_CONSTANTS;
 const {
     WARNING_THRESHOLD_DAYS,
-    SUSPENSION_DURATION_DAYS } = PENALTY_RULES;
+    SUSPENSION_DURATION_DAYS
+} = PENALTY_RULES;
 
-export const calculateLatePenalty = (returnDate, dueDate) => {
+interface NoPenaltyResult {
+    action: "NONE";
+    clientMessage: string;
+}
+
+interface WarningPenaltyResult {
+    action: "WARNING";
+    clientMessage: string;
+}
+
+interface SuspensionPenaltyResult {
+    action: "SUSPEND";
+    suspensionDate: Date;
+    clientMessage: string;
+}
+
+export type LatePenaltyResult = NoPenaltyResult | WarningPenaltyResult | SuspensionPenaltyResult;
+
+export const calculateLatePenalty = (
+    returnDate: Date,
+    dueDate: Date
+): LatePenaltyResult => {
     const d1 = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
     const d2 = new Date(returnDate.getFullYear(), returnDate.getMonth(), returnDate.getDate());
 
