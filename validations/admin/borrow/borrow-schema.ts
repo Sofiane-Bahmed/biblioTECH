@@ -1,0 +1,73 @@
+import { z } from "zod";
+
+// Reusable MongoDB ObjectId validation rule
+const objectIdSchema = z
+    .string()
+    .length(24, "ID must be exactly 24 characters")
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format");
+
+// Reusable administrative pagination parameters
+const adminPaginationSchema = z.object({
+    page: z
+        .coerce
+        .number()
+        .int()
+        .min(1)
+        .default(1),
+    limit: z
+        .coerce
+        .number()
+        .int()
+        .min(1)
+        .max(50) 
+        .default(10),
+});
+
+export const approveBorrowRequestSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+});
+
+export const rejectBorrowRequestSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+});
+
+export const getBorrowSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+});
+
+export const deleteBorrowSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+});
+
+export const getUserBorrowingHistorySchema = z.object({
+    params: z.object({
+        userId: objectIdSchema,
+    }),
+    query: adminPaginationSchema.extend({
+        limit: z.coerce.number().int().min(1).max(100).default(10), // Extends max to 100 specifically for history logs
+    }).optional()
+});
+
+export const getBorrowsQuerySchema = z.object({
+    query: adminPaginationSchema.extend({
+        status: z
+            .string()
+            .optional()
+            .transform((val) => val?.toUpperCase())
+            .pipe(
+                z.enum(["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"]).optional()
+            ),
+        overdue: z
+            .string()
+            .optional()
+            .transform((val) => val === "true")
+    })
+});

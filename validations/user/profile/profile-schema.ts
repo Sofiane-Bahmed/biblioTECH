@@ -8,9 +8,8 @@ export const updateMyProfileSchema = z.object({
         email: z
             .string()
             .email("Invalid email format"),
-
-    }).partial()
-})
+    }).partial() // Safely makes fullName and email optional for patch updates
+});
 
 export const getMyBorrowsQuerySchema = z.object({
     query: z.object({
@@ -20,7 +19,6 @@ export const getMyBorrowsQuerySchema = z.object({
             .int()
             .min(1)
             .default(1),
-
         limit: z
             .coerce
             .number()
@@ -28,18 +26,16 @@ export const getMyBorrowsQuerySchema = z.object({
             .min(1)
             .max(50)
             .default(10),
-
         status: z
             .string()
             .optional()
             .transform((val) => val?.toUpperCase())
-            .pipe(
-                z.enum(["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"]).optional()
-            ),
-
+            // Ensure the incoming piped type correctly allows the transformed undefined state
+            .pipe(z.enum(["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"]).optional()),
         overdue: z
             .string()
             .optional()
+            // Transforms string query param "?overdue=true" into a real boolean state
             .transform((val) => val === "true")
     })
 });
