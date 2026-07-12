@@ -5,11 +5,11 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "tsx watch server.js",
+    "start": "node dist/server.ts",
+    "dev": "tsx watch server.ts",
     "build": "tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
-    "db:seed": "node seed.js"
+    "db:seed": "node seed.ts"
   },
   "author": "",
   "license": "ISC",

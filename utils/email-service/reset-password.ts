@@ -1,6 +1,14 @@
 import { sendEmailNotification } from "./index.js";
 
-export const sendPasswordResetEmail = async (user, resetToken) => {
+interface PasswordResetUserInput {
+    email: string;
+    fullName: string;
+}
+
+export const sendPasswordResetEmail = async (
+    user: PasswordResetUserInput,
+    resetToken: string
+): Promise<void> => {
     try {
         const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
         const subject = 'Password Reset Request';
