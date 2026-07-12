@@ -16,7 +16,9 @@ jest.unstable_mockModule("axios", () => ({
 jest.unstable_mockModule("resend", () => ({
     Resend: jest.fn().mockImplementation(() => ({
         emails: {
-            send: jest.fn().mockResolvedValue({ data: { id: "test-id" }, error: null }),
+            send: jest.fn().mockImplementation(() =>
+                Promise.resolve({ data: { id: "test-id" }, error: null })
+            ),
         },
     })),
 }));
@@ -28,18 +30,17 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
             config: jest.fn(),
         },
         storage: {
-            _handleFile: (req, file, cb) => {
-                // Drain the stream to prevent request hanging
-                file.stream.on("data", () => {});
+            _handleFile: (req: any, file: any, cb: any) => {
+                file.stream.on("data", () => { });
                 file.stream.on("end", () => {
                     cb(null, {
                         path: "http://mock-cloudinary.com/image.jpg",
                         size: 1234
                     });
                 });
-                file.stream.on("error", (err) => cb(err));
+                file.stream.on("error", (err: Error) => cb(err));
             },
-            _removeFile: (req, file, cb) => {
+            _removeFile: (req: any, file: any, cb: any) => {
                 cb(null);
             }
         },
@@ -53,20 +54,21 @@ const { Category } = await import("../models/category.js");
 const { User } = await import("../models/user.js");
 const { default: axios } = await import("axios");
 
-jest.setTimeout(10000); // Increase timeout for database operations
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+jest.setTimeout(10000);
 
 describe("🛡️ Backend Security & Admin Operations - Book Management", () => {
-    let adminToken;
-    let adminUser;
-    let testCategory;
-    let testBookId;
+    let adminToken: string;
+    let adminUser: any;
+    let testCategory: any;
+    let testBookId: string;
 
     beforeAll(async () => {
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(process.env.DBURI);
+            await mongoose.connect(process.env.DBURI!);
         }
 
-        // 1. Cleanup & Setup Admin
         await User.deleteMany({ email: "admin@test.com" });
         await Book.deleteMany({ title: /Admin Book|Auto Imported Book/ });
 
@@ -80,11 +82,10 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
 
         adminToken = Jwt.sign(
             { _id: adminUser._id, role: "admin" },
-            process.env.JWT_ACCESS_SECRET,
+            process.env.JWT_ACCESS_SECRET!,
             { expiresIn: "1h" }
         );
 
-        // 2. Setup Category
         testCategory = await Category.findOneAndUpdate(
             { title: "Science Fiction" },
             { title: "Science Fiction", description: "Sci-Fi Books" },
@@ -104,7 +105,8 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
                 .field("title", "New Admin Book")
                 .field("isbn", "0486284737")
                 .field("author", "Admin Author")
-                .field("category", "Science Fiction")
+                // Pass category as an array element if your middleware/validation requires it
+                .field("category[]", "Science Fiction")
                 .field("description", "A book added by admin for testing.")
                 .field("copies_available", 10)
                 .field("pages", 350)
@@ -124,7 +126,7 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
                 .field("title", "Invalid Category Book")
                 .field("isbn", "0486284738")
                 .field("author", "Author")
-                .field("category", "Non-Existent Category")
+                .field("category[]", "Non-Existent Category")
                 .field("description", "Description...")
                 .field("copies_available", 1)
                 .field("pages", 100)
@@ -139,7 +141,7 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
         it("Should reject non-admin users", async () => {
             const userToken = Jwt.sign(
                 { _id: new mongoose.Types.ObjectId(), role: "user" },
-                process.env.JWT_ACCESS_SECRET
+                process.env.JWT_ACCESS_SECRET!
             );
 
             const res = await request(app)
@@ -170,12 +172,12 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
                 }
             };
 
-            axios.get.mockResolvedValue(mockGoogleResponse);
+            mockedAxios.get.mockResolvedValue(mockGoogleResponse);
 
             const res = await request(app)
-                .get("/api/admin/books/auto-import")
+                .post("/api/admin/books/auto-import") 
                 .set("Cookie", [`accessToken=${adminToken}`])
-                .send({ isbn: "0486284739" });
+                .send({ isbn: "0486284739" }); 
 
             expect(res.statusCode).toBe(201);
             expect(res.body.message).toBe("Book auto-discovered and registered successfully!");
@@ -183,7 +185,7 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
         });
     });
 
-    describe("PUT /api/admin/books/:id", () => {
+    describe("PUT /api/admin/books/:bookId", () => {
         it("Should allow admin to update book details", async () => {
             const res = await request(app)
                 .put(`/api/admin/books/${testBookId}`)
@@ -196,7 +198,7 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
         });
     });
 
-    describe("DELETE /api/admin/books/:id", () => {
+    describe("DELETE /api/admin/books/:bookId", () => {
         it("Should allow admin to delete a book", async () => {
             const res = await request(app)
                 .delete(`/api/admin/books/${testBookId}`)

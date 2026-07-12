@@ -16,7 +16,9 @@ jest.unstable_mockModule("axios", () => ({
 jest.unstable_mockModule("resend", () => ({
     Resend: jest.fn().mockImplementation(() => ({
         emails: {
-            send: jest.fn().mockResolvedValue({ data: { id: "test-id" }, error: null }),
+            send: jest.fn().mockImplementation(() =>
+                Promise.resolve({ data: { id: "test-id" }, error: null })
+            ),
         },
     })),
 }));
@@ -28,26 +30,26 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
             config: jest.fn(),
         },
         storage: {
-            _handleFile: (req, file, cb) => {
-                file.stream.on("data", () => {});
+            _handleFile: (req: any, file: any, cb: any) => {
+                file.stream.on("data", () => { });
                 file.stream.on("end", () => {
                     cb(null, {
                         path: "http://mock-cloudinary.com/image.jpg",
                         size: 1234
                     });
                 });
-                file.stream.on("error", (err) => cb(err));
+                file.stream.on("error", (err: Error) => cb(err));
             },
-            _removeFile: (req, file, cb) => {
+            _removeFile: (req: any, file: any, cb: any) => {
                 cb(null);
             }
         },
     };
 });
 
-// Dynamic imports after mocks
+// Dynamic imports after mocks to guarantee type loading resolution order
 const { default: app } = await import("../app.js");
-const { BorrowBook } = await import("../models/borrow.js");
+const { Borrow } = await import("../models/borrow.js");
 const { Book } = await import("../models/book.js");
 const { User } = await import("../models/user.js");
 const { Category } = await import("../models/category.js");
@@ -55,24 +57,24 @@ const { Category } = await import("../models/category.js");
 jest.setTimeout(15000);
 
 describe("📊 Admin Analytics Operations", () => {
-    let adminToken;
-    let adminUser;
-    let testUser1;
-    let testUser2;
-    let testCategory;
-    let testBookInStock;
-    let testBookOutOfStock;
+    let adminToken: string;
+    let adminUser: any;
+    let testUser1: any;
+    let testUser2: any;
+    let testCategory: any;
+    let testBookInStock: any;
+    let testBookOutOfStock: any;
 
     beforeAll(async () => {
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(process.env.DBURI);
+            await mongoose.connect(process.env.DBURI!);
         }
 
         // Comprehensive Cleanup to ensure accurate counts
         await User.deleteMany({});
         await Category.deleteMany({});
         await Book.deleteMany({});
-        await BorrowBook.deleteMany({});
+        await Borrow.deleteMany({});
 
         // 1. Setup Admin
         adminUser = await User.create({
@@ -85,7 +87,7 @@ describe("📊 Admin Analytics Operations", () => {
 
         adminToken = Jwt.sign(
             { _id: adminUser._id, role: "admin" },
-            process.env.JWT_ACCESS_SECRET,
+            process.env.JWT_ACCESS_SECRET!,
             { expiresIn: "1h" }
         );
 
@@ -139,27 +141,33 @@ describe("📊 Admin Analytics Operations", () => {
             cover_image: "http://mock-cloudinary.com/image.jpg"
         });
 
-        // 5. Setup Borrows
+        // 5. Setup Borrows aligned explicitly with state statuses
         // Active loan
-        await BorrowBook.create({
+        await Borrow.create({
             user: testUser1._id,
             book: testBookInStock._id,
+            status: "ACTIVE", // <-- Updated
+            request_date: new Date(),
             borrow_date: new Date(),
             due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         });
 
         // Overdue loan
-        await BorrowBook.create({
+        await Borrow.create({
             user: testUser2._id,
             book: testBookInStock._id,
+            status: "ACTIVE", // <-- Updated
+            request_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
             borrow_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
             due_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         });
 
         // Returned loan
-        await BorrowBook.create({
+        await Borrow.create({
             user: testUser1._id,
             book: testBookOutOfStock._id,
+            status: "RETURNED", // <-- Updated
+            request_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             borrow_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             due_date: new Date(Date.now() - 23 * 24 * 60 * 60 * 1000),
             return_date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000)
@@ -177,36 +185,36 @@ describe("📊 Admin Analytics Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            
+
             // Verify Summary Cards
             const { summaryCards } = res.body;
             expect(summaryCards.totalBooks).toBe(2);
             expect(summaryCards.totalUsers).toBe(3); // admin + 2 test users (all subscribed)
-            expect(summaryCards.activeLoans).toBe(2); // Active + Overdue are both active
-            expect(summaryCards.overdueLoans).toBe(1);
+            expect(summaryCards.activeLoans).toBe(2); // The 2 explicit "ACTIVE" loans
+            expect(summaryCards.overdueLoans).toBe(1); // The 1 "ACTIVE" past due_date loan
             expect(summaryCards.outOfStockAlerts).toBe(1);
 
             // Verify Charts
             const { charts } = res.body;
             expect(charts.genreDistribution).toBeDefined();
-            const categoryStats = charts.genreDistribution.find(c => c.categoryName === "Stats Category");
+            const categoryStats = charts.genreDistribution.find((c: any) => c.categoryName === "Stats Category");
             expect(categoryStats).toBeDefined();
-            expect(categoryStats.borrowCount).toBe(3); // All 3 borrows belong to this category
+            expect(categoryStats.borrowCount).toBe(3); // 2 ACTIVE + 1 RETURNED count toward metrics
 
             // Verify Leaderboards
             const { leaderboards } = res.body;
             expect(leaderboards.powerUsers).toBeDefined();
             expect(leaderboards.powerUsers.length).toBeGreaterThanOrEqual(2);
-            
-            const topUser = leaderboards.powerUsers.find(u => u.email === "user1-stats@test.com");
+
+            const topUser = leaderboards.powerUsers.find((u: any) => u.email === "user1-stats@test.com");
             expect(topUser).toBeDefined();
-            expect(topUser.borrowCount).toBe(2);
+            expect(topUser.borrowCount).toBe(2); // 1 active + 1 returned
         });
 
         it("Should reject non-admin access", async () => {
             const userToken = Jwt.sign(
                 { _id: testUser1._id, role: "user" },
-                process.env.JWT_ACCESS_SECRET
+                process.env.JWT_ACCESS_SECRET!
             );
 
             const res = await request(app)

@@ -1,28 +1,24 @@
 import request from "supertest";
 import mongoose from "mongoose";
 
-import app from "../app.js"; 
-import { Book } from "../models/book.js";
-import { Category } from "../models/category.js";
-
-// Setup global hooks before running tests
-beforeAll(async () => {
-    // Ensure your test environment connects to your development or isolated test database cluster
-    if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(process.env.DBURI);
-    }
-});
-
-// Close database connections cleanly when finished to prevent open handles
-afterAll(async () => {
-    await mongoose.connection.close();
-});
+import app from "../app.js";
+const { Book } = await import("../models/book.js");
+const { Category } = await import("../models/category.js");
 
 describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
-    let testBookId;
-    let testCategory;
+    let testBookId: string;
+    let testCategory: any;
 
     beforeAll(async () => {
+        // Safely connect using type assertion for the environment variable string
+        if (mongoose.connection.readyState === 0) {
+            await mongoose.connect(process.env.DBURI!);
+        }
+
+        // Clean collections to maintain clean state machine operations
+        await Book.deleteMany({});
+        await Category.deleteMany({});
+
         // Seed a category and a book for testing individual book retrieval
         testCategory = await Category.findOneAndUpdate(
             { title: "Test Category" },
@@ -46,9 +42,14 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
             },
             { upsert: true, new: true }
         );
-        testBookId = testBook._id.toString();
+        testBookId = (testBook._id as mongoose.Types.ObjectId).toString();
     });
 
+    afterAll(async () => {
+        await mongoose.connection.close();
+    });
+
+    // --- GET /api/books ---
     it("GET /api/books -> Should return a structured paginated object layer", async () => {
         const res = await request(app)
             .get("/api/books")
@@ -61,15 +62,13 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
         expect(res.body.data.length).toBeGreaterThan(0);
     });
 
+    // --- GET /api/books/search ---
     it("GET /api/books/search -> Should return a structured paginated object layer", async () => {
         const res = await request(app)
             .get("/api/books/search")
-            .query({ page: 1, limit: 5, title: "Test" }); 
+            .query({ page: 1, limit: 5, title: "Test" });
 
-        // 1. Assert Response Status
         expect(res.statusCode).toBe(200);
-
-        // 2. Assert Reusable Pagination Utility Structure Integrity
         expect(res.body).toHaveProperty("success", true);
         expect(res.body).toHaveProperty("data");
         expect(res.body).toHaveProperty("totalItems");
@@ -77,7 +76,8 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
         expect(Array.isArray(res.body.data)).toBe(true);
     });
 
-    it("GET /api/books/:id -> Should return a single book object", async () => {
+    // --- GET /api/books/:bookId ---
+    it("GET /api/books/:bookId -> Should return a single book object", async () => {
         const res = await request(app)
             .get(`/api/books/${testBookId}`);
 
@@ -86,7 +86,7 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
         expect(res.body).toHaveProperty("title", "Test Book");
     });
 
-    it("GET /api/books/:id -> Should return 400 for invalid ID format", async () => {
+    it("GET /api/books/:bookId -> Should return 400 for invalid ID format", async () => {
         const res = await request(app)
             .get("/api/books/invalid-id");
 
@@ -95,7 +95,7 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
         expect(res.body).toHaveProperty("errors");
     });
 
-    it("GET /api/books/:id -> Should return 404 for non-existent book", async () => {
+    it("GET /api/books/:bookId -> Should return 404 for non-existent book", async () => {
         const nonExistentId = new mongoose.Types.ObjectId().toString();
         const res = await request(app)
             .get(`/api/books/${nonExistentId}`);
@@ -103,5 +103,4 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
         expect(res.statusCode).toBe(404);
         expect(res.body).toHaveProperty("message", "Book not found");
     });
-
 });
