@@ -16,7 +16,7 @@ jest.unstable_mockModule("axios", () => ({
 jest.unstable_mockModule("resend", () => ({
     Resend: jest.fn().mockImplementation(() => ({
         emails: {
-            send: jest.fn().mockResolvedValue({ data: { id: "test-id" }, error: null }),
+            send: jest.fn().mockImplementation(() => Promise.resolve({ data: { id: "test-id" }, error: null }))
         },
     })),
 }));
@@ -29,7 +29,7 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
         },
         storage: {
             _handleFile: (req, file, cb) => {
-                file.stream.on("data", () => {});
+                file.stream.on("data", () => { });
                 file.stream.on("end", () => {
                     cb(null, {
                         path: "http://mock-cloudinary.com/image.jpg",
@@ -93,7 +93,7 @@ describe("🛡️ Admin User Operations", () => {
         await mongoose.connection.close();
     });
 
-    describe("GET /api/admin/users/getAll", () => {
+    describe("GET /api/admin/users/get-All", () => {
         it("Should return all users with pagination", async () => {
             const res = await request(app)
                 .get("/api/admin/users/getAll")

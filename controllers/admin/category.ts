@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 
 import { Category } from "../../models/category.js"
 import asyncHandler from "../../utils/async-handler.js";

@@ -24,7 +24,7 @@ router.use("/books", publicBookRouter)
 
 router.use("/user/borrows", authenticate, userBorrowRouter)
 router.use("/user/comments", authenticate, userCommentRouter)
-router.use("/user/profile", authenticate, profileRouter)
+router.use("/user/profile/me", authenticate, profileRouter)
 
 router.use("/admin/users", authenticate, authorize("admin"), adminUserRouter)
 router.use("/admin/books", authenticate, authorize("admin"), adminBookRouter)

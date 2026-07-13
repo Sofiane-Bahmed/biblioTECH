@@ -42,22 +42,40 @@ Bibliotech is a robust and scalable Library Management System API. Designed to s
 3. **Configure environment variables:**
    Create a `.env` file in the root directory and add your credentials:
    ```env
-   PORT=8080
-   DBURI=mongodb+srv://your_uri
-   JWT_SECRET=your_super_secret_key
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   RESEND_API_KEY=your_resend_key
+PORT=8080
+DBURI=mongodb+srv://your_uri
+
+RESEND_API_KEY=your_resend_key
+
+JWT_SECRET=your_JWT_secret_key
+JWT_ACCESS_SECRET=your_JWT_access_secret_key
+JWT_REFRESH_SECRET==your_JWT_refresh_secret_key
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_key
+
+GOOGLE_BOOKS_API_KEY=your_goole_books_api_key
    ```
 
-4. **Run the development server:**
+4. **Seed the database (Optional but Recommended):**
+   ```bash
+   npm run db:seed
+   ```
+
+5. **Run the development server:**
    ```bash
    npm run dev
    ```
    The API will be available at `http://localhost:5000/api`.
 
 ---
+
+## 🧪 Running Tests
+
+   ```bash
+   npm run test
+   ```
 
 ## 🛠 API Architecture
 

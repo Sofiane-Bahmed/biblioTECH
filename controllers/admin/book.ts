@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { Types } from "mongoose";
 
 import { Book } from "../../models/book.js"
@@ -181,7 +181,7 @@ export const deleteBook = asyncHandler(async (
   res: Response
 ): Promise<void> => {
 
-  const { bookId } = req.params ;
+  const { bookId } = req.params;
 
   const book = await Book.findByIdAndDelete(bookId);
   if (!book) {
