@@ -24,7 +24,7 @@ jest.unstable_mockModule("resend", () => ({
 }));
 
 // Mock Cloudinary storage
-jest.unstable_mockModule("../config/cloudinary.js", async () => {
+jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     return {
         cloudinary: {
             config: jest.fn(),
@@ -48,10 +48,10 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
 });
 
 // Dynamic imports after mocks
-const { default: app } = await import("../app.js");
-const { Book } = await import("../models/book.js");
-const { Category } = await import("../models/category.js");
-const { User } = await import("../models/user.js");
+const { default: app } = await import("../../app.js");
+const { Book } = await import("../../models/book.js");
+const { Category } = await import("../../models/category.js");
+const { User } = await import("../../models/user.js");
 const { default: axios } = await import("axios");
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -175,7 +175,7 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
             mockedAxios.get.mockResolvedValue(mockGoogleResponse);
 
             const res = await request(app)
-                .post("/api/admin/books/auto-import") 
+                .get("/api/admin/books/auto-import") 
                 .set("Cookie", [`accessToken=${adminToken}`])
                 .send({ isbn: "0486284739" }); 
 

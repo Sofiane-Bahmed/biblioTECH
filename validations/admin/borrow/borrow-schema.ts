@@ -19,7 +19,7 @@ const adminPaginationSchema = z.object({
         .number()
         .int()
         .min(1)
-        .max(50) 
+        .max(50)
         .default(10),
 });
 
@@ -33,6 +33,12 @@ export const rejectBorrowRequestSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
     }),
+    body: z.object({
+        rejection_message: z
+            .string()
+            .min(3, "Rejection message must be at least 3 characters")
+            .max(200, "Rejection message must be at most 200 characters")
+    })
 });
 
 export const getBorrowSchema = z.object({

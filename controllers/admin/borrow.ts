@@ -20,6 +20,7 @@ import {
   GetBorrowsQuery,
   GetUserBorrowingHistoryParams,
   GetUserBorrowingHistoryQuery,
+  RejectBorrowBody,
   RejectBorrowParams
 } from "../../validations/admin/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
@@ -122,10 +123,11 @@ export const approveBorrowRequest = asyncHandler(async (
 });
 
 export const rejectBorrowRequest = asyncHandler(async (
-  req: AuthenticatedRequest<RejectBorrowParams, any, any>,
+  req: AuthenticatedRequest<RejectBorrowParams, RejectBorrowBody, any>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
+  const { rejectionMessage } = req.body;
 
   const borrowRequest = await Borrow.findById(borrowId);
 
@@ -146,7 +148,10 @@ export const rejectBorrowRequest = asyncHandler(async (
       _id: borrowRequest._id,
       status: "PENDING"
     }, {
-    $set: { status: "REJECTED" }
+    $set: {
+      status: "REJECTED",
+      rejection_message: rejectionMessage
+    }
   },
     {
       new: true,

@@ -13,6 +13,7 @@ export type ApproveBorrowParams = ApproveBorrowRequest["params"];
 
 export type RejectBorrowRequest = z.infer<typeof rejectBorrowRequestSchema>;
 export type RejectBorrowParams = RejectBorrowRequest["params"];
+export type RejectBorrowBody = RejectBorrowRequest["body"];
 
 export type GetBorrowRequest = z.infer<typeof getBorrowSchema>;
 export type GetBorrowParams = GetBorrowRequest["params"];

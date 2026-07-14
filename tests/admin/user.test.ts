@@ -22,7 +22,7 @@ jest.unstable_mockModule("resend", () => ({
 }));
 
 // Mock Cloudinary storage
-jest.unstable_mockModule("../config/cloudinary.js", async () => {
+jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     return {
         cloudinary: {
             config: jest.fn(),
@@ -46,8 +46,8 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
 });
 
 // Dynamic imports after mocks
-const { default: app } = await import("../app.js");
-const { User } = await import("../models/user.js");
+const { default: app } = await import("../../app.js");
+const { User } = await import("../../models/user.js");
 
 jest.setTimeout(10000);
 
@@ -93,10 +93,10 @@ describe("🛡️ Admin User Operations", () => {
         await mongoose.connection.close();
     });
 
-    describe("GET /api/admin/users/get-All", () => {
+    describe("GET /api/admin/users/get-all", () => {
         it("Should return all users with pagination", async () => {
             const res = await request(app)
-                .get("/api/admin/users/getAll")
+                .get("/api/admin/users/get-all")
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
@@ -106,7 +106,7 @@ describe("🛡️ Admin User Operations", () => {
         });
     });
 
-    describe("GET /api/admin/users/:id", () => {
+    describe("GET /api/admin/users/:userId", () => {
         it("Should return a specific user by ID", async () => {
             const res = await request(app)
                 .get(`/api/admin/users/${testUserId}`)
@@ -151,7 +151,7 @@ describe("🛡️ Admin User Operations", () => {
         });
     });
 
-    describe("PUT /api/admin/users/:id/block", () => {
+    describe("PUT /api/admin/users/:userId/block", () => {
         it("Should block a user", async () => {
             const res = await request(app)
                 .put(`/api/admin/users/${testUserId}/block`)
@@ -162,7 +162,7 @@ describe("🛡️ Admin User Operations", () => {
         });
     });
 
-    describe("PUT /api/admin/users/:id/unblock", () => {
+    describe("PUT /api/admin/users/:userId/unblock", () => {
         it("Should unblock a user", async () => {
             const res = await request(app)
                 .put(`/api/admin/users/${testUserId}/unblock`)
@@ -173,7 +173,7 @@ describe("🛡️ Admin User Operations", () => {
         });
     });
 
-    describe("DELETE /api/admin/users/:id", () => {
+    describe("DELETE /api/admin/users/:userId", () => {
         it("Should delete a user", async () => {
             const res = await request(app)
                 .delete(`/api/admin/users/${testUserId}`)
@@ -195,7 +195,7 @@ describe("🛡️ Admin User Operations", () => {
             );
 
             const res = await request(app)
-                .get("/api/admin/users/getAll")
+                .get("/api/admin/users/get-all")
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(403);
@@ -203,7 +203,7 @@ describe("🛡️ Admin User Operations", () => {
 
         it("Should reject unauthenticated requests", async () => {
             const res = await request(app)
-                .get("/api/admin/users/getAll");
+                .get("/api/admin/users/get-all");
 
             expect(res.statusCode).toBe(401);
         });

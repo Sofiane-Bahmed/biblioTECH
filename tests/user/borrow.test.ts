@@ -3,6 +3,10 @@ import mongoose from "mongoose";
 import Jwt from "jsonwebtoken";
 import { jest } from "@jest/globals";
 
+import { BORROWING_RULES } from "../../constants/library-rules.js";
+
+const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES
+
 // Mocking external services
 jest.unstable_mockModule("axios", () => ({
     default: {
@@ -21,7 +25,7 @@ jest.unstable_mockModule("resend", () => ({
     })),
 }));
 
-jest.unstable_mockModule("../config/cloudinary.js", async () => {
+jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     return {
         cloudinary: { config: jest.fn() },
         storage: {
@@ -38,11 +42,11 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
 });
 
 // Dynamic imports after module mocks executed
-const { default: app } = await import("../app.js");
-const { Borrow } = await import("../models/borrow.js");
-const { Book } = await import("../models/book.js");
-const { User } = await import("../models/user.js");
-const { Category } = await import("../models/category.js");
+const { default: app } = await import("../../app.js");
+const { Borrow } = await import("../../models/borrow.js");
+const { Book } = await import("../../models/book.js");
+const { User } = await import("../../models/user.js");
+const { Category } = await import("../../models/category.js");
 
 jest.setTimeout(15000);
 
@@ -101,11 +105,11 @@ describe("📖 User Borrow Operations", () => {
         await mongoose.connection.close();
     });
 
-    // --- POST /api/user/borrows/book/:bookId ---
-    describe("POST /api/user/borrows/book/:bookId", () => {
+    // --- POST /api/user/borrows/:bookId/request ---
+    describe("POST /api/user/borrows/:bookId/request", () => {
         it("Should allow a user to submit a pending borrow request", async () => {
             const res = await request(app)
-                .post(`/api/user/borrows/book/${testBook._id}`)
+                .post(`/api/user/borrows/${testBook._id}/request`)
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(201);
@@ -117,7 +121,7 @@ describe("📖 User Borrow Operations", () => {
 
         it("Should fail if a user already has a pending request matching the targeted book criteria", async () => {
             const res = await request(app)
-                .post(`/api/user/borrows/book/${testBook._id}`)
+                .post(`/api/user/borrows/${testBook._id}/request`)
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(400);
@@ -128,11 +132,12 @@ describe("📖 User Borrow Operations", () => {
     // --- PATCH /api/user/borrows/:borrowId/renew ---
     describe("PATCH /api/user/borrows/:borrowId/renew", () => {
         beforeEach(async () => {
-            // Re-seed active lifecycle log for targeted testing states
+
             await Borrow.findByIdAndUpdate(testBorrowId, {
                 $set: {
                     status: "ACTIVE",
-                    due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // Active, 5 days remaining
+                    book: testBook._id,
+                    due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                     renewed: false
                 }
             });

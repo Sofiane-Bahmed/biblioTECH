@@ -11,6 +11,7 @@ export interface IBorrow {
   user: Types.ObjectId;
   book: Types.ObjectId;
   status: BorrowStatus;
+  rejection_message: string;
   request_date: Date;
   borrow_date?: Date;
   due_date?: Date;
@@ -38,6 +39,10 @@ const borrowSchema = new Schema<IBorrow>(
       type: String,
       enum: ["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"],
       default: "PENDING",
+      required: true
+    },
+    rejection_message: {
+      type: String,
       required: true
     },
     request_date: {

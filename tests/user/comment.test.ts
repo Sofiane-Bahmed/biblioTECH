@@ -21,7 +21,7 @@ jest.unstable_mockModule("resend", () => ({
     })),
 }));
 
-jest.unstable_mockModule("../config/cloudinary.js", async () => {
+jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     return {
         cloudinary: { config: jest.fn() },
         storage: {
@@ -38,11 +38,11 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
 });
 
 // Dynamic imports after module mocks executed
-const { default: app } = await import("../app.js");
-const { Comment } = await import("../models/comment.js");
-const { Book } = await import("../models/book.js");
-const { User } = await import("../models/user.js");
-const { Category } = await import("../models/category.js");
+const { default: app } = await import("../../app.js");
+const { Comment } = await import("../../models/comment.js");
+const { Book } = await import("../../models/book.js");
+const { User } = await import("../../models/user.js");
+const { Category } = await import("../../models/category.js");
 
 jest.setTimeout(15000);
 

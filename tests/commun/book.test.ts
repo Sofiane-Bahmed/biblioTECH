@@ -1,9 +1,9 @@
 import request from "supertest";
 import mongoose from "mongoose";
 
-import app from "../app.js";
-const { Book } = await import("../models/book.js");
-const { Category } = await import("../models/category.js");
+import app from "../../app.js";
+const { Book } = await import("../../models/book.js");
+const { Category } = await import("../../models/category.js");
 
 describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
     let testBookId: string;

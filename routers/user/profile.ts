@@ -13,7 +13,7 @@ import {
 
 export const profileRouter: Router = express.Router();
 
-profileRouter.get("/", getMyProfile);
-profileRouter.put("/update-me", validate(updateMyProfileSchema), updateMyProfile);
+profileRouter.get("/me", getMyProfile);
+profileRouter.put("/me/update-me", validate(updateMyProfileSchema), updateMyProfile);
 
-profileRouter.get("/borrows", validate(getMyBorrowsQuerySchema), getMyBorrows);
+profileRouter.get("/me/borrows", validate(getMyBorrowsQuerySchema), getMyBorrows);

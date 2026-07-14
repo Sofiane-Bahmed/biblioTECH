@@ -79,23 +79,21 @@ GOOGLE_BOOKS_API_KEY=your_goole_books_api_key
 
 ## 🛠 API Architecture
 
-### Authentication
+### Public & Authentication Routes (/api/auth, /api/books)
 - `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login and receive JWT cookie
-- `POST /api/auth/forgot-password` - Request password reset
-
-### Public Resources
-- `GET /api/books` - List all books (paginated)
-- `GET /api/books/:id` - Get detailed book information
+- `POST /api/auth/login` - Login and receive JWT access/refresh tokens
+- `POST /api/auth/logout` - Request password resetClear current authentication session
+- `GET /api/books` - List all books (paginated, sortable)
+- `GET /api/books/:bookId` - Get detailed book information
 
 ### User Actions (Requires Authentication)
 - `GET /api/user/profile` - View/Update personal profile
-- `GET /api/user/borrows` - View personal borrowing history
-- `POST /api/user/comments` - Add a comment to a book
+- `GET /api/user/borrows` - View personal book borrowing history and borrowing status
+- `POST /api/user/comments` - Add reviews/comments to a book
 
 ### Admin Controls (Requires Admin Role)
-- `GET /api/admin/users` - Manage library members
-- `POST /api/admin/books` - Add new books (with image upload)
+- `GET /api/admin/users` - Manage library members and modify user permissions
+- `POST /api/admin/books` - Create new books (supports multi-part cover image upload via Cloudinary)Add new books (with image upload)
 - `GET /api/admin/borrows` - Overview of all library borrowings
 - `POST /api/admin/categories` - Organize library collections
 

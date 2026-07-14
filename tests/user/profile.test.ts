@@ -21,7 +21,7 @@ jest.unstable_mockModule("resend", () => ({
     })),
 }));
 
-jest.unstable_mockModule("../config/cloudinary.js", async () => {
+jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     return {
         cloudinary: { config: jest.fn() },
         storage: {
@@ -38,10 +38,10 @@ jest.unstable_mockModule("../config/cloudinary.js", async () => {
 });
 
 // Dynamic imports after module mocks executed
-const { default: app } = await import("../app.js");
-const { User } = await import("../models/user.js");
-const { Borrow } = await import("../models/borrow.js");
-const { Book } = await import("../models/book.js");
+const { default: app } = await import("../../app.js");
+const { User } = await import("../../models/user.js");
+const { Borrow } = await import("../../models/borrow.js");
+const { Book } = await import("../../models/book.js");
 
 jest.setTimeout(15000);
 
@@ -110,11 +110,11 @@ describe("👤 User Profile Operations", () => {
         });
     });
 
-    // --- PUT /api/user/profile/me ---
-    describe("PUT /api/user/profile/me", () => {
+    // --- PUT /api/user/profile/update-me ---
+    describe("PUT /api/user/profile/update-me", () => {
         it("Should update profile schema records matching body modifications", async () => {
             const res = await request(app)
-                .put("/api/user/profile/me")
+                .put("/api/user/profile/update-me")
                 .set("Cookie", [`accessToken=${userToken}`])
                 .send({
                     fullName: "Updated Name",
@@ -129,7 +129,7 @@ describe("👤 User Profile Operations", () => {
 
         it("Should fail schema validation layers if payload strings run short", async () => {
             const res = await request(app)
-                .put("/api/user/profile/me")
+                .put("/api/user/profile/update-me")
                 .set("Cookie", [`accessToken=${userToken}`])
                 .send({ fullName: "Ab" });
 
@@ -138,7 +138,7 @@ describe("👤 User Profile Operations", () => {
     });
 
     // --- GET /api/user/profile/borrows ---
-    describe("GET /api/user/profile/borrows", () => {
+    describe("GET /api/user/profile/me/borrows", () => {
         beforeAll(async () => {
             // Seed a historical log mix to test filter logic structures
             await Borrow.create([
@@ -161,7 +161,7 @@ describe("👤 User Profile Operations", () => {
 
         it("Should retrieve paginated logs with integrated book populations", async () => {
             const res = await request(app)
-                .get("/api/user/profile/borrows")
+                .get("/api/user/profile/me/borrows")
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(200);
@@ -172,7 +172,7 @@ describe("👤 User Profile Operations", () => {
 
         it("Should isolate overdue states correctly when using explicit query parameters", async () => {
             const res = await request(app)
-                .get("/api/user/profile/borrows")
+                .get("/api/user/profile/me/borrows")
                 .query({ overdue: "true" })
                 .set("Cookie", [`accessToken=${userToken}`]);
 
