@@ -13,6 +13,7 @@ export interface IBorrow {
   status: BorrowStatus;
   rejected_message: string;
   approved_message: string;
+  canceled_message: string;
   request_date: Date;
   borrow_date?: Date;
   due_date?: Date;
@@ -48,6 +49,10 @@ const borrowSchema = new Schema<IBorrow>(
     },
     approved_message: {
       type: String,
+    },
+    canceled_message: {
+      type: String,
+      required: true
     },
     request_date: {
       type: Date,

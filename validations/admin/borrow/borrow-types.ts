@@ -1,6 +1,7 @@
 import z from "zod";
 import {
     approveBorrowRequestSchema,
+    cancelBorrowRequestSchema,
     deleteBorrowSchema,
     getBorrowSchema,
     getBorrowsQuerySchema,
@@ -15,6 +16,10 @@ export type ApproveBorrowBody = ApproveBorrowRequest["body"];
 export type RejectBorrowRequest = z.infer<typeof rejectBorrowRequestSchema>;
 export type RejectBorrowParams = RejectBorrowRequest["params"];
 export type RejectBorrowBody = RejectBorrowRequest["body"];
+
+export type CancelBorrowRequest = z.infer<typeof cancelBorrowRequestSchema>;
+export type CancelBorrowParams = CancelBorrowRequest["params"];
+export type CancelBorrowBody = CancelBorrowRequest["body"];
 
 export type GetBorrowRequest = z.infer<typeof getBorrowSchema>;
 export type GetBorrowParams = GetBorrowRequest["params"];

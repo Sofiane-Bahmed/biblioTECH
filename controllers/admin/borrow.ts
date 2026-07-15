@@ -16,6 +16,7 @@ import { BORROWING_RULES } from "../../constants/library-rules.js";
 import {
   ApproveBorrowBody,
   ApproveBorrowParams,
+  CancelBorrowBody,
   DeleteBorrowParams,
   GetBorrowParams,
   GetBorrowsQuery,
@@ -25,6 +26,7 @@ import {
   RejectBorrowParams
 } from "../../validations/admin/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
+import { CancelBorrowParams } from "../../validations/user/borrow/borrow-types.js";
 
 const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
 
@@ -170,6 +172,54 @@ export const rejectBorrowRequest = asyncHandler(async (
   res.status(200).json({
     message: "Borrow request has been rejected successfully.",
     borrow: updatedBorrow
+  });
+});
+
+export const cancelBorrow = asyncHandler(async (
+  req: AuthenticatedRequest<CancelBorrowParams, CancelBorrowBody, any>,
+  res: Response
+): Promise<void> => {
+  const { borrowId } = req.params;
+  const { canceledMessage } = req.body;
+
+  const borrowRequest = await Borrow.findById(borrowId);
+
+  if (!borrowRequest) {
+    res.status(404).json({ message: "Borrow request not found." });
+    return;
+  }
+
+  if (borrowRequest.status !== "ACTIVE") {
+    res.status(400).json({
+      message: `Cannot cancel this request. It is already marked as ${borrowRequest.status}.`
+    });
+    return;
+  }
+
+  const canceledBorrow = await Borrow.findOneAndUpdate(
+    {
+      _id: borrowRequest._id,
+      status: "ACTIVE"
+    }, {
+    $set: {
+      status: "CANCELED",
+      canceled_message: canceledMessage
+    }
+  },
+    {
+      new: true,
+      runValidators: true
+    }
+  )
+
+  if (!canceledBorrow) {
+    res.status(400).json({ message: "This request was already processed by another session." });
+    return;
+  }
+
+  res.status(200).json({
+    message: "Borrow request has been rejected successfully.",
+    borrow: canceledBorrow
   });
 });
 

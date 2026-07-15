@@ -47,6 +47,18 @@ export const rejectBorrowRequestSchema = z.object({
     })
 });
 
+export const cancelBorrowRequestSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+    body: z.object({
+        canceled_message: z
+            .string()
+            .min(3, "Canceled message must be at least 3 characters")
+            .max(200, "Canceled message must be at most 200 characters")
+    })
+});
+
 export const getBorrowSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
