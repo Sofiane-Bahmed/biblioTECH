@@ -5,7 +5,7 @@ import { Borrow } from "../../models/borrow.js"
 import { Book, IBook } from "../../models/book.js"
 import { User } from "../../models/user.js"
 
-import { sendSuspensionWarningEmail } from "../../utils/email-service/suspension-warning.js";
+import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning.js";
 import asyncHandler from "../../utils/async-handler.js";
 
 import {

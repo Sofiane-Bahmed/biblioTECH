@@ -1,5 +1,5 @@
 import { User } from "../models/user.js";
-import { sendBookAddedEmail } from "../utils/email-service/book-added.js";
+import { sendBookAddedEmail } from "../utils/email/book-added.js";
 
 interface BookDetailsNotificationInput {
     title: string;

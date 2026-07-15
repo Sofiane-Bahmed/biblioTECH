@@ -218,7 +218,7 @@ export const cancelBorrow = asyncHandler(async (
   }
 
   res.status(200).json({
-    message: "Borrow request has been rejected successfully.",
+    message: "Borrow request has been canceled successfully.",
     borrow: canceledBorrow
   });
 });

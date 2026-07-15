@@ -3,8 +3,8 @@ import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
 
 import { User } from "../../models/user.js"
-import { sendWelcomeEmail } from "../../utils/email-service/welcome.js";
-import { sendPasswordResetEmail } from "../../utils/email-service/reset-password.js";
+import { sendWelcomeEmail } from "../../utils/email/welcome.js";
+import { sendPasswordResetEmail } from "../../utils/email/reset-password.js";
 
 import asyncHandler from "../../utils/async-handler.js";
 import {

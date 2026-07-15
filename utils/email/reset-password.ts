@@ -1,4 +1,4 @@
-import { sendEmailNotification } from "./index.js";
+import { sendEmailNotification } from "../../config/resend.js";
 
 interface PasswordResetUserInput {
     email: string;
