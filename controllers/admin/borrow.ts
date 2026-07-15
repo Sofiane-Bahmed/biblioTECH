@@ -14,6 +14,7 @@ import asyncHandler from "../../utils/async-handler.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 import {
+  ApproveBorrowBody,
   ApproveBorrowParams,
   DeleteBorrowParams,
   GetBorrowParams,
@@ -28,10 +29,11 @@ import { AuthenticatedRequest } from "../../types/auth.js";
 const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
 
 export const approveBorrowRequest = asyncHandler(async (
-  req: AuthenticatedRequest<ApproveBorrowParams>,
+  req: AuthenticatedRequest<ApproveBorrowParams, ApproveBorrowBody, any>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
+  const { approvedMessage } = req.body;
 
   const borrowRequest = await Borrow.findById(borrowId);
   if (!borrowRequest || borrowRequest.status !== "PENDING") {
@@ -54,6 +56,7 @@ export const approveBorrowRequest = asyncHandler(async (
       {
         $set: {
           status: "ACTIVE",
+          approved_message: approvedMessage,
           borrow_date: borrowDate,
           due_date: dueDate
         }
@@ -127,7 +130,7 @@ export const rejectBorrowRequest = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
-  const { rejectMessage } = req.body;
+  const { rejectedMessage } = req.body;
 
   const borrowRequest = await Borrow.findById(borrowId);
 
@@ -150,7 +153,7 @@ export const rejectBorrowRequest = asyncHandler(async (
     }, {
     $set: {
       status: "REJECTED",
-      rejection_message: rejectMessage
+      rejected_message: rejectedMessage
     }
   },
     {

@@ -10,6 +10,7 @@ import {
 
 export type ApproveBorrowRequest = z.infer<typeof approveBorrowRequestSchema>;
 export type ApproveBorrowParams = ApproveBorrowRequest["params"];
+export type ApproveBorrowBody = ApproveBorrowRequest["body"];
 
 export type RejectBorrowRequest = z.infer<typeof rejectBorrowRequestSchema>;
 export type RejectBorrowParams = RejectBorrowRequest["params"];

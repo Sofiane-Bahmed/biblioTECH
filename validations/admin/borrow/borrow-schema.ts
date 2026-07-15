@@ -27,6 +27,12 @@ export const approveBorrowRequestSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
     }),
+    body: z.object({
+        accepted_message: z
+            .string()
+            .min(3, "accepted message must be at least 3 characters")
+            .max(200, "accepted message must be at most 200 characters")
+    })
 });
 
 export const rejectBorrowRequestSchema = z.object({
@@ -34,10 +40,10 @@ export const rejectBorrowRequestSchema = z.object({
         borrowId: objectIdSchema,
     }),
     body: z.object({
-        reject_message: z
+        rejected_message: z
             .string()
-            .min(3, "Rejection message must be at least 3 characters")
-            .max(200, "Rejection message must be at most 200 characters")
+            .min(3, "Rejected message must be at least 3 characters")
+            .max(200, "Rejected message must be at most 200 characters")
     })
 });
 
