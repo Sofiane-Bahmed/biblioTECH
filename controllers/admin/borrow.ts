@@ -127,7 +127,7 @@ export const rejectBorrowRequest = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
-  const { rejectionMessage } = req.body;
+  const { rejectMessage } = req.body;
 
   const borrowRequest = await Borrow.findById(borrowId);
 
@@ -150,7 +150,7 @@ export const rejectBorrowRequest = asyncHandler(async (
     }, {
     $set: {
       status: "REJECTED",
-      rejection_message: rejectionMessage
+      rejection_message: rejectMessage
     }
   },
     {
