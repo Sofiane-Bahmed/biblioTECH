@@ -110,11 +110,11 @@ describe("👤 User Profile Operations", () => {
         });
     });
 
-    // --- PUT /api/user/profile/update-me ---
-    describe("PUT /api/user/profile/update-me", () => {
+    // --- PUT /api/user/profile/me/update-me ---
+    describe("PUT /api/user/profile/me/update-me", () => {
         it("Should update profile schema records matching body modifications", async () => {
             const res = await request(app)
-                .put("/api/user/profile/update-me")
+                .put("/api/user/profile/me/update-me")
                 .set("Cookie", [`accessToken=${userToken}`])
                 .send({
                     fullName: "Updated Name",
@@ -129,7 +129,7 @@ describe("👤 User Profile Operations", () => {
 
         it("Should fail schema validation layers if payload strings run short", async () => {
             const res = await request(app)
-                .put("/api/user/profile/update-me")
+                .put("/api/user/profile/me/update-me")
                 .set("Cookie", [`accessToken=${userToken}`])
                 .send({ fullName: "Ab" });
 

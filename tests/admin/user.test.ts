@@ -188,9 +188,18 @@ describe("🛡️ Admin User Operations", () => {
     });
 
     describe("Security - Admin Only", () => {
+
         it("Should reject non-admin users", async () => {
+
+            const securityCheckUser = await User.create({
+                fullName: "Security Test User",
+                email: "security-test@test.com",
+                password: "password123",
+                role: "user"
+            });
+            
             const userToken = Jwt.sign(
-                { _id: testUserId, role: "user" },
+                { _id: securityCheckUser._id, role: "user" },
                 process.env.JWT_ACCESS_SECRET
             );
 
@@ -199,6 +208,8 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(403);
+
+            await User.deleteOne({ _id: securityCheckUser._id });
         });
 
         it("Should reject unauthenticated requests", async () => {
