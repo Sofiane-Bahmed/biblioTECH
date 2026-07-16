@@ -59,6 +59,7 @@ GOOGLE_BOOKS_API_KEY=your_goole_books_api_key
    ```
 
 4. **Seed the database (Optional but Recommended):**
+
    ```bash
    npm run db:seed
    ```
@@ -67,7 +68,7 @@ GOOGLE_BOOKS_API_KEY=your_goole_books_api_key
    ```bash
    npm run dev
    ```
-   The API will be available at `http://localhost:5000/api`.
+   The API will be available at `http://localhost:8080`.
 
 ---
 
@@ -123,5 +124,11 @@ GOOGLE_BOOKS_API_KEY=your_goole_books_api_key
 ├── utils/          # Helper functions and services
 └── validations/    # Zod validation schemas
 ```
+
+## License
+
+This project is licensed under the Apache License 2.0.
+
+See the [LICENSE](LICENSE) file for details.
 
 
