@@ -158,7 +158,7 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.user.isBlocked).toBe(true);
+            expect(res.body.blockedUser.isBlocked).toBe(true);
         });
     });
 
@@ -190,7 +190,7 @@ describe("🛡️ Admin User Operations", () => {
     describe("Security - Admin Only", () => {
         it("Should reject non-admin users", async () => {
             const userToken = Jwt.sign(
-                { _id: new mongoose.Types.ObjectId(), role: "user" },
+                { _id: testUserId, role: "user" },
                 process.env.JWT_ACCESS_SECRET
             );
 
