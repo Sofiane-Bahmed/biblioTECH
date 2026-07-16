@@ -83,7 +83,13 @@ export const getMyProfile = asyncHandler(async (
   res: Response
 ): Promise<void> => {
 
-  res.status(200).json(req.user);
+  const userProfile = await User.findById(req.user!._id);
+  
+  if (!userProfile) {
+    res.status(404).json({ message: "user not found" })
+  }
+
+  res.status(200).json(userProfile);
 
 });
 
