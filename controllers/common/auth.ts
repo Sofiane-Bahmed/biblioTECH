@@ -111,7 +111,7 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
 
   const baseCookieOptions = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const
   };
 
@@ -212,7 +212,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response): Promise
 
   const cookieOptions: cookieOptions = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict'
   }
 

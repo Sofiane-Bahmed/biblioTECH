@@ -158,7 +158,7 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
             // 2. Make the request with the non-admin cookie
             const res = await request(app)
                 .post("/api/admin/books")
-                .set("Cookie", [`accessToken=${nonAdminToken}`]) // 👈 This must be present!
+                .set("Cookie", [`accessToken=${nonAdminToken}`]) 
                 .send({
                     title: "Hack Attempt",
                     isbn: "9781234567897",

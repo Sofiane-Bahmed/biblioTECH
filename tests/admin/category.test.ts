@@ -52,9 +52,7 @@ describe("Admin Category API", () => {
         description: "Futuristic and technological themes",
     };
 
-    /* ==========================================================
-       POST /api/admin/categories (Add Category)
-       ========================================================== */
+    // POST /api/admin/categories (Add Category)
     describe("POST /api/admin/categories", () => {
         it("should successfully create a category and return 201", async () => {
             const mockedCreate = jest.mocked(Category.create);
@@ -76,9 +74,7 @@ describe("Admin Category API", () => {
         });
     });
 
-    /* ==========================================================
-       GET /api/admin/categories (Get All Paginated Categories)
-       ========================================================== */
+    // GET /api/admin/categories 
     describe("GET /api/admin/categories", () => {
         it("should return a list of paginated categories with 200", async () => {
             const mockPaginatedResult = {
@@ -113,9 +109,7 @@ describe("Admin Category API", () => {
         });
     });
 
-    /* ==========================================================
-       GET /api/admin/categories/:categoryId (Get Single Category)
-       ========================================================== */
+    // GET /api/admin/categories/:categoryId 
     describe("GET /api/admin/categories/:categoryId", () => {
         it("should return the requested category with 200", async () => {
             const mockedFindById = jest.mocked(Category.findById);
@@ -129,9 +123,7 @@ describe("Admin Category API", () => {
         });
     });
 
-    /* ==========================================================
-       PATCH /api/admin/categories/:categoryId (Update Category)
-       ========================================================== */
+    // PATCH /api/admin/categories/:categoryId (Update Category)
     describe("PATCH /api/admin/categories/:categoryId", () => {
         const updatePayload = { title: "Sci-Fi" };
         const updatedCategory = { ...mockCategory, title: "Sci-Fi" };
@@ -169,9 +161,7 @@ describe("Admin Category API", () => {
         });
     });
 
-    /* ==========================================================
-       DELETE /api/admin/categories/:categoryId (Delete Category)
-       ========================================================== */
+    // DELETE /api/admin/categories/:categoryId 
     describe("DELETE /api/admin/categories/:categoryId", () => {
         it("should successfully delete the category and return 200", async () => {
             const mockedFindByIdAndDelete = jest.mocked(Category.findByIdAndDelete);

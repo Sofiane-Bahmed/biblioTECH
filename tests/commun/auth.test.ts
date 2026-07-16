@@ -1,6 +1,5 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import Jwt from "jsonwebtoken";
 import { jest } from "@jest/globals";
 
 // Mocking external email services securely without type trapping
@@ -236,18 +235,43 @@ describe("季 Authentication Operations", () => {
     // --- POST /api/auth/logout ---
     describe("POST /api/auth/logout", () => {
         it("Should drop token indexes and clear client runtime cookies", async () => {
-            const res = await request(app)
-                .post("/api/auth/logout")
-                .set("Cookie", [`refreshToken=${refreshToken}`]);
+            const email = "user@test.com";
+            const password = "password123";
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe("User logged out successfully");
+            // Clear any leftover test user to prevent duplicate key errors
+            await User.deleteOne({ email });
 
-            const cookies = (res.headers["set-cookie"] || []) as string[];
+            await User.create({
+                fullName: "Test User",
+                email,
+                password,
+                role: "user",
+            });
+
+            // Start the supertest agent
+            const agent = request.agent(app);
+
+            const loginRes = await agent
+                .post("/api/auth/login")
+                .send({
+                    email,
+                    password
+                });
+
+            expect(loginRes.statusCode).toBe(200);
+
+            const logoutRes = await agent.post("/api/auth/logout");
+
+            expect(logoutRes.statusCode).toBe(200);
+            expect(logoutRes.body.message).toBe("User logged out successfully");
+
+            // Assert client cookies are cleared
+            const cookies = (logoutRes.headers["set-cookie"] || []) as string[];
             expect(cookies.find(c => c.startsWith("accessToken=;"))).toBeDefined();
             expect(cookies.find(c => c.startsWith("refreshToken=;"))).toBeDefined();
 
-            const user = await User.findOne({ email: "user@test.com" }).select("+refreshToken");
+            // Assert database has been updated
+            const user = await User.findOne({ email }).select("+refreshToken");
             expect(user!.refreshToken).toBeNull();
         });
     });
