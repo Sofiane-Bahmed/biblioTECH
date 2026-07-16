@@ -61,6 +61,7 @@ jest.setTimeout(10000);
 describe("🛡️ Backend Security & Admin Operations - Book Management", () => {
     let adminToken: string;
     let adminUser: any;
+    let regularUser: any;
     let testCategory: any;
     let testBookId: string;
 
@@ -78,6 +79,14 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
             password: "password123",
             role: "admin",
             subscribed: true
+        });
+
+        // Setup Regular User (Non-Admin)
+        regularUser = await User.create({
+            fullName: "Regular Reader",
+            email: "regular-reader@test.com",
+            password: "password123",
+            role: "user"
         });
 
         adminToken = Jwt.sign(
@@ -139,17 +148,33 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
         });
 
         it("Should reject non-admin users", async () => {
-            const userToken = Jwt.sign(
-                { _id: new mongoose.Types.ObjectId(), role: "user" },
-                process.env.JWT_ACCESS_SECRET!
+            // 1. Generate a token for a regular non-admin user
+            const nonAdminToken = Jwt.sign(
+                { _id: regularUser._id, role: "user" }, 
+                process.env.JWT_ACCESS_SECRET!,
+                { expiresIn: "1h" }
             );
 
+            // 2. Make the request with the non-admin cookie
             const res = await request(app)
                 .post("/api/admin/books")
-                .set("Cookie", [`accessToken=${userToken}`])
-                .send({ title: "Hack Attempt" });
+                .set("Cookie", [`accessToken=${nonAdminToken}`]) // 👈 This must be present!
+                .send({
+                    title: "Hack Attempt",
+                    isbn: "9781234567897",
+                    author: ["Some Author"],
+                    category: [testCategory._id],
+                    description: "Some description",
+                    copies_available: 3,
+                    pages: 250,
+                    language: "English",
+                    publication_year: 2024
+                });
 
+            // Now, because authentication succeeds, authorization will fail with a 403!
             expect(res.statusCode).toBe(403);
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBe("Access forbidden: Insufficient permissions");
         });
     });
 
@@ -175,9 +200,9 @@ describe("🛡️ Backend Security & Admin Operations - Book Management", () => 
             mockedAxios.get.mockResolvedValue(mockGoogleResponse);
 
             const res = await request(app)
-                .get("/api/admin/books/auto-import") 
+                .get("/api/admin/books/auto-import")
                 .set("Cookie", [`accessToken=${adminToken}`])
-                .send({ isbn: "0486284739" }); 
+                .send({ isbn: "0486284739" });
 
             expect(res.statusCode).toBe(201);
             expect(res.body.message).toBe("Book auto-discovered and registered successfully!");
