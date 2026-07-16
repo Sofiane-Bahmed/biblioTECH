@@ -209,11 +209,17 @@ describe("🛡️ Admin Borrow Operations", () => {
             // Target the endpoint matching your express router layout setup
             const res = await request(app)
                 .patch(`/api/admin/borrows/${pendingBorrowId}/approve`)
+                .send({ approved_message: "Your request has been approved!" })
                 .set("Cookie", [`accessToken=${adminToken}`]);
+
+            if (res.statusCode !== 200) {
+                console.error("Failed with body:", res.body);
+            }
 
             expect(res.statusCode).toBe(200);
             expect(res.body.success).toBe(true);
             expect(res.body.borrow.status).toBe("ACTIVE");
+            expect(res.body.borrow.approved_message).toBe("Your request has been approved!");
 
             // Verify secondary database modifications handled inside your ACID session transaction block
             const updatedBook = await Book.findById(testBook._id);
@@ -223,6 +229,7 @@ describe("🛡️ Admin Borrow Operations", () => {
         it("Should fail gracefully when target borrow request is not pending anymore", async () => {
             const res = await request(app)
                 .patch(`/api/admin/borrows/${activeBorrowId}/approve`)
+                .send({ approved_message: "Your request has been approved!" })
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(400);

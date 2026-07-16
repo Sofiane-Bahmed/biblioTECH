@@ -48,6 +48,7 @@ export const addBook = asyncHandler(async (
   }
 
   const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
+  
   const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
   if (duplicateBook) {
     res.status(400).json({ message: "A book version with this ISBN already exists in inventory." });

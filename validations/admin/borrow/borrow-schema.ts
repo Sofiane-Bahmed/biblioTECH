@@ -28,7 +28,7 @@ export const approveBorrowRequestSchema = z.object({
         borrowId: objectIdSchema,
     }),
     body: z.object({
-        accepted_message: z
+        approved_message: z
             .string()
             .min(3, "accepted message must be at least 3 characters")
             .max(200, "accepted message must be at most 200 characters")

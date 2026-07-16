@@ -22,7 +22,7 @@ export interface IUser {
    passwordResetExpires?: Date;
    subscribed: boolean;
    suspension_date?: Date;
-   isBlocked: boolean;
+   isBlocked?: boolean;
    borrows: Types.ObjectId[];
    comments: Types.ObjectId[];
 }
@@ -85,7 +85,6 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       isBlocked: {
          type: Boolean,
          default: false,
-         required: true
       },
       borrows: [
          {

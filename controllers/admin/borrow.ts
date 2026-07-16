@@ -35,7 +35,7 @@ export const approveBorrowRequest = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
-  const { approvedMessage } = req.body;
+  const { approved_message } = req.body;
 
   const borrowRequest = await Borrow.findById(borrowId);
   if (!borrowRequest || borrowRequest.status !== "PENDING") {
@@ -58,7 +58,7 @@ export const approveBorrowRequest = asyncHandler(async (
       {
         $set: {
           status: "ACTIVE",
-          approved_message: approvedMessage,
+          approved_message: approved_message,
           borrow_date: borrowDate,
           due_date: dueDate
         }
