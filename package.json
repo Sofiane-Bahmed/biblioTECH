@@ -9,7 +9,7 @@
     "dev": "tsx watch server.ts",
     "build": "tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
-    "db:seed": "node seed.ts"
+    "db:seed": "tsx seed.ts"
   },
   "author": "",
   "license": "ISC",

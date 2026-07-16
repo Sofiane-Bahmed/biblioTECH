@@ -51,8 +51,10 @@ const seedDatabase = async (): Promise<void> => {
 
             const authorName = faker.book.author();
 
+            const uniqueTitle = `${faker.book.title()} #${i + 1}`;
+
             dummyBooks.push({
-                title: faker.book.title(),
+                title: uniqueTitle,
                 author: [authorName],
                 isbn: normalizedIsbn,
                 description: faker.lorem.paragraph(),
