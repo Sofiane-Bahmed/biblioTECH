@@ -180,7 +180,7 @@ export const cancelBorrow = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
-  const { canceledMessage } = req.body;
+  const { canceled_message } = req.body;
 
   const borrowRequest = await Borrow.findById(borrowId);
 
@@ -203,7 +203,7 @@ export const cancelBorrow = asyncHandler(async (
     }, {
     $set: {
       status: "CANCELED",
-      canceled_message: canceledMessage
+      canceled_message: canceled_message
     }
   },
     {
