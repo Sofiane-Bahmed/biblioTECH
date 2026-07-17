@@ -1,8 +1,0 @@
-$kind: http-request
-name: Get Overdue Borrows
-method: GET
-url: '{{baseUrl}}/admin/borrows/overdue'
-order: 6000
-headers:
-  - key: Authorization
-    value: 'Bearer {{accessToken}}'
