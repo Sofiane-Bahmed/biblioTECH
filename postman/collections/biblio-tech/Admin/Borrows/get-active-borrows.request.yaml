@@ -1,8 +1,0 @@
-$kind: http-request
-name: Get Active Borrows
-method: GET
-url: '{{baseUrl}}/admin/borrows/active'
-order: 3000
-headers:
-  - key: Authorization
-    value: 'Bearer {{accessToken}}'
