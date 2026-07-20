@@ -34,25 +34,6 @@ export const requestBorrow = asyncHandler(async (
 
   const userId = req.user!._id;
 
-  const book = await Book.findById(bookId);
-  if (!book || book.copies_available <= 0) {
-    res.status(404)
-      .json({ message: "This book is currently out of stock or unavailable." });
-    return;
-  }
-
-  const alreadyRequested = await Borrow.findOne({
-    user: userId,
-    book: bookId,
-    status: "PENDING"
-  });
-
-  if (alreadyRequested) {
-    res.status(400)
-      .json({ message: "You already have a pending request for this book." });
-    return;
-  }
-
   const eligibility = await checkBorrowEligibility(userId, bookId);
   if (!eligibility.status) {
     res.status(eligibility.code).json({ message: eligibility.message });

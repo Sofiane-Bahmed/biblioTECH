@@ -77,4 +77,23 @@ const borrowSchema = new Schema<IBorrow>(
   }
 );
 
+// Prevents a user from having two PENDING or ACTIVE requests for the same book at the database level
+// 1. Enforce max 1 PENDING request per (user, book)
+borrowSchema.index(
+  { user: 1, book: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "PENDING" }
+  }
+);
+
+// 2. Enforce max 1 ACTIVE borrow per (user, book)
+borrowSchema.index(
+  { user: 1, book: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "ACTIVE" }
+  }
+);
+
 export const Borrow: Model<IBorrow> = mongoose.model<IBorrow>("borrow", borrowSchema);

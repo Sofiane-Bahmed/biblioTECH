@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { Borrow } from "../models/borrow.js";
+import { Book } from "../models/book.js";
 import { BORROWING_RULES } from "../constants/library-rules.js";
 
 const {
@@ -40,6 +41,15 @@ export const checkBorrowEligibility = async (
 ): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
 
+    const book = await Book.findById(bookId)
+    if (!book || book.copies_available <= 0) {
+        return {
+            status: false,
+            code: 404,
+            message: "This book is currently out of stock or unavailable."
+        }
+    }
+
     const monthlyCount = await Borrow.countDocuments({
         user: userId,
         status: { $in: ["ACTIVE", "RETURNED"] },
@@ -68,19 +78,23 @@ export const checkBorrowEligibility = async (
         };
     }
 
-    const activeBorrow = await Borrow.findOne({
+    const existingBorrow = await Borrow.findOne({
         user: userId,
         book: bookId,
-        status: "ACTIVE"
+        status: { $in: ["PENDING", "ACTIVE"] }
     });
 
-    if (activeBorrow) {
+    if (existingBorrow) {
+        const isPending = existingBorrow.status === "PENDING";
+
         return {
             status: false,
             code: 400,
-            message: "You are currently borrowing an unreturned copy of this book."
-        };
-    }
+            message: isPending
+                ? "You already have a pending request for this book."
+                : "You currently have an active borrowed copy of this book."
+        }
+    };
 
     return {
         status: true,
