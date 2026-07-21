@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { FilterQuery } from "mongoose";
 
@@ -215,6 +215,57 @@ export const cancelBorrow = asyncHandler(async (
   res.status(200).json({
     message: "Borrow request has been canceled successfully.",
     borrow: canceledBorrow
+  });
+});
+
+export const confirmHandover = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { borrowId } = req.params;
+
+  const borrow = await Borrow.findById(borrowId);
+  if (!borrow || borrow.status !== "APPROVED") {
+    res.status(400).json({ message: "Borrow record is not in an APPROVED state awaiting handover." });
+    return;
+  }
+
+  const borrowDate = new Date();
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
+
+  const updatedBorrow = await Borrow.findOneAndUpdate(
+    {
+      _id: borrowId,
+      status: "APPROVED"
+    },
+    {
+      $set: {
+        status: "ACTIVE",
+        borrow_date: borrowDate,
+        due_date: dueDate
+      }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  )
+
+  if (!updatedBorrow) {
+    res.status(400).json({ message: "This request was already processed by another session." });
+    return;
+  }
+
+  await User.findByIdAndUpdate(
+    borrow.user,
+    { $push: { borrows: borrow._id } },
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Book handed over! Active borrow period started.",
+    borrow: updatedBorrow
   });
 });
 
