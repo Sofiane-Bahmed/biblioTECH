@@ -2,6 +2,7 @@ import z from "zod";
 import {
     approveBorrowRequestSchema,
     cancelBorrowRequestSchema,
+    confirmHandoverSchema,
     deleteBorrowSchema,
     getBorrowSchema,
     getBorrowsQuerySchema,
@@ -20,6 +21,9 @@ export type RejectBorrowBody = RejectBorrowRequest["body"];
 export type CancelBorrowRequest = z.infer<typeof cancelBorrowRequestSchema>;
 export type CancelBorrowParams = CancelBorrowRequest["params"];
 export type CancelBorrowBody = CancelBorrowRequest["body"];
+
+export type ConfirmHandoverRequest = z.infer<typeof confirmHandoverSchema>;
+export type ConfirmHandoverParams = ConfirmHandoverRequest["params"];
 
 export type GetBorrowRequest = z.infer<typeof getBorrowSchema>;
 export type GetBorrowParams = GetBorrowRequest["params"];

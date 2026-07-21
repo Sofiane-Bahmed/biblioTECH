@@ -18,6 +18,7 @@ import {
   ApproveBorrowBody,
   ApproveBorrowParams,
   CancelBorrowBody,
+  ConfirmHandoverParams,
   DeleteBorrowParams,
   GetBorrowParams,
   GetBorrowsQuery,
@@ -219,7 +220,7 @@ export const cancelBorrow = asyncHandler(async (
 });
 
 export const confirmHandover = asyncHandler(async (
-  req: Request,
+  req: AuthenticatedRequest<ConfirmHandoverParams, any, any>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;

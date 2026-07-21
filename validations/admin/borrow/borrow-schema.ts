@@ -59,6 +59,12 @@ export const cancelBorrowRequestSchema = z.object({
     })
 });
 
+export const confirmHandoverSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+});
+
 export const getBorrowSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
