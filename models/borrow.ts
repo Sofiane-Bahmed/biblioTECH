@@ -5,7 +5,7 @@ import mongoose, {
   Types
 } from "mongoose";
 
-export type BorrowStatus = "PENDING" | "ACTIVE" | "REJECTED" | "RETURNED" | "CANCELED";
+export type BorrowStatus = "PENDING" | "APPROVED" | "ACTIVE" | "REJECTED" | "RETURNED" | "CANCELED" | "EXPIRED";
 
 export interface IBorrow {
   user: Types.ObjectId;
@@ -18,6 +18,7 @@ export interface IBorrow {
   borrow_date?: Date;
   due_date?: Date;
   return_date?: Date;
+  pickup_deadline?: Date;
   renewed: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -65,6 +66,9 @@ const borrowSchema = new Schema<IBorrow>(
     },
     return_date: {
       type: Date,
+    },
+    pickup_deadline: {
+      type: Date
     },
     renewed: {
       type: Boolean,

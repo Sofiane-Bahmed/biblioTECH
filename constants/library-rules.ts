@@ -4,7 +4,7 @@ export const TIME_CONSTANTS = Object.freeze({
     MS_PER_DAY: 1000 * 60 * 60 * 24,
     HOURS_PER_DAY: 24,
     ONE_HOUR_IN_MS: 3600000,
-    EXPIRATION_HOURS: 48
+    PICKUP_WINDOW_HOURS: 48
 } as const);
 
 export const PENALTY_RULES = Object.freeze({

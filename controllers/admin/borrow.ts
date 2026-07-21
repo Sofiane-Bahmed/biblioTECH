@@ -11,8 +11,9 @@ import { User } from "../../models/user.js";
 
 import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
+import { PickupReadyBookInput, PickupReadyUserInput, sendPickupReadyEmail } from "../../utils/email/pickup-ready.js";
 
-import { BORROWING_RULES } from "../../constants/library-rules.js";
+import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
   ApproveBorrowBody,
   ApproveBorrowParams,
@@ -25,10 +26,12 @@ import {
   RejectBorrowBody,
   RejectBorrowParams
 } from "../../validations/admin/borrow/borrow-types.js";
-import { AuthenticatedRequest } from "../../types/auth.js";
 import { CancelBorrowParams } from "../../validations/user/borrow/borrow-types.js";
 
+import { AuthenticatedRequest } from "../../types/auth.js";
+
 const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
+const { PICKUP_WINDOW_HOURS, MS } = TIME_CONSTANTS;
 
 export const approveBorrowRequest = asyncHandler(async (
   req: AuthenticatedRequest<ApproveBorrowParams, ApproveBorrowBody, any>,
@@ -37,7 +40,10 @@ export const approveBorrowRequest = asyncHandler(async (
   const { borrowId } = req.params;
   const { approved_message } = req.body;
 
-  const borrowRequest = await Borrow.findById(borrowId);
+  const borrowRequest = await Borrow
+    .findById(borrowId)
+    .populate<{ user: PickupReadyUserInput; book: PickupReadyBookInput }>("user book");
+
   if (!borrowRequest || borrowRequest.status !== "PENDING") {
     res.status(400).json({ message: "Borrow request not found or has already been processed." });
     return;
@@ -47,9 +53,7 @@ export const approveBorrowRequest = asyncHandler(async (
   session.startTransaction();
 
   try {
-    const borrowDate = new Date();
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
+    const pickupDeadline = new Date(Date.now() + PICKUP_WINDOW_HOURS * MS);
 
     const updatedBorrow = await Borrow.findOneAndUpdate({
       _id: borrowRequest._id,
@@ -57,10 +61,9 @@ export const approveBorrowRequest = asyncHandler(async (
     },
       {
         $set: {
-          status: "ACTIVE",
+          status: "APPROVED",
           approved_message: approved_message,
-          borrow_date: borrowDate,
-          due_date: dueDate
+          pickup_deadline: pickupDeadline
         }
       },
       {
@@ -96,22 +99,14 @@ export const approveBorrowRequest = asyncHandler(async (
       return;
     }
 
-    await User.findByIdAndUpdate(
-      borrowRequest.user,
-      {
-        $push: {
-          borrows: borrowRequest._id
-        }
-      },
-      { session }
-    );
-
     await session.commitTransaction();
     session.endSession();
 
+    sendPickupReadyEmail(borrowRequest.user, borrowRequest.book, pickupDeadline).catch(console.error);
+
     res.status(200).json({
       success: true,
-      message: "Borrow request approved. Book is now active.",
+      message: "Borrow request approved. The user has ${PICKUP_WINDOW_HOURS} hours to collect the book.",
       borrow: updatedBorrow
     });
 
