@@ -1,6 +1,9 @@
 import { Types } from "mongoose";
+
 import { Borrow } from "../models/borrow.js";
 import { Book } from "../models/book.js";
+import { User } from "../models/user.js";
+
 import { BORROWING_RULES } from "../constants/library-rules.js";
 
 const {
@@ -49,6 +52,15 @@ export const checkBorrowEligibility = async (
             message: "This book is currently out of stock or unavailable."
         }
     }
+
+    const user = await User.findById(userId);
+    if (user.outstanding_fines > 10.00) {
+        return {
+            status: false,
+            code: 403,
+            message: `You have $${user.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance to borrow again.`
+        }
+    };
 
     const monthlyCount = await Borrow.countDocuments({
         user: userId,

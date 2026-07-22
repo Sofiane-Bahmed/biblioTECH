@@ -23,6 +23,8 @@ const adminPaginationSchema = z.object({
         .default(10),
 });
 
+
+
 export const approveBorrowRequestSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
@@ -62,6 +64,20 @@ export const cancelBorrowRequestSchema = z.object({
 export const confirmHandoverSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
+    }),
+});
+
+export const BookConditionEnum = z.enum(["GOOD", "DAMAGED", "RUINED"]);
+export type BookCondition = z.infer<typeof BookConditionEnum>;
+
+export const returnBookSchema = z.object({
+    params: z.object({
+        borrowId: objectIdSchema,
+    }),
+    body: z.object({
+        condition: BookConditionEnum
+            .default("GOOD")
+            .optional(),
     }),
 });
 

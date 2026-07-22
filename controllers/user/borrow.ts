@@ -1,25 +1,19 @@
 import { Response } from "express";
-import mongoose from "mongoose";
 
 import { Borrow } from "../../models/borrow.js"
-import { Book, IBook } from "../../models/book.js"
-import { User } from "../../models/user.js"
 
-import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning.js";
 import asyncHandler from "../../utils/async-handler.js";
 
 import {
   checkBorrowEligibility,
   checkCancellationEligibility
 } from "../../services/borrow-service.js";
-import { calculateLatePenalty } from "../../services/penalty-service.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 import {
   CancelBorrowParams,
   RenewBorrowParams,
   RequestBorrowParams,
-  ReturnBookParams
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 
@@ -112,103 +106,6 @@ export const cancelBorrowRequest = asyncHandler(async (
     borrow: canceledRequest
   });
 });
-
-export const returnBook = asyncHandler(async (
-  req: AuthenticatedRequest<ReturnBookParams, any, any>,
-  res: Response
-): Promise<void> => {
-
-  const { borrowId } = req.params;
-
-  const userId = req.user!._id;
-
-  const borrow = await Borrow.findOne({
-    _id: borrowId,
-    user: userId
-  }).populate<{ book: IBook }>("book")
-
-  if (!borrow || !borrow.book) {
-    res.status(404).json({ success: false, message: "Borrow record or associated book not found." });
-    return;
-  }
-
-  if (borrow.status === "RETURNED" || borrow.return_date) {
-    res.status(400)
-      .json({
-        success: false,
-        message: "This book has already been returned."
-      });
-    return;
-  }
-
-  if (borrow.status !== "ACTIVE") {
-    res.status(400).json({
-      success: false,
-      message: `Cannot process return. Current log track status is marked as: ${borrow.status}`
-    });
-    return;
-  }
-
-  const book = borrow.book;
-  const currentDate = new Date();
-  const penalty = calculateLatePenalty(currentDate, borrow.due_date);
-
-  // Multi-Document Transaction Initialization for State Alignment
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    // Acknowledge Return Status
-    await Borrow.findByIdAndUpdate(
-      borrowId,
-      {
-        $set: {
-          status: "RETURNED",
-          return_date: currentDate
-        }
-      },
-      { session }
-    );
-
-    // Restock Inventory safely
-    await Book.findByIdAndUpdate(
-      book._id,
-      { $inc: { copies_available: 1 } },
-      { session }
-    );
-
-    // Apply Penalties across relevant streams conditionally
-    if (penalty.action === "SUSPEND") {
-      await User.findByIdAndUpdate(
-        userId,
-        { $set: { suspension_date: penalty.suspensionDate } },
-        { session }
-      );
-    }
-
-    await session.commitTransaction();
-    session.endSession();
-
-    // Asynchronous Side-Effects (Non-Blocking)
-    if (penalty.action === "WARNING") {
-      sendSuspensionWarningEmail(
-        { name: req.user!.name || "Valued Member", email: req.user!.email },
-        { title: book.title }
-      ).catch(console.error);
-    }
-
-    res.status(200).json({ success: true, message: penalty.clientMessage });
-
-  } catch (error: any) {
-    await session.abortTransaction();
-    session.endSession();
-    res.status(500).json({
-      success: false,
-      message: "Failed to process book return transaction safely.",
-      error: error.message
-    });
-  }
-}); //TODO: next one is this
 
 export const renewBorrow = asyncHandler(async (
   req: AuthenticatedRequest<RenewBorrowParams, any, any>,

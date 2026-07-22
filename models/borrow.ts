@@ -6,6 +6,7 @@ import mongoose, {
 } from "mongoose";
 
 export type BorrowStatus = "PENDING" | "APPROVED" | "ACTIVE" | "REJECTED" | "RETURNED" | "CANCELED" | "EXPIRED";
+export type BookCondition = "GOOD" | "DAMAGED" | "RUINED";
 
 export interface IBorrow {
   user: Types.ObjectId;
@@ -18,6 +19,7 @@ export interface IBorrow {
   borrow_date?: Date;
   due_date?: Date;
   return_date?: Date;
+  condition_on_return: BookCondition;
   pickup_deadline?: Date;
   renewed: boolean;
   createdAt?: Date;
@@ -66,6 +68,12 @@ const borrowSchema = new Schema<IBorrow>(
     },
     return_date: {
       type: Date,
+    },
+    condition_on_return: {
+      type: String,
+      enum: ["GOOD", "DAMAGED", "RUINED"],
+      default: "GOOD",
+      required: true
     },
     pickup_deadline: {
       type: Date

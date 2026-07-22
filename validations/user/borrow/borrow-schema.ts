@@ -23,11 +23,6 @@ export const cancelBorrowRequestSchema = z.object({
     }),
 });
 
-export const returnBookSchema = z.object({
-    params: z.object({
-        borrowId: objectIdSchema,
-    }),
-});
 
 export const renewBorrowSchema = z.object({
     params: z.object({

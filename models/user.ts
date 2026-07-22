@@ -23,6 +23,7 @@ export interface IUser {
    subscribed: boolean;
    suspension_date?: Date;
    isBlocked?: boolean;
+   outstanding_fines: number;
    borrows: Types.ObjectId[];
    comments: Types.ObjectId[];
 }
@@ -85,6 +86,11 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       isBlocked: {
          type: Boolean,
          default: false,
+      },
+      outstanding_fines: {
+         type: Number,
+         default: 0.00,
+         min: 0
       },
       borrows: [
          {

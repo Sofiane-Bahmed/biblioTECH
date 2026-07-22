@@ -7,7 +7,8 @@ import {
     getBorrowSchema,
     getBorrowsQuerySchema,
     getUserBorrowingHistorySchema,
-    rejectBorrowRequestSchema
+    rejectBorrowRequestSchema,
+    returnBookSchema
 } from "./borrow-schema.js";
 
 export type ApproveBorrowRequest = z.infer<typeof approveBorrowRequestSchema>;
@@ -24,6 +25,10 @@ export type CancelBorrowBody = CancelBorrowRequest["body"];
 
 export type ConfirmHandoverRequest = z.infer<typeof confirmHandoverSchema>;
 export type ConfirmHandoverParams = ConfirmHandoverRequest["params"];
+
+export type ReturnBookRequest = z.infer<typeof returnBookSchema>;
+export type ReturnBookParams = ReturnBookRequest["params"];
+export type ReturnBookBody = ReturnBookRequest["body"];
 
 export type GetBorrowRequest = z.infer<typeof getBorrowSchema>;
 export type GetBorrowParams = GetBorrowRequest["params"];

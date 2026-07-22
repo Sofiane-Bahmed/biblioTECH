@@ -28,6 +28,7 @@ export const calculateLatePenalty = (
     returnDate: Date,
     dueDate: Date
 ): LatePenaltyResult => {
+    
     const d1 = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
     const d2 = new Date(returnDate.getFullYear(), returnDate.getMonth(), returnDate.getDate());
 

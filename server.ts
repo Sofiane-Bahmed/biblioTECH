@@ -14,7 +14,7 @@ const startServer = async (): Promise<void> => {
 
     startBorrowExpirationJob();
     console.log("⏰ Background cron jobs initialized.");
-
+    
   } catch (error: any) {
     console.error("❌ Failed to initialize application sequence container:", error.message || error);
     process.exit(1);
