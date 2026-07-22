@@ -8,7 +8,8 @@ import {
     getBorrow,
     deleteBorrow,
     cancelBorrow,
-    confirmHandover
+    confirmHandover,
+    returnBook
 } from "../../controllers/admin/borrow.js"
 import { validate } from "../../middlewares/validate.js";
 import {
@@ -20,6 +21,7 @@ import {
     getBorrowSchema,
     deleteBorrowSchema,
     confirmHandoverSchema,
+    returnBookSchema,
 } from "../../validations/admin/borrow/borrow-schema.js";
 
 export const adminBorrowRouter: Router = express.Router();
@@ -30,6 +32,7 @@ adminBorrowRouter.patch("/:borrowId/approve", validate(approveBorrowRequestSchem
 adminBorrowRouter.patch("/:borrowId/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
 adminBorrowRouter.patch("/:borrowId/cancel", validate(cancelBorrowRequestSchema), cancelBorrow);
 adminBorrowRouter.patch("/:borrowId/confirm-handover", validate(confirmHandoverSchema), confirmHandover);
+adminBorrowRouter.patch("/:borrowId/return-book", validate(returnBookSchema), returnBook);
 adminBorrowRouter.get("/:userId/history", validate(getUserBorrowingHistorySchema), getUserBorrowingHistory);
 
 adminBorrowRouter.get("/:borrowId", validate(getBorrowSchema), getBorrow);
