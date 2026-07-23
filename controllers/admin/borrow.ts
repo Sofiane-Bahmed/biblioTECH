@@ -28,6 +28,8 @@ import {
   GetBorrowsQuery,
   GetUserBorrowingHistoryParams,
   GetUserBorrowingHistoryQuery,
+  PayFineInPersonBody,
+  PayFineInPersonParams,
   RejectBorrowBody,
   RejectBorrowParams,
   ReturnBookBody,
@@ -386,6 +388,54 @@ export const returnBook = asyncHandler(async (
       error: error.message
     });
   }
+}); //TODO : retcheck this + update tests
+
+export const payFineInPerson = asyncHandler(async (
+  req: AuthenticatedRequest<PayFineInPersonParams, PayFineInPersonBody, any>,
+  res: Response
+): Promise<void> => {
+  const { userId } = req.params;
+  const { amountPaid } = req.body; // e.g., $15.00
+
+  const user = await User.findById(userId);
+  if (!user || user.outstanding_fines <= 0) {
+    res.status(400).json({ message: "No outstanding fines found for this user." });
+    return;
+  }
+
+  // Deduct payment from ledger balance (prevent negative balance)
+  const newBalance = Math.max(0, user.outstanding_fines - amountPaid);
+
+  const updatedUser = await User.findOneAndUpdate(
+    {
+      _id: userId,
+    },
+    {
+      $set: {
+        outstanding_fines: newBalance
+      }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  )
+
+  if (!updatedUser) {
+    res.status(400).json({ message: "Failed tu update user fines" })
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Payment of $${amountPaid.toFixed(2)} recorded successfully.`,
+    data: {
+      userId: updatedUser._id,
+      amountPaid,
+      remainingBalance: updatedUser.outstanding_fines,
+    },
+  });
+
 });
 
 export const getBorrows = asyncHandler(async (

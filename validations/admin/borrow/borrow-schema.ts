@@ -67,6 +67,17 @@ export const confirmHandoverSchema = z.object({
     }),
 });
 
+export const payFineInPersonSchema = z.object({
+    params: z.object({
+        userId: objectIdSchema,
+    }),
+    body: z.object({
+        amountPaid: z
+            .number({ message: "Amount paid must be a valid number" })
+            .gt(0, "Amount paid must be greater than 0"),
+    }),
+});
+
 export const BookConditionEnum = z.enum(["GOOD", "DAMAGED", "RUINED"]);
 export type BookCondition = z.infer<typeof BookConditionEnum>;
 

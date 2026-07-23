@@ -9,7 +9,8 @@ import {
     deleteBorrow,
     cancelBorrow,
     confirmHandover,
-    returnBook
+    returnBook,
+    payFineInPerson
 } from "../../controllers/admin/borrow.js"
 import { validate } from "../../middlewares/validate.js";
 import {
@@ -22,6 +23,7 @@ import {
     deleteBorrowSchema,
     confirmHandoverSchema,
     returnBookSchema,
+    payFineInPersonSchema,
 } from "../../validations/admin/borrow/borrow-schema.js";
 
 export const adminBorrowRouter: Router = express.Router();
@@ -33,6 +35,8 @@ adminBorrowRouter.patch("/:borrowId/reject", validate(rejectBorrowRequestSchema)
 adminBorrowRouter.patch("/:borrowId/cancel", validate(cancelBorrowRequestSchema), cancelBorrow);
 adminBorrowRouter.patch("/:borrowId/confirm-handover", validate(confirmHandoverSchema), confirmHandover);
 adminBorrowRouter.patch("/:borrowId/return-book", validate(returnBookSchema), returnBook);
+
+adminBorrowRouter.patch("/:userId/pay-fine", validate(payFineInPersonSchema), payFineInPerson);
 adminBorrowRouter.get("/:userId/history", validate(getUserBorrowingHistorySchema), getUserBorrowingHistory);
 
 adminBorrowRouter.get("/:borrowId", validate(getBorrowSchema), getBorrow);

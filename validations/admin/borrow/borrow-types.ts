@@ -7,6 +7,7 @@ import {
     getBorrowSchema,
     getBorrowsQuerySchema,
     getUserBorrowingHistorySchema,
+    payFineInPersonSchema,
     rejectBorrowRequestSchema,
     returnBookSchema
 } from "./borrow-schema.js";
@@ -29,6 +30,10 @@ export type ConfirmHandoverParams = ConfirmHandoverRequest["params"];
 export type ReturnBookRequest = z.infer<typeof returnBookSchema>;
 export type ReturnBookParams = ReturnBookRequest["params"];
 export type ReturnBookBody = ReturnBookRequest["body"];
+
+export type PayFineInPersonRequest = z.infer<typeof payFineInPersonSchema>;
+export type PayFineInPersonParams = PayFineInPersonRequest["params"];
+export type PayFineInPersonBody = PayFineInPersonRequest["body"];
 
 export type GetBorrowRequest = z.infer<typeof getBorrowSchema>;
 export type GetBorrowParams = GetBorrowRequest["params"];

@@ -23,12 +23,12 @@ const reservationSchema = new Schema<IReservation>(
     {
         user: {
             type: Schema.Types.ObjectId,
-            ref: "User",
+            ref: "user",
             required: true,
         },
         book: {
             type: Schema.Types.ObjectId,
-            ref: "Book",
+            ref: "book",
             required: true,
         },
         status: {
@@ -69,4 +69,4 @@ reservationSchema.index(
     }
 );
 
-export const Reservation: Model<IReservation> = mongoose.model<IReservation>("Reservation", reservationSchema);
+export const Reservation: Model<IReservation> = mongoose.model<IReservation>("reservation", reservationSchema);
