@@ -1,6 +1,8 @@
 import { Response } from "express";
 
 import { Borrow } from "../../models/borrow.js"
+import { Book } from "../../models/book.js";
+import { Reservation } from "../../models/reservation.js";
 
 import asyncHandler from "../../utils/async-handler.js";
 
@@ -17,34 +19,82 @@ import {
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 
+
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
 export const requestBorrow = asyncHandler(async (
   req: AuthenticatedRequest<RequestBorrowParams, any, any>,
   res: Response
 ): Promise<void> => {
-
   const { bookId } = req.params;
-
   const userId = req.user!._id;
 
   const eligibility = await checkBorrowEligibility(userId, bookId);
   if (!eligibility.status) {
     res.status(eligibility.code).json({ message: eligibility.message });
     return;
+  };
+
+  const book = await Book.findById(bookId);
+  if (!book) {
+    res.status(404).json({ success: false, message: "Book not found." });
+    return;
+  };
+
+  if (book.copies_available > 0) {
+    const newBorrow = await Borrow.create({
+      user: userId,
+      book: bookId,
+      status: "PENDING",
+      request_date: new Date(),
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Borrow request submitted successfully and is awaiting staff approval.",
+      data: {
+        type: "BORROW",
+        borrow: newBorrow,
+      },
+    });
+    return;
+  };
+  
+  const existingReservation = await Reservation.findOne({
+    user: userId,
+    book: bookId,
+    status: { $in: ["PENDING", "READY_FOR_PICKUP"] },
+  });
+
+  if (existingReservation) {
+    res.status(400).json({
+      success: false,
+      message: "You are already on the waiting list for this book.",
+    });
+    return;
   }
 
-  const newRequest = await Borrow.create({
+  const queuePosition = await Reservation.countDocuments({
+    book: bookId,
+    status: "PENDING",
+  }) + 1;
+
+  const newReservation = await Reservation.create({
     user: userId,
     book: bookId,
     status: "PENDING",
-    request_date: new Date()
   });
 
   res.status(201).json({
-    message: "Your borrow request has been submitted successfully and is awaiting admin approval.",
-    request: newRequest
+    success: true,
+    message: `All copies are currently borrowed. You have been placed on the waiting list (Queue Position #${queuePosition}).`,
+    data: {
+      type: "RESERVATION",
+      reservation: newReservation,
+      queuePosition,
+    },
   });
+
 });
 
 export const cancelBorrowRequest = asyncHandler(async (

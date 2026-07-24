@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 
 import { Borrow } from "../models/borrow.js";
-import { Book } from "../models/book.js";
 import { User } from "../models/user.js";
 
 import { BORROWING_RULES } from "../constants/library-rules.js";
@@ -43,15 +42,6 @@ export const checkBorrowEligibility = async (
     bookId: string | Types.ObjectId
 ): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
-
-    const book = await Book.findById(bookId)
-    if (!book || book.copies_available <= 0) {
-        return {
-            status: false,
-            code: 404,
-            message: "This book is currently out of stock or unavailable."
-        }
-    }
 
     const user = await User.findById(userId);
     if (user.outstanding_fines > 10.00) {
