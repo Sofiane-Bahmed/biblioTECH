@@ -18,6 +18,7 @@ import {
   RequestBorrowParams,
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
+import { processNextInLineOrRestock } from "../../services/reservation-service.js";
 
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
@@ -59,7 +60,7 @@ export const requestBorrow = asyncHandler(async (
     });
     return;
   };
-  
+
   const existingReservation = await Reservation.findOne({
     user: userId,
     book: bookId,
@@ -97,31 +98,13 @@ export const requestBorrow = asyncHandler(async (
 
 });
 
-export const cancelBorrowRequest = asyncHandler(async (
+
+export const cancelRequest = asyncHandler(async (
   req: AuthenticatedRequest<CancelBorrowParams, any, any>,
   res: Response
 ): Promise<void> => {
-
   const { borrowId } = req.params;
-
   const userId = req.user!._id;
-
-  const borrowRequest = await Borrow.findOne({
-    _id: borrowId,
-    user: userId
-  });
-
-  if (!borrowRequest) {
-    res.status(404).json({ message: "Borrow request not found." });
-    return;
-  }
-
-  if (borrowRequest.status !== "PENDING") {
-    res.status(400).json({
-      message: `Cannot cancel this request. It has already been processed as ${borrowRequest.status}.`
-    });
-    return;
-  }
 
   const eligibility = await checkCancellationEligibility(userId);
   if (!eligibility.status) {
@@ -129,31 +112,60 @@ export const cancelBorrowRequest = asyncHandler(async (
     return;
   }
 
-  const canceledRequest = await Borrow.findOneAndUpdate(
-    {
-      _id: borrowId,
-      user: userId,
-      status: "PENDING"
-    },
-    {
-      $set: { status: "CANCELED" }
-    },
-    {
-      new: true,
-      runValidators: true
-    }
-  );
+  const borrowRequest = await Borrow.findOne({ _id: borrowId, user: userId });
 
-  if (!canceledRequest) {
-    res.status(400).json({
-      message: "Cancellation failed. The request may have just been processed by an administrator."
+  if (borrowRequest) {
+    if (borrowRequest.status !== "PENDING") {
+      res.status(400).json({
+        success: false,
+        message: `Cannot cancel this borrow request. Current status: ${borrowRequest.status}.`,
+      });
+      return;
+    }
+
+    borrowRequest.status = "CANCELED";
+    await borrowRequest.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Your borrow request has been cancelled successfully.",
+      data: { type: "BORROW", request: borrowRequest },
     });
     return;
   }
 
-  res.status(200).json({
-    message: "Your borrow request has been cancelled successfully.",
-    borrow: canceledRequest
+  const reservation = await Reservation.findOne({ _id: borrowId, user: userId });
+
+  if (reservation) {
+    if (!["PENDING", "READY_FOR_PICKUP"].includes(reservation.status)) {
+      res.status(400).json({
+        success: false,
+        message: `Cannot cancel this reservation. Current status: ${reservation.status}.`,
+      });
+      return;
+    }
+
+    const wasReadyForPickup = reservation.status === "READY_FOR_PICKUP";
+    reservation.status = "CANCELED";
+    await reservation.save();
+
+    // pass the held book to the next person in line or back to general stock!
+    if (wasReadyForPickup) {
+      await processNextInLineOrRestock(reservation.book);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "You have been removed from the waiting list.",
+      data: { type: "RESERVATION", request: reservation },
+    });
+    return;
+  }
+
+  // Neither found
+  res.status(404).json({
+    success: false,
+    message: "Request or reservation not found."
   });
 });
 
@@ -161,9 +173,7 @@ export const renewBorrow = asyncHandler(async (
   req: AuthenticatedRequest<RenewBorrowParams, any, any>,
   res: Response
 ): Promise<void> => {
-
   const { borrowId } = req.params;
-
   const userId = req.user!._id;
 
   const borrow = await
