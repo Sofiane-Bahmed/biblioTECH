@@ -33,72 +33,105 @@ export const requestBorrow = asyncHandler(async (
 
   const eligibility = await checkBorrowEligibility(userId, bookId);
   if (!eligibility.status) {
-    res.status(eligibility.code).json({ message: eligibility.message });
-    return;
-  };
-
-  const book = await Book.findById(bookId);
-  if (!book) {
-    res.status(404).json({ success: false, message: "Book not found." });
-    return;
-  };
-
-  if (book.copies_available > 0) {
-    const newBorrow = await Borrow.create({
-      user: userId,
-      book: bookId,
-      status: "PENDING",
-      request_date: new Date(),
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Borrow request submitted successfully and is awaiting staff approval.",
-      data: {
-        type: "BORROW",
-        borrow: newBorrow,
-      },
-    });
-    return;
-  };
-
-  const existingReservation = await Reservation.findOne({
-    user: userId,
-    book: bookId,
-    status: { $in: ["PENDING", "READY_FOR_PICKUP"] },
-  });
-
-  if (existingReservation) {
-    res.status(400).json({
-      success: false,
-      message: "You are already on the waiting list for this book.",
-    });
+    res.status(eligibility.code).json({ success: false, message: eligibility.message });
     return;
   }
 
-  const queuePosition = await Reservation.countDocuments({
-    book: bookId,
-    status: "PENDING",
-  }) + 1;
+  // Start atomic session & transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const newReservation = await Reservation.create({
-    user: userId,
-    book: bookId,
-    status: "PENDING",
-  });
+  try {
+    const book = await Book.findById(bookId).session(session);
+    if (!book) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(404).json({ success: false, message: "Book not found." });
+      return;
+    }
 
-  res.status(201).json({
-    success: true,
-    message: `All copies are currently borrowed. You have been placed on the waiting list (Queue Position #${queuePosition}).`,
-    data: {
-      type: "RESERVATION",
-      reservation: newReservation,
-      queuePosition,
-    },
-  });
+    // SCENARIO A: Copies available -> Create Borrow Request
+    if (book.copies_available > 0) {
+      const [newBorrow] = await Borrow.create(
+        [
+          {
+            user: userId,
+            book: bookId,
+            status: "PENDING",
+            request_date: new Date(),
+          },
+        ],
+        { session } 
+      );
 
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(201).json({
+        success: true,
+        message: "Borrow request submitted successfully and is awaiting staff approval.",
+        data: {
+          type: "BORROW",
+          borrow: newBorrow,
+        },
+      });
+      return;
+    }
+
+    // SCENARIO B: Out of stock -> Reservation Fallback Queue
+    const existingReservation = await Reservation.findOne({
+      user: userId,
+      book: bookId,
+      status: { $in: ["PENDING", "READY_FOR_PICKUP"] },
+    }).session(session);
+
+    if (existingReservation) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({
+        success: false,
+        message: "You are already on the waiting list for this book.",
+      });
+      return;
+    }
+
+    // Calculate queue position atomically within transaction isolation
+    const pendingCount = await Reservation.countDocuments({
+      book: bookId,
+      status: "PENDING",
+    }).session(session);
+
+    const queuePosition = pendingCount + 1;
+
+    const [newReservation] = await Reservation.create(
+      [
+        {
+          user: userId,
+          book: bookId,
+          status: "PENDING",
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      success: true,
+      message: `All copies are currently borrowed. You have been placed on the waiting list (Queue Position #${queuePosition}).`,
+      data: {
+        type: "RESERVATION",
+        reservation: newReservation,
+        queuePosition,
+      },
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 });
-
 
 export const cancelRequest = asyncHandler(async (
   req: AuthenticatedRequest<CancelBorrowParams, any, any>,
