@@ -20,6 +20,7 @@ import {
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import { processNextInLineOrRestock } from "../../services/reservation-service.js";
+import { User } from "../../models/user.js";
 
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
@@ -61,7 +62,7 @@ export const requestBorrow = asyncHandler(async (
             request_date: new Date(),
           },
         ],
-        { session } 
+        { session }
       );
 
       await session.commitTransaction();
@@ -246,74 +247,90 @@ export const renewBorrow = asyncHandler(async (
   const { borrowId } = req.params;
   const userId = req.user!._id;
 
-  const borrow = await
-    Borrow
-      .findOne({
-        _id: borrowId,
-        user: userId
-      }
-      )
-      .populate("book")
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (!borrow || !borrow.book) {
-    res.status(404).json({ message: "Active borrow record or associated book not found." });
-    return;
-  }
+  try {
+    const borrow = await Borrow.findOne({
+      _id: borrowId,
+      user: userId,
+      status: "ACTIVE",
+    }).session(session);
 
-  if (borrow.status !== "ACTIVE") {
-    res.status(400).json({
-      message: `Cannot renew book. Current log track status is marked as: ${borrow.status}`
-    });
-    return;
-  }
-
-  if (borrow.renewed) {
-    res
-      .status(400)
-      .json({ message: "The maximum number of renewals (1) has been reached." });
-    return;
-  }
-
-  const currentDate = new Date();
-  if (currentDate > borrow.due_date) {
-    res
-      .status(400)
-      .json({ message: "Cannot renew a late book. Please return it to inventory first." });
-    return;
-  }
-
-  const newDueDate = new Date(borrow.due_date);
-  newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
-
-  const renewedBorrow = await Borrow.findOneAndUpdate({
-    _id: borrowId,
-    user: userId,
-    status: "ACTIVE",
-    renewed: false
-  },
-    {
-      $set: {
-        renewed: true,
-        due_date: newDueDate
-      }
-    },
-    {
-      new: true,
-      runValidators: true
+    if (!borrow) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(404).json({
+        success: false,
+        message: "Active borrow record not found.",
+      });
+      return;
     }
-  ).populate("book");
 
-  if (!renewedBorrow) {
-    res.status(400).json({
-      message: "Renewal failed. The borrow record may have just been processed or is no longer eligible for renewal."
+    if (borrow.renewed) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({
+        success: false,
+        message: "The maximum number of renewals (1) has been reached for this loan.",
+      });
+      return;
+    }
+
+    const currentDate = new Date();
+    if (currentDate > borrow.due_date) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({
+        success: false,
+        message: "Cannot renew an overdue book. Please return it to the library to settle any late fees.",
+      });
+      return;
+    }
+
+    // Waiting List / Reservation Check 
+    const pendingHoldCount = await Reservation.countDocuments({
+      book: borrow.book,
+      status: "PENDING",
+    }).session(session);
+
+    if (pendingHoldCount > 0) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({
+        success: false,
+        message: "Renewal unavailable. Another patron is currently on the waiting list for this title.",
+      });
+      return;
+    }
+
+    // Calculate new due date and save
+    const newDueDate = new Date(borrow.due_date);
+    newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
+
+    borrow.renewed = true;
+    borrow.due_date = newDueDate;
+    await borrow.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Re-populate for response payload
+    await borrow.populate("book");
+
+    res.status(200).json({
+      success: true,
+      message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
+      data: {
+        borrow,
+        newDueDate: borrow.due_date,
+      },
     });
-    return;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  res.status(200).json({
-    message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
-    borrow: renewedBorrow
-  });
 });
 
 
