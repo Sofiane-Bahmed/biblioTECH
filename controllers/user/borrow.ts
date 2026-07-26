@@ -1,4 +1,5 @@
 import { Response } from "express";
+import mongoose from "mongoose";
 
 import { Borrow } from "../../models/borrow.js"
 import { Book } from "../../models/book.js";
@@ -108,65 +109,101 @@ export const cancelRequest = asyncHandler(async (
 
   const eligibility = await checkCancellationEligibility(userId);
   if (!eligibility.status) {
-    res.status(eligibility.code).json({ message: eligibility.message });
+    res.status(eligibility.code).json({ success: false, message: eligibility.message });
     return;
   }
 
-  const borrowRequest = await Borrow.findOne({ _id: borrowId, user: userId });
+  // Start atomic session & transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (borrowRequest) {
-    if (borrowRequest.status !== "PENDING") {
-      res.status(400).json({
-        success: false,
-        message: `Cannot cancel this borrow request. Current status: ${borrowRequest.status}.`,
+  try {
+    // 1. Check Borrow Request first (passing session)
+    const borrowRequest = await Borrow
+      .findOne({
+        _id: borrowId,
+        user: userId
+      })
+      .session(session);
+
+    if (borrowRequest) {
+      if (borrowRequest.status !== "PENDING") {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(400).json({
+          success: false,
+          message: `Cannot cancel this borrow request. Current status: ${borrowRequest.status}.`,
+        });
+        return;
+      }
+
+      borrowRequest.status = "CANCELED";
+      await borrowRequest.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(200).json({
+        success: true,
+        message: "Your borrow request has been cancelled successfully.",
+        data: { type: "BORROW", request: borrowRequest },
       });
       return;
     }
 
-    borrowRequest.status = "CANCELED";
-    await borrowRequest.save();
+    // 2. Check Reservation Request (passing session)
+    const reservation = await Reservation
+      .findOne({
+        _id: borrowId,
+        user: userId
+      })
+      .session(session);
 
-    res.status(200).json({
-      success: true,
-      message: "Your borrow request has been cancelled successfully.",
-      data: { type: "BORROW", request: borrowRequest },
-    });
-    return;
-  }
+    if (reservation) {
+      if (!["PENDING", "READY_FOR_PICKUP"].includes(reservation.status)) {
+        await session.abortTransaction();
+        session.endSession();
+        res.status(400).json({
+          success: false,
+          message: `Cannot cancel this reservation. Current status: ${reservation.status}.`,
+        });
+        return;
+      }
 
-  const reservation = await Reservation.findOne({ _id: borrowId, user: userId });
+      const wasReadyForPickup = reservation.status === "READY_FOR_PICKUP";
+      reservation.status = "CANCELED";
+      await reservation.save({ session });
 
-  if (reservation) {
-    if (!["PENDING", "READY_FOR_PICKUP"].includes(reservation.status)) {
-      res.status(400).json({
-        success: false,
-        message: `Cannot cancel this reservation. Current status: ${reservation.status}.`,
+      // Pass held book to next in line or restock (passing session into helper)
+      if (wasReadyForPickup) {
+        await processNextInLineOrRestock(reservation.book, session);
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+
+      res.status(200).json({
+        success: true,
+        message: "You have been removed from the waiting list.",
+        data: { type: "RESERVATION", request: reservation },
       });
       return;
     }
 
-    const wasReadyForPickup = reservation.status === "READY_FOR_PICKUP";
-    reservation.status = "CANCELED";
-    await reservation.save();
+    // 3. Neither found
+    await session.abortTransaction();
+    session.endSession();
 
-    // pass the held book to the next person in line or back to general stock!
-    if (wasReadyForPickup) {
-      await processNextInLineOrRestock(reservation.book);
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "You have been removed from the waiting list.",
-      data: { type: "RESERVATION", request: reservation },
+    res.status(404).json({
+      success: false,
+      message: "Request or reservation not found.",
     });
-    return;
+  } catch (error) {
+    // Rollback all DB operations if anything fails
+    await session.abortTransaction();
+    session.endSession();
+    throw error; // Let asyncHandler forward to global error handler
   }
-
-  // Neither found
-  res.status(404).json({
-    success: false,
-    message: "Request or reservation not found."
-  });
 });
 
 export const renewBorrow = asyncHandler(async (
