@@ -34,7 +34,7 @@ import {
   RejectBorrowParams,
   ReturnBookBody,
   ReturnBookParams
-} from "../../validations/admin/borrow/borrow-types.js";
+} from "../../validations/librarian/borrow/borrow-types.js";
 import { CancelBorrowParams } from "../../validations/user/borrow/borrow-types.js";
 
 import { AuthenticatedRequest } from "../../types/auth.js";
@@ -388,7 +388,7 @@ export const returnBook = asyncHandler(async (
       error: error.message
     });
   }
-}); //TODO : retcheck this + update tests
+}); 
 
 export const payFineInPerson = asyncHandler(async (
   req: AuthenticatedRequest<PayFineInPersonParams, PayFineInPersonBody, any>,

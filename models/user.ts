@@ -60,7 +60,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       },
       role: {
          type: String,
-         enum: ["user", "admin"],
+         enum: ["user", "admin","librarian"],
          required: true
       },
       refreshToken: {

@@ -1,37 +1,42 @@
-import express, { Router } from "express"
+import express, { Router } from "express";
 
-import { authRouter } from "./common/auth.js"
-import { publicBookRouter } from "./common/book.js"
+import { authRouter } from "./common/auth.js";
+import { publicBookRouter } from "./common/book.js";
 
-import { profileRouter } from "./user/profile.js"
-import { userBorrowRouter } from "./user/borrow.js"
-import { userCommentRouter } from "./user/comment.js"
+import { profileRouter } from "./user/profile.js";
+import { userBorrowRouter } from "./user/borrow.js";
+import { userCommentRouter } from "./user/comment.js";
 
-import { adminBorrowRouter } from "./admin/borrow.js"
-import { adminUserRouter } from "./admin/user.js"
-import { adminCategoryRouter } from "./admin/category.js"
-import { adminBookRouter } from "./admin/book.js"
-import { adminstatisticsRouter } from "./admin/analytics.js"
-import { adminCommentRouter } from "./admin/comment.js"
+import { librarianBookRouter } from "./librarian/book.js";
+import { librarianBorrowRouter } from "./librarian/borrow.js";
 
-import { authenticate } from "../middlewares/authenticate.js"
-import { authorize } from "../middlewares/authorize.js"
+import { adminUserRouter } from "./admin/user.js";
+import { adminCategoryRouter } from "./admin/category.js";
+import { adminCommentRouter } from "./admin/comment.js";
+import { adminstatisticsRouter } from "./admin/analytics.js";
+
+import { authenticate } from "../middlewares/authenticate.js";
+import { authorize } from "../middlewares/authorize.js";
 
 const router: Router = express.Router();
 
-router.use("/auth", authRouter)
-router.use("/books", publicBookRouter)
+// 1. PUBLIC ROUTES
+router.use("/auth", authRouter);
+router.use("/books", publicBookRouter);
 
-router.use("/user/profile", authenticate, profileRouter)
-router.use("/user/borrows", authenticate, userBorrowRouter)
-router.use("/user/comments", authenticate, userCommentRouter)
+// 2. PATRON / ALL AUTHENTICATED USERS
+router.use("/user/profile", authenticate, authorize("user", "librarian", "admin"), profileRouter);
+router.use("/user/borrows", authenticate, authorize("user", "librarian", "admin"), userBorrowRouter);
+router.use("/user/comments", authenticate, authorize("user", "librarian", "admin"), userCommentRouter);
 
-router.use("/admin/users", authenticate, authorize("admin"), adminUserRouter)
-router.use("/admin/books", authenticate, authorize("admin"), adminBookRouter)
-router.use("/admin/categories", authenticate, authorize("admin"), adminCategoryRouter)
-router.use("/admin/comments", authenticate, authorize("admin"), adminCommentRouter)
-router.use("/admin/borrows", authenticate, authorize("admin"), adminBorrowRouter)
-router.use("/admin/stats", authenticate, authorize("admin"), adminstatisticsRouter)
+// 3. LIBRARIAN & ADMIN ROUTES (Staff Desk & Operations)
+router.use("/librarian/books", authenticate, authorize("librarian", "admin"), librarianBookRouter);
+router.use("/librarian/borrows", authenticate, authorize("librarian", "admin"), librarianBorrowRouter);
+
+// 4. STRICTLY ADMIN ROUTES (System Administration)
+router.use("/admin/users", authenticate, authorize("admin"), adminUserRouter);
+router.use("/admin/categories", authenticate, authorize("admin"), adminCategoryRouter);
+router.use("/admin/comments", authenticate, authorize("admin"), adminCommentRouter);
+router.use("/admin/stats", authenticate, authorize("admin"), adminstatisticsRouter);
 
 export default router;
-

@@ -20,7 +20,6 @@ import {
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import { processNextInLineOrRestock } from "../../services/reservation-service.js";
-import { User } from "../../models/user.js";
 
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
@@ -134,7 +133,7 @@ export const requestBorrow = asyncHandler(async (
   }
 });
 
-export const cancelRequest = asyncHandler(async (
+export const cancelBorrowRequest = asyncHandler(async (
   req: AuthenticatedRequest<CancelBorrowParams, any, any>,
   res: Response
 ): Promise<void> => {

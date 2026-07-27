@@ -3,32 +3,29 @@ import {
     NextFunction,
     RequestHandler
 } from "express";
-
-import asyncHandler from "../utils/async-handler.js";
 import { AuthenticatedRequest, UserRole } from "../types/auth.js";
 
-export const authorize = (requiredRole: UserRole): RequestHandler =>
-    asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const authorize = (...allowedRoles: UserRole[]): RequestHandler => {
+    return (
+        req: AuthenticatedRequest,
+        res: Response,
+        next: NextFunction
+    ) => {
         if (!req.user) {
-            return res
-                .status(500)
-                .json({
-                    success: false,
-                    message: "Auth context missing. Authenticate middleware must run first."
-                });
+            return res.status(500).json({
+                success: false,
+                message: "Auth context missing. Authenticate middleware must run first.",
+            });
         }
 
-        const roles: UserRole[] = ["user", "admin"];
-
-        const userRoleLevel = roles.indexOf(req.user.role);
-        const requiredRoleLevel = roles.indexOf(requiredRole);
-
-        if (userRoleLevel < requiredRoleLevel) {
+        // Check if user's role is in the list of allowed roles for this endpoint
+        if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({
                 success: false,
-                message: "Access forbidden: Insufficient permissions"
+                message: "Access forbidden: Insufficient permissions.",
             });
         }
 
         next();
-    });
+    };
+};

@@ -17,7 +17,7 @@ import {
   DeleteBookParams,
   UpdateBookBody,
   UpdateBookParams
-} from "../../validations/admin/book/book-types.js";
+} from "../../validations/librarian/book/book-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 
 interface BookUpdatePayload extends Omit<UpdateBookBody, "category"> {
