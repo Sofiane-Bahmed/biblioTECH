@@ -11,6 +11,7 @@ import {
   checkBorrowEligibility,
   checkCancellationEligibility
 } from "../../services/borrow-service.js";
+import { processNextInLineOrRestock } from "../../services/reservation-service.js";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 import {
@@ -19,7 +20,6 @@ import {
   RequestBorrowParams,
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { processNextInLineOrRestock } from "../../services/reservation-service.js";
 
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;

@@ -54,6 +54,13 @@ export const authenticate = asyncHandler(async (
             });
         }
 
+        if (liveUser.outstanding_fines > 10.00) {
+            return res.status(403).json({
+                success: false,
+                message: "`You have $${liveUser.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`"
+            })
+        }
+
         req.user = {
             _id: liveUser._id.toString(),
             role: liveUser.role

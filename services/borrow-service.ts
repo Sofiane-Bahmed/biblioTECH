@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 
 import { Borrow } from "../models/borrow.js";
-import { User } from "../models/user.js";
 
 import { BORROWING_RULES } from "../constants/library-rules.js";
 
@@ -42,15 +41,6 @@ export const checkBorrowEligibility = async (
     bookId: string | Types.ObjectId
 ): Promise<EligibilityResult> => {
     const { firstDay, lastDay } = getMonthlyBoundaries();
-
-    const user = await User.findById(userId);
-    if (user.outstanding_fines > 10.00) {
-        return {
-            status: false,
-            code: 403,
-            message: `You have $${user.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance to borrow again.`
-        }
-    };
 
     const monthlyCount = await Borrow.countDocuments({
         user: userId,
