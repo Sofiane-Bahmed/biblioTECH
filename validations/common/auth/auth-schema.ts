@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/
+
 export const registerSchema = z
     .object({
         body: z.object({
@@ -9,6 +11,13 @@ export const registerSchema = z
             email: z
                 .string()
                 .email({ message: "Invalid email format" }),
+            phone: z
+                .string({ message: "Phone number is required" })
+                .min(10, { message: "Phone number must be at least 10 digits" })
+                .regex(phoneRegex, {
+                    message: "Invalid phone number format",
+                })
+                .optional(),
             password: z
                 .string()
                 .min(8, { message: "Password must be at least 8 characters" }),

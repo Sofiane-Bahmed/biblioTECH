@@ -31,6 +31,7 @@ export const register = asyncHandler(async (
     fullName,
     password,
     email,
+    phone,
     confirmPassword
   } = req.body as RegisterBody;
 
@@ -42,6 +43,7 @@ export const register = asyncHandler(async (
     fullName,
     password,
     email,
+    phone,
     role
   })
 
