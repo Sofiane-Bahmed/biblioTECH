@@ -4,6 +4,7 @@ import { User } from "../../models/user.js"
 import asyncHandler from "../../utils/async-handler.js";
 import {
   BlockUserParams,
+  CreateStaffBody,
   DeleteUserParams,
   GetUserParams,
   GetUsersQuery,
@@ -12,6 +13,44 @@ import {
   UpdateUserRoleParams,
 } from "../../validations/admin/user/user-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
+
+export const createStaff = asyncHandler(async (
+  req: AuthenticatedRequest<any, CreateStaffBody, any>,
+  res: Response
+): Promise<void> => {
+  const {
+    fullName,
+    email,
+    password,
+    confirmPassword,
+    role = "librarian",
+    phone
+  } = req.body;
+
+
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  if (existingUser) {
+    res.status(409).json({
+      success: false,
+      message: "A user with this email address already exists.",
+    });
+    return;
+  }
+
+  const staffMember = await User.create({
+    fullName,
+    email: email.toLowerCase(),
+    password,
+    role,
+    phone,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: `Staff member created successfully with role '${role}'.`,
+    staffMember
+  });
+});
 
 export const updateUserRole = asyncHandler(async (
   req: AuthenticatedRequest<UpdateUserRoleParams, UpdateUserRoleBody, any>,

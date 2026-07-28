@@ -2,6 +2,7 @@ import express, { Router } from "express";
 
 import {
     blockUser,
+    createStaff,
     deleteUser,
     getUser,
     getUsers,
@@ -11,6 +12,7 @@ import {
 import { validate } from "../../middlewares/validate.js";
 import {
     blockUserSchema,
+    createStaffSchema,
     deleteUserSchema,
     getUserSchema,
     getUsersSchema,
@@ -20,6 +22,7 @@ import {
 
 export const adminUserRouter: Router = express.Router();
 
+adminUserRouter.post("/create-staff", validate(createStaffSchema), createStaff);
 adminUserRouter.get("/get-all", validate(getUsersSchema), getUsers);
 
 adminUserRouter.put("/:id/role", validate(updateUserRoleSchema), updateUserRole);

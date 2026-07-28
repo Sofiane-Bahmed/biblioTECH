@@ -16,6 +16,7 @@ export interface IUser {
    fullName: string;
    email: string;
    password?: string;
+   phone?: string;
    role: UserRole;
    refreshToken?: string;
    passwordResetToken?: string;
@@ -58,9 +59,12 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
          required: true,
          select: false
       },
+      phone: {
+         type: String,
+      },
       role: {
          type: String,
-         enum: ["user", "admin","librarian"],
+         enum: ["user", "admin", "librarian"],
          required: true
       },
       refreshToken: {

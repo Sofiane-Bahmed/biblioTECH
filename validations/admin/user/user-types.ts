@@ -1,12 +1,16 @@
 import z from "zod";
 import {
     blockUserSchema,
+    createStaffSchema,
     deleteUserSchema,
     getUserSchema,
     getUsersSchema,
     unblockUserSchema,
     updateUserRoleSchema
 } from "./user-schema.js";
+
+export type CreateStaffRequest = z.infer<typeof createStaffSchema>
+export type CreateStaffBody = CreateStaffRequest["body"]
 
 export type GetUserRequest = z.infer<typeof getUserSchema>;
 export type GetUserParams = GetUserRequest["params"];
