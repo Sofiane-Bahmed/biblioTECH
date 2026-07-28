@@ -11,7 +11,7 @@ export const borrowSchema = z.object({
     }),
 });
 
-export const requestBorrowSchema = z.object({
+export const borrowRequestSchema = z.object({
     params: z.object({
         bookId: objectIdSchema,
     }),

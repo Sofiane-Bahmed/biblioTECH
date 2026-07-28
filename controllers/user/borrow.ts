@@ -24,7 +24,7 @@ import { AuthenticatedRequest } from "../../types/auth.js";
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
-export const requestBorrow = asyncHandler(async (
+export const BorrowRequest = asyncHandler(async (
   req: AuthenticatedRequest<RequestBorrowParams, any, any>,
   res: Response
 ): Promise<void> => {
