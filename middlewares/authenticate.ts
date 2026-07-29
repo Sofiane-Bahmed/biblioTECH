@@ -59,7 +59,7 @@ export const authenticate = asyncHandler(async (
                 success: false,
                 message: "`You have $${liveUser.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`"
             })
-        }
+        };
 
         req.user = {
             _id: liveUser._id.toString(),

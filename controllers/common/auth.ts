@@ -90,6 +90,15 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
     return;
   }
 
+  //check outstanding_fines
+  if (user.outstanding_fines > 10.00) {
+    res.status(403).json({
+      success: false,
+      message: "`You have $${liveUser.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`"
+    });
+    return;
+  };
+
   const accessToken = sign(
     {
       _id: user._id,
