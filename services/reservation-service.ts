@@ -1,4 +1,4 @@
-import { ClientSession, Types } from "mongoose";
+import mongoose, { ClientSession, Types } from "mongoose";
 
 import { Book } from "../models/book.js";
 import { Reservation } from "../models/reservation.js";
@@ -7,6 +7,7 @@ import { User } from "../models/user.js";
 import { sendHoldReadyEmail } from "../utils/email/hold-ready-email.js";
 
 import { TIME_CONSTANTS } from "../constants/library-rules.js";
+import { AuditLog } from "../models/audit-log.js";
 
 const { PICKUP_WINDOW_HOURS, MS } = TIME_CONSTANTS
 
@@ -48,5 +49,78 @@ export const processNextInLineOrRestock = async (
                 console.error(`[Email Error] Failed sending hold notification for reservation #${nextReservation._id}:`, err)
             );
         }
+    }
+};
+
+export const forceQueuePositionService = async ({
+    reservationId,
+    newPosition,
+    reason,
+    staffId,
+}) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const targetReservation = await Reservation
+            .findById(reservationId)
+            .session(session);
+
+        if (!targetReservation) {
+            throw new Error("RESERVATION_NOT_FOUND");
+        }
+
+        if (targetReservation.status !== "PENDING") {
+            throw new Error("INVALID_RESERVATION_STATUS");
+        }
+
+        // Fetch all pending holds for this book ordered by creation date
+        const pendingHolds = await Reservation.find({
+            book: targetReservation.book,
+            status: "PENDING",
+        })
+            .sort({ createdAt: 1 })
+            .session(session);
+
+        // Remove target reservation and re-insert at new target position (1-based index)
+        const filteredHolds = pendingHolds.filter((h) => h._id.toString() !== reservationId);
+        const targetIndex = Math.min(newPosition - 1, filteredHolds.length);
+
+        filteredHolds.splice(targetIndex, 0, targetReservation);
+
+        // Update timestamps sequentially to preserve queue order natively
+        const baseTime = Date.now();
+        for (let i = 0; i < filteredHolds.length; i++) {
+            filteredHolds[i].createdAt = new Date(baseTime + i * 1000);
+            await filteredHolds[i].save({ session });
+        }
+
+        // Create Audit Log within the transaction or right after
+        await AuditLog.create(
+            [
+                {
+                    action: "FORCE_QUEUE_REORDER",
+                    performedBy: staffId,
+                    targetUser: targetReservation.user,
+                    targetResource: "Reservation",
+                    resourceId: targetReservation._id,
+                    details: { newQueuePosition: targetIndex + 1 },
+                    reason,
+                },
+            ],
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            newPosition: targetIndex + 1,
+            reservation: targetReservation,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
     }
 };
