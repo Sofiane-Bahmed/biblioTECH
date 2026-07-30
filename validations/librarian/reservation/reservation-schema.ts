@@ -14,12 +14,23 @@ export const extendPickupDeadlineSchema = z.object({
             .coerce
             .number()
             .int()
-            .min(1)
-            .max(48)
+            .min(1, "Extension must be at least 1 hour")
+            .max(48, "Extension cannot exceed 48 hours")
             .default(24),
         reason: z
             .string()
             .min(5, "Reason must be at least 5 characters")
-            .max(200, "Reason must be at most 100 characters"),
+            .max(200, "Reason must be at most 200 characters"),
     })
-})
+});
+
+export const placeStaffHoldSchema = z.object({
+    body: z.object({
+        userId: objectIdSchema,
+        bookId: objectIdSchema,
+        reason: z
+            .string()
+            .min(5, "Reason must be at least 5 characters")
+            .max(200, "Reason must be at most 200 characters"),
+    })
+});

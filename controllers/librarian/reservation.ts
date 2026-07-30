@@ -11,7 +11,8 @@ import { AuthenticatedRequest } from "../../types/auth.js";
 import { TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
     extendPickupDeadlineBody,
-    extendPickupDeadlineParams
+    extendPickupDeadlineParams,
+    placeStaffHoldBody
 } from "../../validations/librarian/reservation/reservation-types.js";
 
 const { MS } = TIME_CONSTANTS;
@@ -21,7 +22,7 @@ export const extendPickupDeadline = asyncHandler(async (
     res: Response
 ): Promise<void> => {
     const { reservationId } = req.params;
-    const { extensionHours = 24, reason } = req.body;
+    const { extensionHours, reason } = req.body;
     const staffId = req.user!._id;
 
     const reservation = await Reservation.findById(reservationId);
@@ -51,7 +52,10 @@ export const extendPickupDeadline = asyncHandler(async (
         targetUser: reservation.user,
         targetResource: "Reservation",
         resourceId: reservation._id,
-        details: { oldExpiry: currentExpiry, newExpiry, extensionHours },
+        details: {
+            oldExpiry: currentExpiry,
+            newExpiry, extensionHours
+        },
         reason,
     });
 
@@ -59,5 +63,60 @@ export const extendPickupDeadline = asyncHandler(async (
         success: true,
         message: `Pickup deadline extended by ${extensionHours} hours. New deadline: ${newExpiry.toISOString()}`,
         data: reservation,
+    });
+});
+
+export const placeStaffHold = asyncHandler(async (
+    req: AuthenticatedRequest<any, placeStaffHoldBody, any>,
+    res: Response
+): Promise<void> => {
+    const { userId, bookId, reason } = req.body;
+    const staffId = req.user!._id;
+
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+        res.status(404).json({ success: false, message: "Patron account not found." });
+        return;
+    }
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+        res.status(404).json({ success: false, message: "Book not found." });
+        return;
+    }
+
+    // Prevent duplicate active holds
+    const existingHold = await Reservation.findOne({
+        user: userId,
+        book: bookId,
+        status: { $in: ["PENDING", "READY_FOR_PICKUP"] },
+    });
+
+    if (existingHold) {
+        res.status(400).json({ success: false, message: "Patron already has an active hold on this book." });
+        return;
+    }
+
+    const newReservation = await Reservation.create({
+        user: userId,
+        book: bookId,
+        status: "PENDING",
+    });
+
+    // Audit Log
+    await AuditLog.create({
+        action: "STAFF_PLACE_HOLD",
+        performedBy: staffId,
+        targetUser: userId,
+        targetResource: "Reservation",
+        resourceId: newReservation._id,
+        details: { bookId },
+        reason,
+    });
+
+    res.status(201).json({
+        success: true,
+        message: "Manual reservation placed successfully on behalf of patron.",
+        data: newReservation,
     });
 });
