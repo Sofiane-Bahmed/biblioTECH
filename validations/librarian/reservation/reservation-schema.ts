@@ -34,3 +34,21 @@ export const placeStaffHoldSchema = z.object({
             .max(200, "Reason must be at most 200 characters"),
     })
 });
+
+export const forceQueuePositionSchema = z.object({
+    params: z.object({
+        reservationId: objectIdSchema
+    }),
+    body: z.object({
+        newPosition: z
+            .coerce
+            .number()
+            .int()
+            .min(1, "New position must be at least 1")
+            .default(1),
+        reason: z
+            .string()
+            .min(5, "Reason must be at least 5 characters")
+            .max(200, "Reason must be at most 200 characters"),
+    })
+});

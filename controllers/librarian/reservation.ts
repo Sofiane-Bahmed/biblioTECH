@@ -12,6 +12,8 @@ import { TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
     extendPickupDeadlineBody,
     extendPickupDeadlineParams,
+    forceQueuePositionBody,
+    forceQueuePositionParams,
     placeStaffHoldBody
 } from "../../validations/librarian/reservation/reservation-types.js";
 
@@ -119,4 +121,76 @@ export const placeStaffHold = asyncHandler(async (
         message: "Manual reservation placed successfully on behalf of patron.",
         data: newReservation,
     });
+});
+
+export const forceQueuePosition = asyncHandler(async (
+    req: AuthenticatedRequest<forceQueuePositionParams, forceQueuePositionBody, any>,
+    res: Response
+): Promise<void> => {
+    const { reservationId } = req.params;
+    const { newPosition, reason } = req.body;
+    const staffId = req.user!._id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const targetReservation = await Reservation
+            .findById(reservationId)
+            .session(session);
+
+        if (!targetReservation || targetReservation.status !== "PENDING") {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(400).json({
+                success: false,
+                message: "Only PENDING reservations can be re-ordered."
+            });
+            return;
+        }
+
+        // Get all pending holds for this book ordered by creation date
+        const pendingHolds = await Reservation.find({
+            book: targetReservation.book,
+            status: "PENDING",
+        })
+            .sort({ createdAt: 1 })
+            .session(session);
+
+        // Remove target and insert at newPosition index (1-based)
+        const filteredHolds = pendingHolds.filter((h) => h._id.toString() !== reservationId);
+        const targetIndex = Math.min(newPosition - 1, filteredHolds.length);
+
+        filteredHolds.splice(targetIndex, 0, targetReservation);
+
+        // Update timestamps sequentially to reflect the new queue order natively
+        const baseTime = new Date().getTime();
+        for (let i = 0; i < filteredHolds.length; i++) {
+            filteredHolds[i].createdAt = new Date(baseTime + i * 1000);
+            await filteredHolds[i].save({ session });
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        // Audit Log
+        await AuditLog.create({
+            action: "FORCE_QUEUE_REORDER",
+            performedBy: staffId,
+            targetUser: targetReservation.user,
+            targetResource: "Reservation",
+            resourceId: targetReservation._id,
+            details: { newQueuePosition: targetIndex + 1 },
+            reason,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Queue position adjusted. Patron is now at position #${targetIndex + 1} in line.`,
+        });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
 });
