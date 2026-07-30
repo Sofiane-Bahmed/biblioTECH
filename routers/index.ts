@@ -9,6 +9,7 @@ import { userCommentRouter } from "./user/comment.js";
 
 import { librarianBookRouter } from "./librarian/book.js";
 import { librarianBorrowRouter } from "./librarian/borrow.js";
+import { librarianReservationRouter } from "./librarian/reservation.js";
 
 import { adminUserRouter } from "./admin/user.js";
 import { adminCategoryRouter } from "./admin/category.js";
@@ -32,6 +33,7 @@ router.use("/user/comments", authenticate, authorize("user", "librarian", "admin
 // 3. LIBRARIAN & ADMIN ROUTES (Staff Desk & Operations)
 router.use("/librarian/books", authenticate, authorize("librarian", "admin"), librarianBookRouter);
 router.use("/librarian/borrows", authenticate, authorize("librarian", "admin"), librarianBorrowRouter);
+router.use("/librarian/reservations", authenticate, authorize("librarian", "admin"), librarianReservationRouter);
 
 // 4. STRICTLY ADMIN ROUTES (System Administration)
 router.use("/admin/users", authenticate, authorize("admin"), adminUserRouter);
