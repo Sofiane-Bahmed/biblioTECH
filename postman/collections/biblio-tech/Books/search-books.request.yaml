@@ -1,8 +1,10 @@
 $kind: http-request
 name: Search Books
 method: GET
-url: '{{baseUrl}}/books/search'
+url: "{{baseUrl}}/books/search?author=James Clear"
 order: 2000
 queryParams:
-  - key: q
-    value: harry potter
+  - key: author
+    value: James Clear
+    disabled: false
+    description: ""

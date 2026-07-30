@@ -94,7 +94,7 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
   if (user.outstanding_fines > 10.00) {
     res.status(403).json({
       success: false,
-      message: "`You have $${liveUser.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`"
+      message: "`You have $${user.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`"
     });
     return;
   };

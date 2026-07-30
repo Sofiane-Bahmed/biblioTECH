@@ -1,11 +1,14 @@
 $kind: http-request
 name: Auto Import Book
 method: GET
-url: '{{baseUrl}}/admin/books/auto-import'
+url: "{{baseUrl}}/admin/books/auto-import"
+body:
+  type: json
+  content: "{\r
+
+    \    \"isbn\":\"1847941834 \"\r
+
+    }"
 order: 2000
 headers:
-  - key: Authorization
-    value: 'Bearer {{accessToken}}'
-queryParams:
-  - key: isbn
-    value: 978-3-16-148410-0
+  Authorization: Bearer {{accessToken}}

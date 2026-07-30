@@ -1,4 +1,12 @@
 $kind: http-request
-url: ""
-method: GET
+name: Cancel Borrow
+url: "{{baseUrl}}/admin/borrows/{{borrowId}}/cancel"
+method: PATCH
+body:
+  type: json
+  content: "{\r
+
+    \    \"canceled_message\":\"your borrow is canceled\"\r
+
+    }"
 order: 4376234460971318
