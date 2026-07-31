@@ -19,6 +19,7 @@ export interface IBorrow {
   borrow_date?: Date;
   due_date?: Date;
   return_date?: Date;
+  issued_by: Types.ObjectId;
   condition_on_return: BookCondition;
   pickup_deadline?: Date;
   renewed: boolean;
@@ -77,6 +78,11 @@ const borrowSchema = new Schema<IBorrow>(
     },
     pickup_deadline: {
       type: Date
+    },
+    issued_by: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false, 
     },
     renewed: {
       type: Boolean,

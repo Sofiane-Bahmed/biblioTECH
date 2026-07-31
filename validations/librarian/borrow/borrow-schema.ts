@@ -23,8 +23,6 @@ const adminPaginationSchema = z.object({
         .default(10),
 });
 
-
-
 export const approveBorrowRequestSchema = z.object({
     params: z.object({
         borrowId: objectIdSchema,
@@ -127,4 +125,15 @@ export const getBorrowsQuerySchema = z.object({
             .optional()
             .transform((val) => val === "true")
     })
+});
+
+export const bypassQueueSchema = z.object({
+    body: z.object({
+        userId: objectIdSchema,
+        bookId: objectIdSchema,
+        reason: z
+            .string()
+            .min(5, "Reason must be at least 5 characters")
+            .max(200, "Reason must be at most 200 characters"),
+    }),
 });

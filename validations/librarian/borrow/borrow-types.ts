@@ -1,6 +1,7 @@
 import z from "zod";
 import {
     approveBorrowRequestSchema,
+    bypassQueueSchema,
     cancelBorrowRequestSchema,
     confirmHandoverSchema,
     deleteBorrowSchema,
@@ -47,3 +48,6 @@ export type GetUserBorrowingHistoryQuery = NonNullable<GetUserBorrowingHistoryRe
 
 export type GetBorrowsQueryRequest = z.infer<typeof getBorrowsQuerySchema>;
 export type GetBorrowsQuery = GetBorrowsQueryRequest["query"];
+
+export type BypassQueueRequest = z.infer<typeof bypassQueueSchema>;
+export type BypassQueueBody = BypassQueueRequest["body"]

@@ -16,11 +16,13 @@ import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning
 import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
 import { calculateLatePenalty } from "../../services/penalty-service.js";
+import { bypassQueueService } from "../../services/borrow-service.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
   ApproveBorrowBody,
   ApproveBorrowParams,
+  BypassQueueBody,
   CancelBorrowBody,
   ConfirmHandoverParams,
   DeleteBorrowParams,
@@ -388,7 +390,7 @@ export const returnBook = asyncHandler(async (
       error: error.message
     });
   }
-}); 
+});
 
 export const payFineInPerson = asyncHandler(async (
   req: AuthenticatedRequest<PayFineInPersonParams, PayFineInPersonBody, any>,
@@ -532,4 +534,50 @@ export const getUserBorrowingHistory = asyncHandler(async (
   }
 
   res.status(200).json(result);
+});
+
+export const bypassQueueIssue = asyncHandler(async (
+  req: AuthenticatedRequest<any, BypassQueueBody, any>,
+  res: Response
+): Promise<void> => {
+  const {
+    userId,
+    bookId,
+    reason
+  } = req.body;
+  const staffId = req.user!._id;
+
+  try {
+    const borrowRecord = await bypassQueueService({
+      userId,
+      bookId,
+      reason,
+      staffId,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Book issued successfully bypassing queue.",
+      data: borrowRecord,
+    });
+  } catch (error: any) {
+    if (error.message === "USER_NOT_FOUND") {
+      res.status(404).json({ success: false, message: "Patron account not found." });
+      return;
+    }
+    if (error.message === "BOOK_NOT_FOUND") {
+      res.status(404).json({ success: false, message: "Book not found." });
+      return;
+    }
+    if (error.message === "NO_COPIES_AVAILABLE") {
+      res.status(400).json({ success: false, message: "No physical copies are currently available in inventory." });
+      return;
+    }
+    if (error.message === "ALREADY_HAS_ACTIVE_LOAN") {
+      res.status(400).json({ success: false, message: "Patron already has an active loan for this book." });
+      return;
+    }
+
+    throw error;
+  }
 });

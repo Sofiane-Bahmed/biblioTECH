@@ -10,7 +10,8 @@ import {
     cancelBorrow,
     confirmHandover,
     returnBook,
-    payFineInPerson
+    payFineInPerson,
+    bypassQueueIssue
 } from "../../controllers/librarian/borrow.js"
 import { validate } from "../../middlewares/validate.js";
 import {
@@ -24,11 +25,13 @@ import {
     confirmHandoverSchema,
     returnBookSchema,
     payFineInPersonSchema,
+    bypassQueueSchema,
 } from "../../validations/librarian/borrow/borrow-schema.js";
 
 export const librarianBorrowRouter: Router = express.Router();
 
 librarianBorrowRouter.get("/", validate(getBorrowsQuerySchema), getBorrows);
+librarianBorrowRouter.post("/bypass-queue", validate(bypassQueueSchema), bypassQueueIssue);
 
 librarianBorrowRouter.patch("/:borrowId/approve", validate(approveBorrowRequestSchema), approveBorrowRequest);
 librarianBorrowRouter.patch("/:borrowId/reject", validate(rejectBorrowRequestSchema), rejectBorrowRequest);
