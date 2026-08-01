@@ -5,7 +5,7 @@ export type UserRole = "user" | "admin" | "librarian";
 export interface AuthUser {
     _id: string;
     role: UserRole;
-    name?: string;
+    fullName?: string;
     email?: string;
 }
 

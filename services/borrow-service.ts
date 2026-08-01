@@ -139,20 +139,38 @@ export const bypassQueueService = async ({
         // 1. Validate User
         const user = await User.findById(userId).session(session);
         if (!user) {
-            throw new Error("USER_NOT_FOUND");
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Patron account not found.",
+            };
         }
 
         // 2. Validate Book & Available Copies
         const book = await Book.findById(bookId).session(session);
         if (!book) {
-            throw new Error("BOOK_NOT_FOUND");
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Book not found.",
+            };
         }
 
         if (book.copies_available <= 0) {
-            throw new Error("NO_COPIES_AVAILABLE");
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "No physical copies are currently available in inventory.",
+            };
         }
 
-        // 3. Check if target patron already has an active hold or active loan on this book
+        // 3. Check if target patron already has an active loan on this book
         const existingLoan = await Borrow.findOne({
             user: userId,
             book: bookId,
@@ -160,7 +178,13 @@ export const bypassQueueService = async ({
         }).session(session);
 
         if (existingLoan) {
-            throw new Error("ALREADY_HAS_ACTIVE_LOAN");
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Patron already has an active loan for this book.",
+            };
         }
 
         // 4. Handle any active holds for this user on this book (fulfill if present)
@@ -210,7 +234,7 @@ export const bypassQueueService = async ({
                         bookId,
                         dueDays: BORROW_PERIOD_DAYS,
                         dueDate,
-                        fulfilledReservation: !!userReservation
+                        fulfilledReservation: !!userReservation,
                     },
                     reason,
                 },
@@ -221,11 +245,15 @@ export const bypassQueueService = async ({
         await session.commitTransaction();
         session.endSession();
 
-        return borrowRecord;
-
+        return {
+            status: true,
+            code: 201,
+            message: "Book issued successfully bypassing queue.",
+            data: borrowRecord,
+        };
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        throw error;
+        throw error; 
     }
 };

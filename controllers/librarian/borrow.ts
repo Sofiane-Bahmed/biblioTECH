@@ -547,37 +547,13 @@ export const bypassQueueIssue = asyncHandler(async (
   } = req.body;
   const staffId = req.user!._id;
 
-  try {
-    const borrowRecord = await bypassQueueService({
-      userId,
-      bookId,
-      reason,
-      staffId,
-    });
+  const result = await bypassQueueService({
+    userId,
+    bookId,
+    reason,
+    staffId,
+  });
 
-    res.status(201).json({
-      success: true,
-      message: "Book issued successfully bypassing queue.",
-      data: borrowRecord,
-    });
-  } catch (error: any) {
-    if (error.message === "USER_NOT_FOUND") {
-      res.status(404).json({ success: false, message: "Patron account not found." });
-      return;
-    }
-    if (error.message === "BOOK_NOT_FOUND") {
-      res.status(404).json({ success: false, message: "Book not found." });
-      return;
-    }
-    if (error.message === "NO_COPIES_AVAILABLE") {
-      res.status(400).json({ success: false, message: "No physical copies are currently available in inventory." });
-      return;
-    }
-    if (error.message === "ALREADY_HAS_ACTIVE_LOAN") {
-      res.status(400).json({ success: false, message: "Patron already has an active loan for this book." });
-      return;
-    }
+  res.status(result.code).json(result);
 
-    throw error;
-  }
 });
