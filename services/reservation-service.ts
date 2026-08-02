@@ -62,16 +62,26 @@ export const forceQueuePositionService = async ({
     session.startTransaction();
 
     try {
-        const targetReservation = await Reservation
-            .findById(reservationId)
-            .session(session);
+        const targetReservation = await Reservation.findById(reservationId).session(session);
 
         if (!targetReservation) {
-            throw new Error("RESERVATION_NOT_FOUND");
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Reservation not found.",
+            };
         }
 
         if (targetReservation.status !== "PENDING") {
-            throw new Error("INVALID_RESERVATION_STATUS");
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Only PENDING reservations can be re-ordered.",
+            };
         }
 
         // Fetch all pending holds for this book ordered by creation date
@@ -95,7 +105,7 @@ export const forceQueuePositionService = async ({
             await filteredHolds[i].save({ session });
         }
 
-        // Create Audit Log within the transaction or right after
+        // Create Audit Log within the transaction
         await AuditLog.create(
             [
                 {
@@ -115,8 +125,13 @@ export const forceQueuePositionService = async ({
         session.endSession();
 
         return {
-            newPosition: targetIndex + 1,
-            reservation: targetReservation,
+            status: true,
+            code: 200,
+            message: `Queue position adjusted. Patron is now at position #${targetIndex + 1} in line.`,
+            data: {
+                newPosition: targetIndex + 1,
+                reservation: targetReservation,
+            },
         };
     } catch (error) {
         await session.abortTransaction();

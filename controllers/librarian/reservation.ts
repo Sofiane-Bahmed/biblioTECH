@@ -132,28 +132,12 @@ export const forceQueuePosition = asyncHandler(async (
     const { newPosition, reason } = req.body;
     const staffId = req.user!._id;
 
-    try {
-        const result = await forceQueuePositionService({
-            reservationId,
-            newPosition,
-            reason,
-            staffId,
-        });
+    const result = await forceQueuePositionService({
+        reservationId,
+        newPosition,
+        reason,
+        staffId,
+    });
 
-        res.status(200).json({
-            success: true,
-            message: `Queue position adjusted. Patron is now at position #${result.newPosition} in line.`,
-        });
-    } catch (error: any) {
-        if (error.message === "RESERVATION_NOT_FOUND") {
-            res.status(404).json({ success: false, message: "Reservation not found." });
-            return;
-        }
-        if (error.message === "INVALID_RESERVATION_STATUS") {
-            res.status(400).json({ success: false, message: "Only PENDING reservations can be re-ordered." });
-            return;
-        }
-
-        throw error;
-    }
+    res.status(result.code).json(result);
 });
