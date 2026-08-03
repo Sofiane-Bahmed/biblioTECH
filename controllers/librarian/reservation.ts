@@ -1,10 +1,10 @@
 import { Response } from "express";
 
-import { Reservation } from "../../models/reservation.js";
-import { Book } from "../../models/book.js";
-import { User } from "../../models/user.js";
-import { AuditLog } from "../../models/audit-log.js";
-
+import {
+    extendPickupDeadlineService,
+    forceQueuePositionService,
+    placeStaffHoldService
+} from "../../services/reservation-service.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import { TIME_CONSTANTS } from "../../constants/library-rules.js";
@@ -16,10 +16,6 @@ import {
     placeStaffHoldBody
 } from "../../validations/librarian/reservation/reservation-types.js";
 
-import { forceQueuePositionService, placeStaffHoldService } from "../../services/reservation-service.js";
-
-const { MS } = TIME_CONSTANTS;
-
 export const extendPickupDeadline = asyncHandler(async (
     req: AuthenticatedRequest<extendPickupDeadlineParams, extendPickupDeadlineBody, any>,
     res: Response
@@ -28,45 +24,14 @@ export const extendPickupDeadline = asyncHandler(async (
     const { extensionHours, reason } = req.body;
     const staffId = req.user!._id;
 
-    const reservation = await Reservation.findById(reservationId);
-    if (!reservation) {
-        res.status(404).json({ success: false, message: "Reservation not found." });
-        return;
-    }
-
-    if (reservation.status !== "READY_FOR_PICKUP") {
-        res.status(400).json({
-            success: false,
-            message: `Cannot extend deadline. Reservation status is '${reservation.status}', expected 'READY_FOR_PICKUP'.`,
-        });
-        return;
-    }
-
-    const currentExpiry = reservation.expires_at ? new Date(reservation.expires_at) : new Date();
-    const newExpiry = new Date(currentExpiry.getTime() + extensionHours * MS);
-
-    reservation.expires_at = newExpiry;
-    await reservation.save();
-
-    // Audit Log
-    await AuditLog.create({
-        action: "MANUAL_HOLD_EXTENSION",
-        performedBy: staffId,
-        targetUser: reservation.user,
-        targetResource: "Reservation",
-        resourceId: reservation._id,
-        details: {
-            oldExpiry: currentExpiry,
-            newExpiry, extensionHours
-        },
+    const result = await extendPickupDeadlineService({
+        reservationId,
+        extensionHours,
         reason,
+        staffId,
     });
 
-    res.status(200).json({
-        success: true,
-        message: `Pickup deadline extended by ${extensionHours} hours. New deadline: ${newExpiry.toISOString()}`,
-        data: reservation,
-    });
+    res.status(result.code).json(result);
 });
 
 export const placeStaffHold = asyncHandler(async (

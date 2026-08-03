@@ -234,3 +234,81 @@ export const placeStaffHoldService = async ({
         throw error;
     }
 };
+
+export const extendPickupDeadlineService = async ({
+    reservationId,
+    extensionHours,
+    reason,
+    staffId,
+}) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 1. Verify Reservation exists
+        const reservation = await Reservation.findById(reservationId).session(session);
+        if (!reservation) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Reservation not found.",
+            };
+        }
+
+        // 2. Validate Reservation status
+        if (reservation.status !== "READY_FOR_PICKUP") {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: `Cannot extend deadline. Reservation status is '${reservation.status}', expected 'READY_FOR_PICKUP'.`,
+            };
+        }
+
+        // 3. Calculate new expiration time
+        const currentExpiry = reservation.expires_at
+            ? new Date(reservation.expires_at)
+            : new Date();
+        const newExpiry = new Date(currentExpiry.getTime() + extensionHours * MS);
+
+        reservation.expires_at = newExpiry;
+        await reservation.save({ session });
+
+        // 4. Create Audit Log entry
+        await AuditLog.create(
+            [
+                {
+                    action: "MANUAL_HOLD_EXTENSION",
+                    performedBy: staffId,
+                    targetUser: reservation.user,
+                    targetResource: "Reservation",
+                    resourceId: reservation._id,
+                    details: {
+                        oldExpiry: currentExpiry,
+                        newExpiry,
+                        extensionHours,
+                    },
+                    reason,
+                },
+            ],
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: `Pickup deadline extended by ${extensionHours} hours. New deadline: ${newExpiry.toISOString()}`,
+            data: reservation,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
