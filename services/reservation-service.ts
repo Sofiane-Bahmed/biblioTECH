@@ -139,3 +139,98 @@ export const forceQueuePositionService = async ({
         throw error;
     }
 };
+
+export const placeStaffHoldService = async ({
+    userId,
+    bookId,
+    reason,
+    staffId,
+}) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 1. Verify User
+        const targetUser = await User.findById(userId).session(session);
+        if (!targetUser) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Patron account not found.",
+            };
+        }
+
+        // 2. Verify Book
+        const book = await Book.findById(bookId).session(session);
+        if (!book) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Book not found.",
+            };
+        }
+
+        // 3. Prevent duplicate active holds
+        const existingHold = await Reservation.findOne({
+            user: userId,
+            book: bookId,
+            status: { $in: ["PENDING", "READY_FOR_PICKUP"] },
+        }).session(session);
+
+        if (existingHold) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Patron already has an active hold on this book.",
+            };
+        }
+
+        // 4. Create new Reservation
+        const [newReservation] = await Reservation.create(
+            [
+                {
+                    user: userId,
+                    book: bookId,
+                    status: "PENDING",
+                },
+            ],
+            { session }
+        );
+
+        // 5. Create Audit Log Entry
+        await AuditLog.create(
+            [
+                {
+                    action: "STAFF_PLACE_HOLD",
+                    performedBy: staffId,
+                    targetUser: userId,
+                    targetResource: "Reservation",
+                    resourceId: newReservation._id,
+                    details: { bookId },
+                    reason,
+                },
+            ],
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 201,
+            message: "Manual reservation placed successfully on behalf of patron.",
+            data: newReservation,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};

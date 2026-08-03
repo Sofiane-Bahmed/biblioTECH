@@ -16,7 +16,7 @@ import {
     placeStaffHoldBody
 } from "../../validations/librarian/reservation/reservation-types.js";
 
-import { forceQueuePositionService } from "../../services/reservation-service.js";
+import { forceQueuePositionService, placeStaffHoldService } from "../../services/reservation-service.js";
 
 const { MS } = TIME_CONSTANTS;
 
@@ -76,52 +76,14 @@ export const placeStaffHold = asyncHandler(async (
     const { userId, bookId, reason } = req.body;
     const staffId = req.user!._id;
 
-    const targetUser = await User.findById(userId);
-    if (!targetUser) {
-        res.status(404).json({ success: false, message: "Patron account not found." });
-        return;
-    }
-
-    const book = await Book.findById(bookId);
-    if (!book) {
-        res.status(404).json({ success: false, message: "Book not found." });
-        return;
-    }
-
-    // Prevent duplicate active holds
-    const existingHold = await Reservation.findOne({
-        user: userId,
-        book: bookId,
-        status: { $in: ["PENDING", "READY_FOR_PICKUP"] },
-    });
-
-    if (existingHold) {
-        res.status(400).json({ success: false, message: "Patron already has an active hold on this book." });
-        return;
-    }
-
-    const newReservation = await Reservation.create({
-        user: userId,
-        book: bookId,
-        status: "PENDING",
-    });
-
-    // Audit Log
-    await AuditLog.create({
-        action: "STAFF_PLACE_HOLD",
-        performedBy: staffId,
-        targetUser: userId,
-        targetResource: "Reservation",
-        resourceId: newReservation._id,
-        details: { bookId },
+    const result = await placeStaffHoldService({
+        userId,
+        bookId,
         reason,
+        staffId,
     });
 
-    res.status(201).json({
-        success: true,
-        message: "Manual reservation placed successfully on behalf of patron.",
-        data: newReservation,
-    });
+    res.status(result.code).json(result);
 });
 
 export const forceQueuePosition = asyncHandler(async (
