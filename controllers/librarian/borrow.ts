@@ -11,12 +11,11 @@ import { Reservation } from "../../models/reservation.js";
 
 import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
-import { PickupReadyBookInput, PickupReadyUserInput, sendPickupReadyEmail } from "../../utils/email/pickup-ready.js";
 import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning.js";
 import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
 import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { approveBorrowRequestService, bypassQueueService } from "../../services/borrow-service.js";
+import { approveBorrowRequestService, bypassQueueService, rejectBorrowRequestService } from "../../services/borrow-service.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
@@ -62,51 +61,20 @@ export const approveBorrowRequest = asyncHandler(async (
 });
 
 export const rejectBorrowRequest = asyncHandler(async (
-  req: AuthenticatedRequest<RejectBorrowParams, RejectBorrowBody, any>,
+  req: AuthenticatedRequest<RejectBorrowParams, any, RejectBorrowBody>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
   const { rejected_message } = req.body;
+  const staffId = req.user!._id;
 
-  const borrowRequest = await Borrow.findById(borrowId);
-
-  if (!borrowRequest) {
-    res.status(404).json({ message: "Borrow request not found." });
-    return;
-  }
-
-  if (borrowRequest.status !== "PENDING") {
-    res.status(400).json({
-      message: `Cannot reject this request. It is already marked as ${borrowRequest.status}.`
-    });
-    return;
-  }
-
-  const updatedBorrow = await Borrow.findOneAndUpdate(
-    {
-      _id: borrowRequest._id,
-      status: "PENDING"
-    }, {
-    $set: {
-      status: "REJECTED",
-      rejected_message: rejected_message
-    }
-  },
-    {
-      new: true,
-      runValidators: true
-    }
-  )
-
-  if (!updatedBorrow) {
-    res.status(400).json({ message: "This request was already processed by another session." });
-    return;
-  }
-
-  res.status(200).json({
-    message: "Borrow request has been rejected successfully.",
-    borrow: updatedBorrow
+  const result = await rejectBorrowRequestService({
+    borrowId,
+    rejected_message,
+    staffId,
   });
+
+  res.status(result.code).json(result);
 });
 
 export const cancelBorrow = asyncHandler(async (

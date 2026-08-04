@@ -356,3 +356,62 @@ export const approveBorrowRequestService = async ({
         throw error;
     }
 };
+
+export const rejectBorrowRequestService = async ({
+    borrowId,
+    rejected_message,
+    staffId,
+}) => {
+    // 1. Verify existence
+    const borrowRequest = await Borrow.findById(borrowId);
+    if (!borrowRequest) {
+        return {
+            status: false,
+            code: 404,
+            message: "Borrow request not found.",
+        };
+    }
+
+    // 2. Validate current status
+    if (borrowRequest.status !== "PENDING") {
+        return {
+            status: false,
+            code: 400,
+            message: `Cannot reject this request. It is already marked as ${borrowRequest.status}.`,
+        };
+    }
+
+    // 3. Atomically transition status to REJECTED
+    const updatedBorrow = await Borrow.findOneAndUpdate(
+        {
+            _id: borrowRequest._id,
+            status: "PENDING",
+        },
+        {
+            $set: {
+                status: "REJECTED",
+                rejected_message,
+                ...(staffId && { rejectedBy: staffId }),
+            },
+        },
+        {
+            new: true,
+            runValidators: true,
+        }
+    );
+
+    if (!updatedBorrow) {
+        return {
+            status: false,
+            code: 400,
+            message: "This request was already processed by another session.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Borrow request has been rejected successfully.",
+        data: updatedBorrow,
+    };
+};
