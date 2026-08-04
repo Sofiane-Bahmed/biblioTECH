@@ -2,12 +2,15 @@ import mongoose, { Types } from "mongoose";
 
 import { Borrow } from "../models/borrow.js";
 import { User } from "../models/user.js";
-import { Book } from "../models/book.js";
+import { Book, IBook } from "../models/book.js";
 import { Reservation } from "../models/reservation.js";
 import { AuditLog } from "../models/audit-log.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../constants/library-rules.js";
 import { sendPickupReadyEmail } from "../utils/email/pickup-ready.js";
+import { sendSuspensionWarningEmail } from "../utils/email/suspension-warning.js";
+import { sendHoldReadyEmail } from "../utils/email/hold-ready-email.js";
+import { calculateLatePenalty } from "./penalty-service.js";
 
 const {
     BORROWS_PER_MONTH,
@@ -566,6 +569,122 @@ export const confirmHandoverService = async ({
             code: 200,
             message: "Book handed over! Active borrow period started.",
             data: updatedBorrow,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
+
+export const returnBookService = async ({
+    borrowId,
+    condition,
+    staffId,
+}) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 1. Fetch borrow record with session
+        const borrow = await Borrow.findById(borrowId)
+            .session(session)
+            .populate<{ book: IBook }>("book");
+
+        if (!borrow || !borrow.book) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Borrow record or associated book not found.",
+            };
+        }
+
+        if (borrow.status === "RETURNED") {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "This book has already been returned.",
+            };
+        }
+
+        const userId = borrow.user;
+        const book = borrow.book;
+        const dueDate = borrow.due_date;
+        const currentDate = new Date();
+
+        const penalty = calculateLatePenalty(currentDate, dueDate);
+
+        // 2. Mark borrow record as RETURNED
+        await Borrow.findByIdAndUpdate(
+            borrowId,
+            {
+                $set: {
+                    status: "RETURNED",
+                    return_date: currentDate,
+                    condition_on_return: condition,
+                    ...(staffId && { returnedTo: staffId }),
+                },
+            },
+            { session }
+        );
+
+        // 3. Handle queue re-assignment or inventory restock
+        const nextReservation = await Reservation.findOne({
+            book: book._id,
+            status: "PENDING",
+        })
+            .sort({ createdAt: 1 })
+            .session(session);
+
+        if (nextReservation) {
+            nextReservation.status = "READY_FOR_PICKUP";
+            nextReservation.expires_at = new Date(Date.now() + PICKUP_WINDOW_HOURS * MS_PER_HOUR);
+            await nextReservation.save({ session });
+        } else {
+            await Book.findByIdAndUpdate(
+                book._id,
+                { $inc: { copies_available: 1 } },
+                { session }
+            );
+        }
+
+        // 4. Apply penalties & damage fees conditionally
+        if (penalty.action === "SUSPEND" || condition === "DAMAGED") {
+            const updateFields: any = {};
+            if (penalty.action === "SUSPEND") {
+                updateFields.suspension_date = penalty.suspensionDate;
+            }
+            if (condition === "DAMAGED") {
+                updateFields.$inc = { outstanding_fines: 15.0 };
+            }
+
+            await User.findByIdAndUpdate(userId, updateFields, { session });
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        // 5. Trigger post-transaction notification emails
+        if (nextReservation) {
+            sendHoldReadyEmail(nextReservation.user, book.title, nextReservation.expires_at).catch(console.error);
+        }
+
+        if (penalty.action === "WARNING") {
+            sendSuspensionWarningEmail({ name: "Valued Member", email: "..." }, { title: book.title }).catch(console.error);
+        }
+
+        return {
+            status: true,
+            code: 200,
+            message: "Return processed successfully.",
+            data: {
+                heldForQueue: !!nextReservation,
+                penaltyDetails: penalty.clientMessage,
+            },
         };
     } catch (error) {
         await session.abortTransaction();

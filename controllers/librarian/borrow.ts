@@ -15,7 +15,7 @@ import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning
 import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
 import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { approveBorrowRequestService, bypassQueueService, cancelBorrowService, confirmHandoverService, rejectBorrowRequestService } from "../../services/borrow-service.js";
+import { approveBorrowRequestService, bypassQueueService, cancelBorrowService, confirmHandoverService, rejectBorrowRequestService, returnBookService } from "../../services/borrow-service.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
@@ -115,110 +115,15 @@ export const returnBook = asyncHandler(async (
 ): Promise<void> => {
   const { borrowId } = req.params;
   const { condition } = req.body;
+  const staffId = req.user!._id;
 
-  // Initialize session early so READS are also protected within the transaction
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const result = await returnBookService({
+    borrowId,
+    condition,
+    staffId,
+  });
 
-  try {
-    // Pass session to the find query to ensure data consistency
-    const borrow = await Borrow
-      .findById(borrowId)
-      .session(session)
-      .populate<{ book: IBook }>("book");
-
-    if (!borrow || !borrow.book) {
-      res.status(404).json({ success: false, message: "Borrow record or associated book not found." });
-      await session.abortTransaction();
-      return;
-    }
-
-    if (borrow.status === "RETURNED") {
-      res.status(400).json({ success: false, message: "This book has already been returned." });
-      await session.abortTransaction();
-      return;
-    }
-
-    const userId = borrow.user;
-    const book = borrow.book;
-    const dueDate = borrow.due_date;
-    const currentDate = new Date();
-
-    const penalty = calculateLatePenalty(currentDate, dueDate);
-
-    // Acknowledge Return Status & Condition Log
-    await Borrow.findByIdAndUpdate(
-      borrowId,
-      {
-        $set: {
-          status: "RETURNED",
-          return_date: currentDate,
-          condition_on_return: condition
-        }
-      },
-      { session }
-    );
-
-    // Handle Waiting Lists / Reservations
-    const nextReservation = await Reservation.findOne({ book: book._id, status: "PENDING" })
-      .sort({ createdAt: 1 }) // First in, first out queue
-      .session(session);
-
-    if (nextReservation) {
-      // Keep inventory locked, assign it directly to the waiting user
-      nextReservation.status = "READY_FOR_PICKUP";
-      nextReservation.expires_at = new Date(Date.now() + PICKUP_WINDOW_HOURS * MS);
-      await nextReservation.save({ session });
-
-      // Keep copies_available locked since it's going straight to a reserved shelf
-    } else {
-      // No one is waiting? Safely restock general inventory
-      await Book.findByIdAndUpdate(
-        book._id,
-        { $inc: { copies_available: 1 } },
-        { session }
-      );
-    }
-
-    // Apply Penalties / Damage Fees conditionally
-    if (penalty.action === "SUSPEND" || condition === "DAMAGED") {
-      const updateFields: any = {};
-      if (penalty.action === "SUSPEND") updateFields.suspension_date = penalty.suspensionDate;
-      if (condition === "DAMAGED") {
-        // Assume you have a balance/fine tracking stream on the user
-        updateFields.$inc = { outstanding_fines: 15.00 }; // $15 flat damage fee example
-      }
-
-      await User.findByIdAndUpdate(userId, updateFields, { session });
-    }
-
-    await session.commitTransaction();
-    session.endSession();
-
-    if (nextReservation) {
-      sendHoldReadyEmail(nextReservation.user, book.title, nextReservation.expires_at).catch(console.error);
-    }
-
-    if (penalty.action === "WARNING") {
-      sendSuspensionWarningEmail({ name: "Valued Member", email: "..." }, { title: book.title }).catch(console.error);
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Return processed successfully.",
-      heldForQueue: !!nextReservation,
-      penaltyDetails: penalty.clientMessage
-    });
-
-  } catch (error: any) {
-    await session.abortTransaction();
-    session.endSession();
-    res.status(500).json({
-      success: false,
-      message: "Transaction failed safely.",
-      error: error.message
-    });
-  }
+  res.status(result.code).json(result);
 });
 
 export const payFineInPerson = asyncHandler(async (
