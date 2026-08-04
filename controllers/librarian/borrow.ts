@@ -1,23 +1,24 @@
 import { Response } from "express";
-import mongoose, { FilterQuery } from "mongoose";
+import { FilterQuery } from "mongoose";
 
 import {
   Borrow,
   IBorrow,
 } from "../../models/borrow.js";
-import { Book, IBook } from "../../models/book.js";
-import { User } from "../../models/user.js";
-import { Reservation } from "../../models/reservation.js";
 
 import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
-import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning.js";
-import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
-import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { approveBorrowRequestService, bypassQueueService, cancelBorrowService, confirmHandoverService, rejectBorrowRequestService, returnBookService } from "../../services/borrow-service.js";
+import {
+  approveBorrowRequestService,
+  bypassQueueService,
+  cancelBorrowService,
+  confirmHandoverService,
+  payFineInPersonService,
+  rejectBorrowRequestService,
+  returnBookService
+} from "../../services/borrow-service.js";
 
-import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
   ApproveBorrowBody,
   ApproveBorrowParams,
@@ -37,11 +38,7 @@ import {
   ReturnBookParams
 } from "../../validations/librarian/borrow/borrow-types.js";
 import { CancelBorrowParams } from "../../validations/user/borrow/borrow-types.js";
-
 import { AuthenticatedRequest } from "../../types/auth.js";
-
-const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
-const { PICKUP_WINDOW_HOURS, MS } = TIME_CONSTANTS;
 
 export const approveBorrowRequest = asyncHandler(async (
   req: AuthenticatedRequest<ApproveBorrowParams, any, ApproveBorrowBody>,
@@ -131,46 +128,37 @@ export const payFineInPerson = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { userId } = req.params;
-  const { amountPaid } = req.body; // e.g., $15.00
+  const { amountPaid } = req.body;
+  const staffId = req.user!._id;
 
-  const user = await User.findById(userId);
-  if (!user || user.outstanding_fines <= 0) {
-    res.status(400).json({ message: "No outstanding fines found for this user." });
-    return;
-  }
-
-  // Deduct payment from ledger balance (prevent negative balance)
-  const newBalance = Math.max(0, user.outstanding_fines - amountPaid);
-
-  const updatedUser = await User.findOneAndUpdate(
-    {
-      _id: userId,
-    },
-    {
-      $set: {
-        outstanding_fines: newBalance
-      }
-    },
-    {
-      new: true,
-      runValidators: true
-    }
-  )
-
-  if (!updatedUser) {
-    res.status(400).json({ message: "Failed tu update user fines" })
-    return;
-  }
-
-  res.status(200).json({
-    success: true,
-    message: `Payment of $${amountPaid.toFixed(2)} recorded successfully.`,
-    data: {
-      userId: updatedUser._id,
-      amountPaid,
-      remainingBalance: updatedUser.outstanding_fines,
-    },
+  const result = await payFineInPersonService({
+    userId,
+    amountPaid,
+    staffId,
   });
+
+  res.status(result.code).json(result);
+});
+
+export const bypassQueueIssue = asyncHandler(async (
+  req: AuthenticatedRequest<any, BypassQueueBody, any>,
+  res: Response
+): Promise<void> => {
+  const {
+    userId,
+    bookId,
+    reason
+  } = req.body;
+  const staffId = req.user!._id;
+
+  const result = await bypassQueueService({
+    userId,
+    bookId,
+    reason,
+    staffId,
+  });
+
+  res.status(result.code).json(result);
 
 });
 
@@ -270,24 +258,4 @@ export const getUserBorrowingHistory = asyncHandler(async (
   res.status(200).json(result);
 });
 
-export const bypassQueueIssue = asyncHandler(async (
-  req: AuthenticatedRequest<any, BypassQueueBody, any>,
-  res: Response
-): Promise<void> => {
-  const {
-    userId,
-    bookId,
-    reason
-  } = req.body;
-  const staffId = req.user!._id;
 
-  const result = await bypassQueueService({
-    userId,
-    bookId,
-    reason,
-    staffId,
-  });
-
-  res.status(result.code).json(result);
-
-});

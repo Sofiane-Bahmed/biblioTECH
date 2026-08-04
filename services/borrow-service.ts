@@ -692,3 +692,85 @@ export const returnBookService = async ({
         throw error;
     }
 };
+
+export const payFineInPersonService = async ({
+    userId,
+    amountPaid,
+    reason = "In-person cash/card fine payment",
+    staffId,
+}) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 1. Verify User existence and fine balance
+        const user = await User.findById(userId).session(session);
+        if (!user || user.outstanding_fines <= 0) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "No outstanding fines found for this user.",
+            };
+        }
+
+        // 2. Calculate new balance (prevent negative values)
+        const newBalance = Math.max(0, user.outstanding_fines - amountPaid);
+
+        // 3. Atomically update user balance
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: userId },
+            { $set: { outstanding_fines: newBalance } },
+            { session, new: true, runValidators: true }
+        );
+
+        if (!updatedUser) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Failed to update user fines.",
+            };
+        }
+
+        // 4. Record Audit Log entry
+        await AuditLog.create(
+            [
+                {
+                    action: "PAY_FINE_IN_PERSON",
+                    performedBy: staffId,
+                    targetUser: userId,
+                    targetResource: "User",
+                    resourceId: userId,
+                    details: {
+                        amountPaid,
+                        previousBalance: user.outstanding_fines,
+                        remainingBalance: updatedUser.outstanding_fines,
+                    },
+                    reason,
+                },
+            ],
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: `Payment of $${amountPaid.toFixed(2)} recorded successfully.`,
+            data: {
+                userId: updatedUser._id,
+                amountPaid,
+                remainingBalance: updatedUser.outstanding_fines,
+            },
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
