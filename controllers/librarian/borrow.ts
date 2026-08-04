@@ -16,7 +16,7 @@ import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning
 import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
 import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { bypassQueueService } from "../../services/borrow-service.js";
+import { approveBorrowRequestService, bypassQueueService } from "../../services/borrow-service.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
@@ -45,92 +45,20 @@ const { BORROW_PERIOD_DAYS } = BORROWING_RULES;
 const { PICKUP_WINDOW_HOURS, MS } = TIME_CONSTANTS;
 
 export const approveBorrowRequest = asyncHandler(async (
-  req: AuthenticatedRequest<ApproveBorrowParams, ApproveBorrowBody, any>,
+  req: AuthenticatedRequest<ApproveBorrowParams, any, ApproveBorrowBody>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
   const { approved_message } = req.body;
+  const staffId = req.user!._id;
 
-  const borrowRequest = await Borrow
-    .findById(borrowId)
-    .populate<{ user: PickupReadyUserInput; book: PickupReadyBookInput }>("user book");
+  const result = await approveBorrowRequestService({
+    borrowId,
+    approved_message,
+    staffId,
+  });
 
-  if (!borrowRequest || borrowRequest.status !== "PENDING") {
-    res.status(400).json({ message: "Borrow request not found or has already been processed." });
-    return;
-  }
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const pickupDeadline = new Date(Date.now() + PICKUP_WINDOW_HOURS * MS);
-
-    const updatedBorrow = await Borrow.findOneAndUpdate({
-      _id: borrowRequest._id,
-      status: "PENDING",
-    },
-      {
-        $set: {
-          status: "APPROVED",
-          approved_message: approved_message,
-          pickup_deadline: pickupDeadline
-        }
-      },
-      {
-        session,
-        new: true
-      });
-
-    if (!updatedBorrow) {
-      await session.abortTransaction();
-      session.endSession();
-      res.status(400).json({ message: "This request was already processed by another session." });
-      return;
-    }
-
-    const updatedBook = await Book.findOneAndUpdate(
-      {
-        _id: borrowRequest.book,
-        copies_available: { $gt: 0 }
-      },
-      {
-        $inc: { copies_available: -1 },
-        $push: { borrows: borrowRequest._id }
-      },
-      { session, new: true }
-    );
-
-    if (!updatedBook) {
-      await session.abortTransaction();
-      session.endSession();
-      res
-        .status(400)
-        .json({ message: "Book inventory depleted at the moment of approval processing." });
-      return;
-    }
-
-    await session.commitTransaction();
-    session.endSession();
-
-    sendPickupReadyEmail(borrowRequest.user, borrowRequest.book, pickupDeadline).catch(console.error);
-
-    res.status(200).json({
-      success: true,
-      message: "Borrow request approved. The user has ${PICKUP_WINDOW_HOURS} hours to collect the book.",
-      borrow: updatedBorrow
-    });
-
-  } catch (error: any) {
-    await session.abortTransaction();
-    session.endSession();
-
-    res.status(500).json({
-      success: false,
-      message: "Transaction safety failure while processing admin approval.",
-      error: error.message
-    });
-  }
+  res.status(result.code).json(result);
 });
 
 export const rejectBorrowRequest = asyncHandler(async (

@@ -2,6 +2,7 @@
 export const TIME_CONSTANTS = Object.freeze({
     MS: 1000 * 60 * 60,
     MS_PER_DAY: 1000 * 60 * 60 * 24,
+    MS_PER_HOUR:1000 * 60 * 60,
     HOURS_PER_DAY: 24,
     ONE_HOUR_IN_MS: 3600000,
     PICKUP_WINDOW_HOURS: 48

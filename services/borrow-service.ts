@@ -6,7 +6,8 @@ import { Book } from "../models/book.js";
 import { Reservation } from "../models/reservation.js";
 import { AuditLog } from "../models/audit-log.js";
 
-import { BORROWING_RULES } from "../constants/library-rules.js";
+import { BORROWING_RULES, TIME_CONSTANTS } from "../constants/library-rules.js";
+import { sendPickupReadyEmail } from "../utils/email/pickup-ready.js";
 
 const {
     BORROWS_PER_MONTH,
@@ -14,6 +15,8 @@ const {
     CANCEL_BORROWS_PER_MONTH,
     BORROW_PERIOD_DAYS
 } = BORROWING_RULES;
+
+const { MS_PER_HOUR, PICKUP_WINDOW_HOURS } = TIME_CONSTANTS;
 
 interface EligibilitySuccess {
     status: true;
@@ -254,6 +257,102 @@ export const bypassQueueService = async ({
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        throw error; 
+        throw error;
+    }
+};
+
+export const approveBorrowRequestService = async ({
+    borrowId,
+    approved_message,
+    staffId,
+}) => {
+    // 1. Fetch borrow request and check initial status before opening a transaction
+    const borrowRequest = await Borrow.findById(borrowId).populate<{
+        user;
+        book;
+    }>("user book");
+
+    if (!borrowRequest || borrowRequest.status !== "PENDING") {
+        return {
+            status: false,
+            code: 400,
+            message: "Borrow request not found or has already been processed.",
+        };
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const pickupDeadline = new Date(Date.now() + PICKUP_WINDOW_HOURS * MS_PER_HOUR);
+
+        // 2. Atomically transition status from PENDING to APPROVED
+        const updatedBorrow = await Borrow.findOneAndUpdate(
+            {
+                _id: borrowRequest._id,
+                status: "PENDING",
+            },
+            {
+                $set: {
+                    status: "APPROVED",
+                    approved_message,
+                    pickup_deadline: pickupDeadline,
+                    approvedBy: staffId,
+                },
+            },
+            { session, new: true }
+        );
+
+        if (!updatedBorrow) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "This request was already processed by another session.",
+            };
+        }
+
+        // 3. Atomically decrement available book inventory
+        const updatedBook = await Book.findOneAndUpdate(
+            {
+                _id: borrowRequest.book._id || borrowRequest.book,
+                copies_available: { $gt: 0 },
+            },
+            {
+                $inc: { copies_available: -1 },
+                $push: { borrows: borrowRequest._id },
+            },
+            { session, new: true }
+        );
+
+        if (!updatedBook) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Book inventory depleted at the moment of approval processing.",
+            };
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        // Trigger async notification after successful transaction commit
+        sendPickupReadyEmail(borrowRequest.user, borrowRequest.book, pickupDeadline).catch(
+            console.error
+        );
+
+        return {
+            status: true,
+            code: 200,
+            message: `Borrow request approved. The user has ${PICKUP_WINDOW_HOURS} hours to collect the book.`,
+            data: updatedBorrow,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
     }
 };
