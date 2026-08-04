@@ -15,7 +15,7 @@ import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning
 import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
 import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { approveBorrowRequestService, bypassQueueService, rejectBorrowRequestService } from "../../services/borrow-service.js";
+import { approveBorrowRequestService, bypassQueueService, cancelBorrowService, rejectBorrowRequestService } from "../../services/borrow-service.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
@@ -78,51 +78,20 @@ export const rejectBorrowRequest = asyncHandler(async (
 });
 
 export const cancelBorrow = asyncHandler(async (
-  req: AuthenticatedRequest<CancelBorrowParams, CancelBorrowBody, any>,
+  req: AuthenticatedRequest<CancelBorrowParams, any, CancelBorrowBody>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
   const { canceled_message } = req.body;
+  const staffId = req.user!._id;
 
-  const borrowRequest = await Borrow.findById(borrowId);
-
-  if (!borrowRequest) {
-    res.status(404).json({ message: "Borrow request not found." });
-    return;
-  }
-
-  if (borrowRequest.status !== "ACTIVE") {
-    res.status(400).json({
-      message: `Cannot cancel this request. It is already marked as ${borrowRequest.status}.`
-    });
-    return;
-  }
-
-  const canceledBorrow = await Borrow.findOneAndUpdate(
-    {
-      _id: borrowRequest._id,
-      status: "ACTIVE"
-    }, {
-    $set: {
-      status: "CANCELED",
-      canceled_message: canceled_message
-    }
-  },
-    {
-      new: true,
-      runValidators: true
-    }
-  )
-
-  if (!canceledBorrow) {
-    res.status(400).json({ message: "This request was already processed by another session." });
-    return;
-  }
-
-  res.status(200).json({
-    message: "Borrow request has been canceled successfully.",
-    borrow: canceledBorrow
+  const result = await cancelBorrowService({
+    borrowId,
+    canceled_message,
+    staffId,
   });
+
+  res.status(result.code).json(result);
 });
 
 export const confirmHandover = asyncHandler(async (

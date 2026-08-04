@@ -415,3 +415,85 @@ export const rejectBorrowRequestService = async ({
         data: updatedBorrow,
     };
 };
+
+export const cancelBorrowService = async ({
+    borrowId,
+    canceled_message,
+    staffId,
+}) => {
+    // 1. Verify existence
+    const borrowRequest = await Borrow.findById(borrowId);
+
+    if (!borrowRequest) {
+        return {
+            status: false,
+            code: 404,
+            message: "Borrow request not found.",
+        };
+    }
+
+    // 2. Validate current status
+    if (borrowRequest.status !== "ACTIVE") {
+        return {
+            status: false,
+            code: 400,
+            message: `Cannot cancel this request. It is already marked as ${borrowRequest.status}.`,
+        };
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 3. Atomically transition status to CANCELED
+        const canceledBorrow = await Borrow.findOneAndUpdate(
+            {
+                _id: borrowRequest._id,
+                status: "ACTIVE",
+            },
+            {
+                $set: {
+                    status: "CANCELED",
+                    canceled_message,
+                    ...(staffId && { canceledBy: staffId }),
+                },
+            },
+            {
+                session,
+                new: true,
+                runValidators: true,
+            }
+        );
+
+        if (!canceledBorrow) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "This request was already processed by another session.",
+            };
+        }
+
+        // 4. Restock book inventory
+        await Book.findByIdAndUpdate(
+            borrowRequest.book,
+            { $inc: { copies_available: 1 } },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: "Borrow request has been canceled successfully.",
+            data: canceledBorrow,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
