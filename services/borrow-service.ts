@@ -497,3 +497,79 @@ export const cancelBorrowService = async ({
         throw error;
     }
 };
+
+export const confirmHandoverService = async ({
+    borrowId,
+    staffId,
+}) => {
+    // 1. Verify existence and current status
+    const borrow = await Borrow.findById(borrowId);
+    if (!borrow || borrow.status !== "APPROVED") {
+        return {
+            status: false,
+            code: 400,
+            message: "Borrow record is not in an APPROVED state awaiting handover.",
+        };
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const borrowDate = new Date();
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
+
+        // 2. Atomically transition status from APPROVED to ACTIVE
+        const updatedBorrow = await Borrow.findOneAndUpdate(
+            {
+                _id: borrowId,
+                status: "APPROVED",
+            },
+            {
+                $set: {
+                    status: "ACTIVE",
+                    borrow_date: borrowDate,
+                    due_date: dueDate,
+                    ...(staffId && { handedOverBy: staffId }),
+                },
+            },
+            {
+                session,
+                new: true,
+                runValidators: true,
+            }
+        );
+
+        if (!updatedBorrow) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "This request was already processed by another session.",
+            };
+        }
+
+        // 3. Link borrow record to user document
+        await User.findByIdAndUpdate(
+            borrow.user,
+            { $addToSet: { borrows: borrow._id } },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: "Book handed over! Active borrow period started.",
+            data: updatedBorrow,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};

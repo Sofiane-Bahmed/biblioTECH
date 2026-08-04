@@ -15,7 +15,7 @@ import { sendSuspensionWarningEmail } from "../../utils/email/suspension-warning
 import { sendHoldReadyEmail } from "../../utils/email/hold-ready-email.js";
 
 import { calculateLatePenalty } from "../../services/penalty-service.js";
-import { approveBorrowRequestService, bypassQueueService, cancelBorrowService, rejectBorrowRequestService } from "../../services/borrow-service.js";
+import { approveBorrowRequestService, bypassQueueService, cancelBorrowService, confirmHandoverService, rejectBorrowRequestService } from "../../services/borrow-service.js";
 
 import { BORROWING_RULES, TIME_CONSTANTS } from "../../constants/library-rules.js";
 import {
@@ -99,50 +99,14 @@ export const confirmHandover = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
+  const staffId = req.user!._id;
 
-  const borrow = await Borrow.findById(borrowId);
-  if (!borrow || borrow.status !== "APPROVED") {
-    res.status(400).json({ message: "Borrow record is not in an APPROVED state awaiting handover." });
-    return;
-  }
-
-  const borrowDate = new Date();
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + BORROW_PERIOD_DAYS);
-
-  const updatedBorrow = await Borrow.findOneAndUpdate(
-    {
-      _id: borrowId,
-      status: "APPROVED"
-    },
-    {
-      $set: {
-        status: "ACTIVE",
-        borrow_date: borrowDate,
-        due_date: dueDate
-      }
-    },
-    {
-      new: true,
-      runValidators: true
-    }
-  )
-
-  if (!updatedBorrow) {
-    res.status(400).json({ message: "This request was already processed by another session." });
-    return;
-  }
-
-  await User.findByIdAndUpdate(
-    borrow.user,
-    { $push: { borrows: borrow._id } },
-  );
-
-  res.status(200).json({
-    success: true,
-    message: "Book handed over! Active borrow period started.",
-    borrow: updatedBorrow
+  const result = await confirmHandoverService({
+    borrowId,
+    staffId,
   });
+
+  res.status(result.code).json(result);
 });
 
 export const returnBook = asyncHandler(async (
