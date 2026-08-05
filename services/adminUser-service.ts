@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { User } from "../models/user.js";
+import { AuditLog } from "../models/audit-log.js";
 
 export const createStaffService = async ({
     fullName,
@@ -124,4 +126,107 @@ export const getUsersService = async ({
             },
         },
     };
+};
+
+export const blockUserService = async ({
+    userId,
+    reason = "Administrative block",
+    staffId,
+}) => {
+    // 1. Verify user existence
+    const user = await User.findById(userId);
+    if (!user) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    // 2. Business rule checks
+    if (user.isBlocked) {
+        return {
+            status: false,
+            code: 400,
+            message: "User is already blocked.",
+        };
+    }
+
+    if (user.role === "admin") {
+        return {
+            status: false,
+            code: 400,
+            message: "You cannot block an admin user.",
+        };
+    }
+
+    const currentDate = new Date();
+    if (user.suspension_date && user.suspension_date > currentDate) {
+        return {
+            status: false,
+            code: 400,
+            message: `User is already suspended until ${user.suspension_date.toISOString()}.`,
+        };
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 3. Atomic status update with optimistic concurrency conditions
+        const blockedUser = await User.findOneAndUpdate(
+            {
+                _id: userId,
+                isBlocked: false,
+                role: { $ne: "admin" },
+                $or: [
+                    { suspension_date: { $exists: false } },
+                    { suspension_date: { $lte: currentDate } },
+                ],
+            },
+            { $set: { isBlocked: true } },
+            { session, new: true, runValidators: true }
+        );
+
+        if (!blockedUser) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "User could not be blocked. Please check the user status and try again.",
+            };
+        }
+
+        // 4. Audit Log entry (if staff member performing action)
+        if (staffId) {
+            await AuditLog.create(
+                [
+                    {
+                        action: "BLOCK_USER",
+                        performedBy: staffId,
+                        targetUser: userId,
+                        targetResource: "User",
+                        resourceId: userId,
+                        reason,
+                    },
+                ],
+                { session }
+            );
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: "User blocked successfully.",
+            data: blockedUser,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
 };

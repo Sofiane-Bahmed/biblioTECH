@@ -13,7 +13,7 @@ import {
   UpdateUserRoleParams,
 } from "../../validations/admin/user/user-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { createStaffService, getUsersService, updateUserRoleService } from "../../services/adminUser-service.js";
+import { blockUserService, createStaffService, getUsersService, updateUserRoleService } from "../../services/adminUser-service.js";
 
 export const createStaff = asyncHandler(async (
   req: AuthenticatedRequest<any, CreateStaffBody, any>,
@@ -95,52 +95,14 @@ export const blockUser = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { userId } = req.params;
+  const staffId = req.user!._id;
 
-  const user = await User.findById(userId);
+  const result = await blockUserService({
+    userId,
+    staffId,
+  });
 
-  if (!user) {
-    res.status(404).json({ message: "User not found" });
-    return;
-  }
-
-  if (user.isBlocked) {
-    res.status(400).json({ message: "User is already blocked" });
-    return;
-  }
-
-  if (user.role === "admin") {
-    res.status(400).json({ message: "You cannot block an admin user" });
-    return;
-  }
-
-  if (user.suspension_date && user.suspension_date > new Date()) {
-    res.status(400).json({ message: "User is already suspended until " + user.suspension_date.toISOString() });
-    return;
-  }
-
-  const blockedUser = await User.findOneAndUpdate(
-    {
-      _id: userId,
-      isBlocked: false,
-      role: { $ne: "admin" },
-      $or: [
-        { suspension_date: { $exists: false } },
-        { suspension_date: { $lte: new Date() } }
-      ]
-    },
-    { $set: { isBlocked: true } },
-    {
-      new: true, runValidators: true
-    },
-  )
-
-  if (!blockedUser) {
-    res.status(400).json({ message: "User could not be blocked. Please check the user status and try again." });
-    return;
-  }
-
-
-  res.status(200).json({ message: "User blocked successfully", blockedUser });
+  res.status(result.code).json(result);
 });
 
 export const unblockUser = asyncHandler(async (
