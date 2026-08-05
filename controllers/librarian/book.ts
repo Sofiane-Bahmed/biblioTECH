@@ -1,17 +1,12 @@
 import { Response } from "express";
-import { Types } from "mongoose";
 
 import { Book } from "../../models/book.js"
-
 import asyncHandler from "../../utils/async-handler.js";
-import { notifySubscribersAboutNewBook } from "../../services/notification-service.js";
-import { fetchBookMetadataByIsbn } from "../../services/googleBooks-service.js";
-import { addBookService, autoAddBookByIsbnService } from "../../services/books-service.js";
 import {
-  getOrCreateCategories,
-  validateExistingCategories
-} from "../../services/category-service.js";
-
+  addBookService,
+  autoAddBookByIsbnService,
+  updateBookService
+} from "../../services/books-service.js";
 import {
   AddBookBody,
   AutoImportBookBody,
@@ -21,10 +16,6 @@ import {
 } from "../../validations/librarian/book/book-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 
-interface BookUpdatePayload extends Omit<UpdateBookBody, "category"> {
-  category?: Types.ObjectId[];
-  cover_image?: string;
-}
 
 export const addBook = asyncHandler(async (
   req: AuthenticatedRequest<any, AddBookBody, any>,
@@ -63,41 +54,16 @@ export const updateBook = asyncHandler(async (
 ): Promise<void> => {
   const { bookId } = req.params;
   const { category, ...allowedUpdates } = req.body;
+  const coverImageUrl = req.file?.path;
 
-  const updateData: BookUpdatePayload = { ...allowedUpdates };
-
-  if (category) {
-    const { categoryIds, missingCategories } = await validateExistingCategories(category);
-
-    if (missingCategories.length > 0) {
-      res.status(400).json({
-        message: "Validation failed: Some specified categories do not exist.",
-        missingCategories
-      });
-      return;
-    }
-    updateData.category = categoryIds;
-  }
-
-  if (req.file) {
-    updateData.cover_image = req.file.path;
-  }
-
-  const updatedBook = await Book.findByIdAndUpdate(
+  const result = await updateBookService({
     bookId,
-    { $set: updateData },
-    { new: true, runValidators: true }
-  ).populate("category");
-
-  if (!updatedBook) {
-    res.status(404).json({ message: "Book not found" });
-    return;
-  }
-
-  res.status(200).json({
-    message: "Book updated successfully",
-    updatedBook
+    category,
+    coverImageUrl,
+    allowedUpdates,
   });
+
+  res.status(result.code).json(result);
 });
 
 export const deleteBook = asyncHandler(async (

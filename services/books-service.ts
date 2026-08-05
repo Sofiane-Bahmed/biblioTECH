@@ -1,4 +1,6 @@
+import { Types } from "mongoose";
 import { Book } from "../models/book.js";
+import { UpdateBookBody } from "../validations/librarian/book/book-types.js";
 import { getOrCreateCategories, validateExistingCategories } from "./category-service.js";
 import { fetchBookMetadataByIsbn } from "./googleBooks-service.js";
 import { notifySubscribersAboutNewBook } from "./notification-service.js";
@@ -137,5 +139,61 @@ export const autoAddBookByIsbnService = async ({
         code: 201,
         message: "Book auto-discovered and registered successfully!",
         data: newBook,
+    };
+};
+
+interface BookUpdatePayload extends Omit<UpdateBookBody, "category"> {
+    category?: Types.ObjectId[];
+    cover_image?: string;
+}
+
+export const updateBookService = async ({
+    bookId,
+    category,
+    coverImageUrl,
+    allowedUpdates,
+}) => {
+    const updateData: BookUpdatePayload = { ...allowedUpdates };
+
+    // 1. Validate categories if provided
+    if (category) {
+        const { categoryIds, missingCategories } = await validateExistingCategories(category);
+
+        if (missingCategories.length > 0) {
+            return {
+                status: false,
+                code: 400,
+                message: "Validation failed: Some specified categories do not exist.",
+                data: { missingCategories },
+            };
+        }
+        updateData.category = categoryIds;
+    }
+
+    // 2. Attach updated cover image if present
+    if (coverImageUrl) {
+        updateData.cover_image = coverImageUrl;
+    }
+
+    // 3. Atomically update and populate
+    const updatedBook = await Book.findByIdAndUpdate(
+        bookId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    ).populate("category");
+
+    if (!updatedBook) {
+        return {
+            status: false,
+            code: 404,
+            message: "Book not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Book updated successfully.",
+        data: updatedBook,
     };
 };
