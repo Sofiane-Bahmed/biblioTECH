@@ -6,6 +6,7 @@ import { Book } from "../../models/book.js"
 import asyncHandler from "../../utils/async-handler.js";
 import { notifySubscribersAboutNewBook } from "../../services/notification-service.js";
 import { fetchBookMetadataByIsbn } from "../../services/googleBooks-service.js";
+import { addBookService } from "../../services/books-service.js";
 import {
   getOrCreateCategories,
   validateExistingCategories
@@ -29,61 +30,16 @@ export const addBook = asyncHandler(async (
   req: AuthenticatedRequest<any, AddBookBody, any>,
   res: Response
 ): Promise<void> => {
+  const staffId = req.user!._id;
+  const coverImageUrl = req.file?.path;
 
-  const {
-    title,
-    isbn,
-    author,
-    category,
-    description,
-    copies_available,
-    pages,
-    language,
-    publication_year,
-  } = req.body;
-
-  if (!req.file) {
-    res.status(400).json({ message: "Book cover image is required" });
-    return;
-  }
-
-  const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
-  
-  const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
-  if (duplicateBook) {
-    res.status(400).json({ message: "A book version with this ISBN already exists in inventory." });
-    return;
-  }
-
-  const { categoryIds, missingCategories } = await validateExistingCategories(category);
-  if (missingCategories.length > 0) {
-    res.status(400).json({
-      message: "Validation failed: Some specified categories do not exist.",
-      missingCategories
-    });
-    return;
-  }
-
-  const authorNames = Array.isArray(author) ? author : [author];
-  const coverImageUrl = req.file.path;
-
-  const newBook = await Book.create({
-    title,
-    isbn: normalizedIsbn,
-    author: authorNames,
-    category: categoryIds,
-    cover_image: coverImageUrl,
-    description,
-    copies_available,
-    pages,
-    language,
-    publication_year
+  const result = await addBookService({
+    ...req.body,
+    coverImageUrl,
+    staffId,
   });
 
-  res.status(201).json(newBook);
-
-  notifySubscribersAboutNewBook({ title, author: authorNames }).catch(console.error)
-
+  res.status(result.code).json(result);
 });
 
 export const autoAddBookByIsbn = asyncHandler(async (
