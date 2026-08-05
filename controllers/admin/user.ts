@@ -12,8 +12,14 @@ import {
   UpdateUserRoleBody,
   UpdateUserRoleParams,
 } from "../../validations/admin/user/user-types.js";
+import {
+  blockUserService,
+  createStaffService,
+  getUsersService,
+  unblockUserService,
+  updateUserRoleService
+} from "../../services/adminUser-service.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { blockUserService, createStaffService, getUsersService, updateUserRoleService } from "../../services/adminUser-service.js";
 
 export const createStaff = asyncHandler(async (
   req: AuthenticatedRequest<any, CreateStaffBody, any>,
@@ -110,19 +116,14 @@ export const unblockUser = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { userId } = req.params;
+  const staffId = req.user!._id;
 
-  const user = await User.findByIdAndUpdate(
+  const result = await unblockUserService({
     userId,
-    { $set: { isBlocked: false } },
-    { new: true, runValidators: true }
-  );
+    staffId,
+  });
 
-  if (!user) {
-    res.status(404).json({ message: "User not found" });
-    return;
-  }
-
-  res.status(200).json({ message: "User unblocked successfully", user });
+  res.status(result.code).json(result);
 });
 
 

@@ -230,3 +230,80 @@ export const blockUserService = async ({
         throw error;
     }
 };
+
+export const unblockUserService = async ({
+    userId,
+    reason = "Administrative unblock",
+    staffId,
+}) => {
+    // 1. Check user existence and block status before transaction
+    const existingUser = await User.findById(userId);
+    if (!existingUser) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    if (!existingUser.isBlocked) {
+        return {
+            status: false,
+            code: 400,
+            message: "User is not currently blocked.",
+        };
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 2. Atomically unblock user
+        const unblockedUser = await User.findOneAndUpdate(
+            { _id: userId, isBlocked: true },
+            { $set: { isBlocked: false } },
+            { session, new: true, runValidators: true }
+        );
+
+        if (!unblockedUser) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Failed to unblock user. The account status may have changed.",
+            };
+        }
+
+        // 3. Create Audit Log entry if performed by staff
+        if (staffId) {
+            await AuditLog.create(
+                [
+                    {
+                        action: "UNBLOCK_USER",
+                        performedBy: staffId,
+                        targetUser: userId,
+                        targetResource: "User",
+                        resourceId: userId,
+                        reason,
+                    },
+                ],
+                { session }
+            );
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: "User unblocked successfully.",
+            data: unblockedUser,
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
