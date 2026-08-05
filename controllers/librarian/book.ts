@@ -6,7 +6,7 @@ import { Book } from "../../models/book.js"
 import asyncHandler from "../../utils/async-handler.js";
 import { notifySubscribersAboutNewBook } from "../../services/notification-service.js";
 import { fetchBookMetadataByIsbn } from "../../services/googleBooks-service.js";
-import { addBookService } from "../../services/books-service.js";
+import { addBookService, autoAddBookByIsbnService } from "../../services/books-service.js";
 import {
   getOrCreateCategories,
   validateExistingCategories
@@ -47,47 +47,14 @@ export const autoAddBookByIsbn = asyncHandler(async (
   res: Response
 ): Promise<void> => {
   const { isbn } = req.body;
+  const staffId = req.user!._id;
 
-  if (!isbn) {
-    res.status(400).json({ message: "ISBN code is required to auto-populate fields." });
-    return;
-  }
-
-  const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
-
-  const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
-  if (duplicateBook) {
-    res.status(400).json({ message: "This book version already exists in inventory." });
-    return;
-  }
-
-  const metadata = await fetchBookMetadataByIsbn(normalizedIsbn);
-  if (!metadata) {
-    res.status(404).json({ message: "No book records found on Google Books API for this ISBN." });
-    return;
-  }
-
-  const categoryIds = await getOrCreateCategories(metadata.categories);
-
-  const newBook = await Book.create({
-    isbn: normalizedIsbn,
-    title: metadata.title,
-    author: metadata.authors,
-    description: metadata.description,
-    pages: metadata.pages,
-    language: metadata.language,
-    publication_year: metadata.publicationYear,
-    cover_image: metadata.coverImageUrl,
-    category: categoryIds,
-    copies_available: 1,
+  const result = await autoAddBookByIsbnService({
+    isbn,
+    staffId,
   });
 
-  res.status(201).json({
-    message: "Book auto-discovered and registered successfully!",
-    book: newBook
-  });
-
-  notifySubscribersAboutNewBook({ title: metadata.title, author: metadata.authors }).catch(console.error);
+  res.status(result.code).json(result);
 });
 
 export const updateBook = asyncHandler(async (

@@ -1,5 +1,6 @@
 import { Book } from "../models/book.js";
-import { validateExistingCategories } from "./category-service.js";
+import { getOrCreateCategories, validateExistingCategories } from "./category-service.js";
+import { fetchBookMetadataByIsbn } from "./googleBooks-service.js";
 import { notifySubscribersAboutNewBook } from "./notification-service.js";
 
 export const addBookService = async ({
@@ -69,6 +70,72 @@ export const addBookService = async ({
         status: true,
         code: 201,
         message: "Book added to inventory successfully.",
+        data: newBook,
+    };
+};
+
+export const autoAddBookByIsbnService = async ({
+    isbn,
+    staffId,
+}) => {
+    // 1. Validate required ISBN input
+    if (!isbn) {
+        return {
+            status: false,
+            code: 400,
+            message: "ISBN code is required to auto-populate fields.",
+        };
+    }
+
+    // 2. Normalize ISBN and check for existing record
+    const normalizedIsbn = isbn.replace(/[- ]/g, "").toUpperCase();
+
+    const duplicateBook = await Book.findOne({ isbn: normalizedIsbn });
+    if (duplicateBook) {
+        return {
+            status: false,
+            code: 400,
+            message: "This book version already exists in inventory.",
+        };
+    }
+
+    // 3. Fetch external metadata (Google Books API)
+    const metadata = await fetchBookMetadataByIsbn(normalizedIsbn);
+    if (!metadata) {
+        return {
+            status: false,
+            code: 404,
+            message: "No book records found on Google Books API for this ISBN.",
+        };
+    }
+
+    // 4. Resolve or create categories
+    const categoryIds = await getOrCreateCategories(metadata.categories);
+
+    // 5. Create new Book entry
+    const newBook = await Book.create({
+        isbn: normalizedIsbn,
+        title: metadata.title,
+        author: metadata.authors,
+        description: metadata.description,
+        pages: metadata.pages,
+        language: metadata.language,
+        publication_year: metadata.publicationYear,
+        cover_image: metadata.coverImageUrl,
+        category: categoryIds,
+        copies_available: 1,
+    });
+
+    // 6. Trigger async notification after creation
+    notifySubscribersAboutNewBook({
+        title: metadata.title,
+        author: metadata.authors,
+    }).catch(console.error);
+
+    return {
+        status: true,
+        code: 201,
+        message: "Book auto-discovered and registered successfully!",
         data: newBook,
     };
 };
