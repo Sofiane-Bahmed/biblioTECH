@@ -13,7 +13,7 @@ import {
   UpdateUserRoleParams,
 } from "../../validations/admin/user/user-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { createStaffService, updateUserRoleService } from "../../services/adminUser-service.js";
+import { createStaffService, getUsersService, updateUserRoleService } from "../../services/adminUser-service.js";
 
 export const createStaff = asyncHandler(async (
   req: AuthenticatedRequest<any, CreateStaffBody, any>,
@@ -82,40 +82,12 @@ export const getUsers = asyncHandler(async (
   req: AuthenticatedRequest<any, any, GetUsersQuery>,
   res: Response
 ): Promise<void> => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
 
-  const query = req.query;
-  const { page, limit } = query;
+  const result = await getUsersService({ page, limit });
 
-  const skip = (page - 1) * limit;
-
-  const [users, totalUsers] = await Promise.all([
-    User
-      .find()
-      .skip(skip)
-      .limit(limit),
-    User.countDocuments()
-  ]);
-
-  if (!users || !users.length) {
-    res.status(200).json({
-      success: true,
-      message: "No users found in this matching viewport slice.",
-      totalPages: 0,
-      currentPage: page,
-      totalUsers: 0,
-      data: []
-    });
-    return;
-  }
-
-  res.status(200).json({
-    success: true,
-    count: users.length,
-    totalPages: Math.ceil(totalUsers / limit),
-    currentPage: page,
-    totalUsers: totalUsers,
-    data: users
-  });
+  res.status(result.code).json(result);
 });
 
 export const blockUser = asyncHandler(async (

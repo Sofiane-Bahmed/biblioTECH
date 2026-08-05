@@ -76,3 +76,52 @@ export const updateUserRoleService = async ({
         data: updatedUser,
     };
 };
+
+export const getUsersService = async ({
+    page = 1,
+    limit = 10,
+}) => {
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Execute parallel queries for data and total count
+    const [users, totalUsers] = await Promise.all([
+        User.find().skip(skip).limit(limitNum),
+        User.countDocuments(),
+    ]);
+
+    const totalPages = Math.ceil(totalUsers / limitNum) || 0;
+
+    if (!users || users.length === 0) {
+        return {
+            status: true,
+            code: 200,
+            message: "No users found in this matching viewport slice.",
+            data: {
+                users: [],
+                pagination: {
+                    count: 0,
+                    currentPage: pageNum,
+                    totalPages: 0,
+                    totalUsers: 0,
+                },
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Users fetched successfully.",
+        data: {
+            users,
+            pagination: {
+                count: users.length,
+                currentPage: pageNum,
+                totalPages,
+                totalUsers,
+            },
+        },
+    };
+};
