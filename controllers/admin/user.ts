@@ -13,43 +13,20 @@ import {
   UpdateUserRoleParams,
 } from "../../validations/admin/user/user-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
+import { createStaffService } from "../../services/adminUser-service.js";
 
 export const createStaff = asyncHandler(async (
   req: AuthenticatedRequest<any, CreateStaffBody, any>,
   res: Response
 ): Promise<void> => {
-  const {
-    fullName,
-    email,
-    password,
-    confirmPassword,
-    role = "librarian",
-    phone
-  } = req.body;
+  const creatorId = req.user!._id;
 
-
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) {
-    res.status(409).json({
-      success: false,
-      message: "A user with this email address already exists.",
-    });
-    return;
-  }
-
-  const staffMember = await User.create({
-    fullName,
-    email: email.toLowerCase(),
-    password,
-    role,
-    phone,
+  const result = await createStaffService({
+    ...req.body,
+    creatorId,
   });
 
-  res.status(201).json({
-    success: true,
-    message: `Staff member created successfully with role '${role}'.`,
-    staffMember
-  });
+  res.status(result.code).json(result);
 });
 
 export const updateUserRole = asyncHandler(async (
