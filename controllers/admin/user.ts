@@ -13,7 +13,7 @@ import {
   UpdateUserRoleParams,
 } from "../../validations/admin/user/user-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { createStaffService } from "../../services/adminUser-service.js";
+import { createStaffService, updateUserRoleService } from "../../services/adminUser-service.js";
 
 export const createStaff = asyncHandler(async (
   req: AuthenticatedRequest<any, CreateStaffBody, any>,
@@ -30,37 +30,20 @@ export const createStaff = asyncHandler(async (
 });
 
 export const updateUserRole = asyncHandler(async (
-  req: AuthenticatedRequest<UpdateUserRoleParams, UpdateUserRoleBody, any>,
-  res: Response)
-  : Promise<void> => {
-
+  req: AuthenticatedRequest<UpdateUserRoleParams, any, UpdateUserRoleBody>,
+  res: Response
+): Promise<void> => {
   const { id } = req.params;
   const { role } = req.body;
-
   const userId = req.user!._id;
 
-  if (String(userId) === String(id)) {
-    res.status(400).json({ success: false, message: "You cannot change your own administrative role" });
-    return;
-  }
-
-  const user = await User.findByIdAndUpdate(
-    id,
-    { $set: { role } },
-    { new: true, runValidators: true }
-  );
-
-  if (!user) {
-    res.status(404).json({ success: false, message: "User not found" });
-    return;
-  }
-
-  res.status(200).json({
-    success: true,
-    message: `User role successfully updated to ${role}`,
-    user
+  const result = await updateUserRoleService({
+    targetUserId: id,
+    role,
+    userId,
   });
 
+  res.status(result.code).json(result);
 });
 
 export const deleteUser = asyncHandler(async (

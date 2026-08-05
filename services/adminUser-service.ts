@@ -39,3 +39,40 @@ export const createStaffService = async ({
         data: staffResponse,
     };
 };
+
+export const updateUserRoleService = async ({
+    targetUserId,
+    role,
+    userId,
+}) => {
+    // 1. Prevent self-role modification
+    if (String(userId) === String(targetUserId)) {
+        return {
+            status: false,
+            code: 400,
+            message: "You cannot change your own administrative role.",
+        };
+    }
+
+    // 2. Atomically update user role
+    const updatedUser = await User.findByIdAndUpdate(
+        targetUserId,
+        { $set: { role } },
+        { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: `User role successfully updated to ${role}.`,
+        data: updatedUser,
+    };
+};
