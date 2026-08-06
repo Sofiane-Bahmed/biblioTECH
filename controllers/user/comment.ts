@@ -18,7 +18,7 @@ import {
     UpdateCommentParams
 } from "../../validations/user/comment/comment-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCommentService, deleteCommentService, getCommentService, updateCommentService } from "../../services/comment-services.js";
+import { addCommentService, deleteCommentService, getBookCommentsService, getCommentService, updateCommentService } from "../../services/comment-services.js";
 
 export const addComment = asyncHandler(async (
     req: AuthenticatedRequest<CreateCommentParams, CreateCommentBody, any>,
@@ -89,42 +89,14 @@ export const getBookComments = asyncHandler(async (
 ): Promise<void> => {
     const { bookId } = req.params;
 
-    const result = await getPaginatedData({
-        model: Comment,
-        query: { book: bookId, parentComment: null },
+    const result = await getBookCommentsService({
+        bookId,
         req,
-        populate: [
-            {
-                path: 'user',
-                select: 'fullName email'
-            },
-            {
-                path: 'replies',
-                populate: [
-                    {
-                        path: 'user',
-                        select: 'fullName'
-                    },
-                    {
-                        path: 'replies', // Deep nesting: Level 3
-                        populate: {
-                            path: 'user',
-                            select: 'fullName'
-                        }
-                    }
-                ]
-            }
-        ]
-    })
+    });
 
-    if (!result.data.length) {
-        res.status(404).json({ message: 'No comments found for this book' });
-        return;
-
-    }
-
-    res.status(200).json(result);
-
+    res.status(result.code).json(result);
 });
+
+
 
 

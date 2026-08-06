@@ -3,6 +3,7 @@ import mongoose, { Types } from "mongoose";
 import { Book } from "../models/book.js";
 import { Comment } from "../models/comment.js";
 import { User } from "../models/user.js";
+import { getPaginatedData } from "../utils/paginate.js";
 
 export const addCommentService = async ({
     userId,
@@ -252,4 +253,67 @@ export const deleteCommentService = async ({
         session.endSession();
         throw error;
     }
+};
+
+export const getBookCommentsService = async ({
+    bookId,
+    req,
+}) => {
+    // 1. Verify book existence
+    const bookExists = await Book.exists({ _id: bookId });
+    if (!bookExists) {
+        return {
+            status: false,
+            code: 404,
+            message: "Book not found.",
+        };
+    }
+
+    // 2. Query paginated root comments
+    const result = await getPaginatedData({
+        model: Comment,
+        query: { book: bookId, parentComment: null },
+        req,
+        populate: [
+            {
+                path: "user",
+                select: "fullName email",
+            },
+            {
+                path: "replies",
+                populate: [
+                    {
+                        path: "user",
+                        select: "fullName",
+                    },
+                    {
+                        path: "replies",
+                        populate: {
+                            path: "user",
+                            select: "fullName",
+                        },
+                    },
+                ],
+            },
+        ],
+    });
+
+    if (!result.data.length) {
+        return {
+            status: true,
+            code: 200,
+            message: "No comments found for this book.",
+            data: {
+                ...result,
+                data: [],
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Book comments retrieved successfully.",
+        data: result,
+    };
 };
