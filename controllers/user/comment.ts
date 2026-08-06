@@ -18,7 +18,7 @@ import {
     UpdateCommentParams
 } from "../../validations/user/comment/comment-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCommentService, getCommentService } from "../../services/comment-services.js";
+import { addCommentService, getCommentService, updateCommentService } from "../../services/comment-services.js";
 
 export const addComment = asyncHandler(async (
     req: AuthenticatedRequest<CreateCommentParams, CreateCommentBody, any>,
@@ -53,40 +53,17 @@ export const updateComment = asyncHandler(async (
     req: AuthenticatedRequest<UpdateCommentParams, UpdateCommentBody, any>,
     res: Response
 ): Promise<void> => {
-
     const { commentId } = req.params;
     const { comment } = req.body;
-
     const userId = req.user!._id;
 
-    if (!comment) {
-        res.status(400).json({ message: "Comment content is required for updates." });
-        return;
-    }
-
-    const updatedComment = await Comment.findOneAndUpdate(
-        {
-            _id: commentId,
-            user: userId
-        },
-        { $set: { comment } },
-        {
-            new: true,
-            runValidators: true
-        }
-    );
-
-    if (!updatedComment) {
-        res.status(404).json({
-            message: "Comment not found or you are not authorized to edit this resource."
-        });
-        return;
-    }
-
-    res.status(200).json({
-        message: "Comment updated successfully",
-        comment: updatedComment
+    const result = await updateCommentService({
+        commentId,
+        comment,
+        userId,
     });
+
+    res.status(result.code).json(result);
 });
 
 export const deleteComment = asyncHandler(async (

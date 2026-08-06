@@ -89,7 +89,7 @@ export const addCommentService = async ({
 };
 
 export const getCommentService = async ({ commentId }) => {
-    
+
     const comment = await Comment.findById(commentId)
         .populate("user", "fullName email")
         .populate("book", "title author")
@@ -117,5 +117,48 @@ export const getCommentService = async ({ commentId }) => {
         code: 200,
         message: "Comment retrieved successfully.",
         data: comment,
+    };
+};
+
+export const updateCommentService = async ({
+    commentId,
+    comment,
+    userId,
+}) => {
+    // 1. Validate required content payload
+    if (!comment || !comment.trim()) {
+        return {
+            status: false,
+            code: 400,
+            message: "Comment content is required for updates.",
+        };
+    }
+
+    // 2. Atomically update comment ensuring user ownership
+    const updatedComment = await Comment.findOneAndUpdate(
+        {
+            _id: commentId,
+            user: userId,
+        },
+        { $set: { comment } },
+        {
+            new: true,
+            runValidators: true,
+        }
+    );
+
+    if (!updatedComment) {
+        return {
+            status: false,
+            code: 404,
+            message: "Comment not found or you are not authorized to edit this resource.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Comment updated successfully.",
+        data: updatedComment,
     };
 };
