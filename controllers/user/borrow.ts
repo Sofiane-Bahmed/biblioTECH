@@ -1,19 +1,7 @@
 import { Response } from "express";
-import mongoose from "mongoose";
-
-import { Borrow } from "../../models/borrow.js"
-import { Book } from "../../models/book.js";
-import { Reservation } from "../../models/reservation.js";
 
 import asyncHandler from "../../utils/async-handler.js";
 
-import {
-  checkBorrowEligibility,
-  checkCancellationEligibility
-} from "../../services/borrow-service.js";
-import { processNextInLineOrRestock } from "../../services/reservation-service.js";
-
-import { BORROWING_RULES } from "../../constants/library-rules.js";
 import {
   CancelBorrowParams,
   RenewBorrowParams,
@@ -21,8 +9,6 @@ import {
 } from "../../validations/user/borrow/borrow-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import { cancelBorrowRequestService, renewBorrowService, requestBorrowService } from "../../services/userBorrow-service.js";
-
-
 
 export const BorrowRequest = asyncHandler(async (
   req: AuthenticatedRequest<RequestBorrowParams, any, any>,

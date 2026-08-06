@@ -18,79 +18,24 @@ import {
     UpdateCommentParams
 } from "../../validations/user/comment/comment-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
+import { addCommentService } from "../../services/comment-services.js";
 
 export const addComment = asyncHandler(async (
     req: AuthenticatedRequest<CreateCommentParams, CreateCommentBody, any>,
     res: Response
 ): Promise<void> => {
-
     const { bookId } = req.params;
     const { comment, parentCommentId } = req.body;
-
     const userId = req.user!._id;
 
-    const bookExists = await Book.exists({ _id: bookId });
-    if (!bookExists) {
-        res.status(404).json({ message: "Book not found" });
-        return;
-    };
-
-    const commentData = {
-        user: userId,
-        book: bookId,
+    const result = await addCommentService({
+        userId,
+        bookId,
         comment,
-        ...(parentCommentId && { parentComment: parentCommentId })
-    };
+        parentCommentId,
+    });
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-        // If it's a sub-thread reply, verify structural parent existence inside the session
-        if (parentCommentId) {
-            const parentExists = await Comment
-                .exists({ _id: parentCommentId })
-                .session(session);
-            if (!parentExists) {
-                res.status(404).json({ message: "Parent comment not found" });
-                return;
-            }
-        }
-
-        const [savedComment] = await Comment.create([commentData], { session });
-
-        if (parentCommentId) {
-            // Keep sub-replies localized strictly inside their parent node tree path
-            await Comment.findByIdAndUpdate(
-                parentCommentId,
-                { $push: { replies: savedComment._id } },
-                { session }
-            );
-        } else {
-            // Only attach top-level root threads directly to the parent book schema
-            await Book.findByIdAndUpdate(
-                bookId,
-                { $push: { comments: savedComment._id } },
-                { session }
-            );
-        }
-
-        await User.findByIdAndUpdate(
-            userId,
-            { $push: { comments: savedComment._id } },
-            { session }
-        );
-
-        await session.commitTransaction();
-        session.endSession();
-
-        res.status(201).json(savedComment);
-
-    } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
-        res.status(500).json({ message: "Failed to persist comment entry safely.", error: error.message });
-    }
+    res.status(result.code).json(result);
 });
 
 export const getComment = asyncHandler(async (
