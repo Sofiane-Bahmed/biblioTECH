@@ -162,3 +162,94 @@ export const updateCommentService = async ({
         data: updatedComment,
     };
 };
+
+export const deleteCommentService = async ({
+    commentId,
+    userId,
+    userRole,
+}) => {
+    // 1. Fetch target comment
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+        return {
+            status: false,
+            code: 404,
+            message: "Comment not found.",
+        };
+    }
+
+    // 2. Authorization check (Owner or Admin)
+    const isOwner = comment.user?.toString() === userId.toString();
+    const isAdmin = userRole === "admin";
+
+    if (!isOwner && !isAdmin) {
+        return {
+            status: false,
+            code: 403,
+            message: "Unauthorized: You cannot remove this resource.",
+        };
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const hasReplies = comment.replies && comment.replies.length > 0;
+
+        if (hasReplies) {
+            // SCENARIO A: Soft Delete - Scrub sensitive data but preserve tree nodes for children
+            await Comment.findByIdAndUpdate(
+                commentId,
+                {
+                    $set: {
+                        comment: "This comment has been removed.",
+                        isDeleted: true,
+                    },
+                    $unset: { user: "" },
+                },
+                { session }
+            );
+        } else {
+            // SCENARIO B: Hard Delete - No children exist, safe to erase completely
+            await Comment.findByIdAndDelete(commentId, { session });
+
+            // Unlink references in parallel
+            await Promise.all([
+                Book.findByIdAndUpdate(
+                    comment.book,
+                    { $pull: { comments: commentId } },
+                    { session }
+                ),
+                comment.user
+                    ? User.findByIdAndUpdate(
+                        comment.user,
+                        { $pull: { comments: commentId } },
+                        { session }
+                    )
+                    : Promise.resolve(),
+                comment.parentComment
+                    ? Comment.findByIdAndUpdate(
+                        comment.parentComment,
+                        { $pull: { replies: commentId } },
+                        { session }
+                    )
+                    : Promise.resolve(),
+            ]);
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+            status: true,
+            code: 200,
+            message: hasReplies
+                ? "Comment masked successfully."
+                : "Comment permanently erased from ecosystem.",
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
