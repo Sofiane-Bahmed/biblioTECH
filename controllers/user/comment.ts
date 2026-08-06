@@ -18,7 +18,7 @@ import {
     UpdateCommentParams
 } from "../../validations/user/comment/comment-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCommentService } from "../../services/comment-services.js";
+import { addCommentService, getCommentService } from "../../services/comment-services.js";
 
 export const addComment = asyncHandler(async (
     req: AuthenticatedRequest<CreateCommentParams, CreateCommentBody, any>,
@@ -42,30 +42,11 @@ export const getComment = asyncHandler(async (
     req: AuthenticatedRequest<GetCommentParams, any, any>,
     res: Response
 ): Promise<void> => {
-
     const { commentId } = req.params;
-    const comment = await Comment
-        .findById(commentId)
-        .populate('user', 'fullName email')
-        .populate('book', 'title author')
-        .populate({
-            path: 'replies',
-            populate: [
-                { path: 'user', select: 'fullName' },
-                {
-                    path: 'replies', // Deep nesting: Level 3
-                    populate: { path: 'user', select: 'fullName' }
-                }
-            ]
-        });
 
-    if (!comment) {
-        res.status(404).json({ message: 'comment not found' });
-        return;
-    }
+    const result = await getCommentService({ commentId });
 
-    res.status(200).json(comment);
-
+    res.status(result.code).json(result);
 });
 
 export const updateComment = asyncHandler(async (

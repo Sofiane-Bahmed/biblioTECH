@@ -4,8 +4,6 @@ import { Book } from "../models/book.js";
 import { Comment } from "../models/comment.js";
 import { User } from "../models/user.js";
 
-
-
 export const addCommentService = async ({
     userId,
     bookId,
@@ -88,4 +86,36 @@ export const addCommentService = async ({
         session.endSession();
         throw error;
     }
+};
+
+export const getCommentService = async ({ commentId }) => {
+    
+    const comment = await Comment.findById(commentId)
+        .populate("user", "fullName email")
+        .populate("book", "title author")
+        .populate({
+            path: "replies",
+            populate: [
+                { path: "user", select: "fullName" },
+                {
+                    path: "replies", // Deep nesting: Level 3
+                    populate: { path: "user", select: "fullName" },
+                },
+            ],
+        });
+
+    if (!comment) {
+        return {
+            status: false,
+            code: 404,
+            message: "Comment not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Comment retrieved successfully.",
+        data: comment,
+    };
 };
