@@ -1,0 +1,54 @@
+import { FilterQuery } from "mongoose";
+
+import { Borrow, IBorrow } from "../models/borrow.js";
+import { getPaginatedData } from "../utils/paginate.js";
+
+export const getMyBorrowsService = async ({
+    userId,
+    status,
+    overdue,
+    req,
+}) => {
+    const dbQuery: FilterQuery<IBorrow> = { user: userId };
+
+    if (status) {
+        dbQuery.status = status;
+    }
+
+    // Handle boolean/string query parameters for overdue filtering
+    if (overdue === true || overdue === "true") {
+        dbQuery.status = "ACTIVE";
+        dbQuery.due_date = { $lt: new Date() };
+    }
+
+    const result = await getPaginatedData({
+        model: Borrow,
+        query: dbQuery,
+        populate: [
+            {
+                path: "book",
+                select: "title author",
+            },
+        ],
+        req,
+    });
+
+    if (!result || !result.data || !result.data.length) {
+        return {
+            status: true,
+            code: 200,
+            message: "No borrowing history found.",
+            data: {
+                ...result,
+                data: [],
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "User borrow records retrieved successfully.",
+        data: result,
+    };
+};

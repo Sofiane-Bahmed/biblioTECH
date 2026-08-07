@@ -1,12 +1,6 @@
 import { Response } from "express";
-import mongoose from "mongoose";
-
-import { Book } from "../../models/book.js"
-import { Comment } from "../../models/comment.js"
-import { User } from "../../models/user.js";
 
 import asyncHandler from "../../utils/async-handler.js";
-import { getPaginatedData } from "../../utils/paginate.js";
 import {
     CreateCommentBody,
     CreateCommentParams,
@@ -17,8 +11,14 @@ import {
     UpdateCommentBody,
     UpdateCommentParams
 } from "../../validations/user/comment/comment-types.js";
+import {
+    addCommentService,
+    deleteCommentService,
+    getBookCommentsService,
+    getCommentService,
+    updateCommentService
+} from "../../services/comment-services.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCommentService, deleteCommentService, getBookCommentsService, getCommentService, updateCommentService } from "../../services/comment-services.js";
 
 export const addComment = asyncHandler(async (
     req: AuthenticatedRequest<CreateCommentParams, CreateCommentBody, any>,
