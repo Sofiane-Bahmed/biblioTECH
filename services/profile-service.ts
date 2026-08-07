@@ -1,6 +1,7 @@
 import { FilterQuery } from "mongoose";
 
 import { Borrow, IBorrow } from "../models/borrow.js";
+import { User } from "../models/user.js";
 import { getPaginatedData } from "../utils/paginate.js";
 
 export const getMyBorrowsService = async ({
@@ -50,5 +51,36 @@ export const getMyBorrowsService = async ({
         code: 200,
         message: "User borrow records retrieved successfully.",
         data: result,
+    };
+};
+
+export const updateMyProfileService = async ({
+    userId,
+    updateData,
+}) => {
+    // Prevent sensitive/restricted fields from being updated directly
+    delete updateData.role;
+    delete updateData.password;
+    delete updateData.email;
+
+    const user = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    )
+
+    if (!user) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Profile updated successfully.",
+        data: { user },
     };
 };

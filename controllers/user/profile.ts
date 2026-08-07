@@ -8,7 +8,7 @@ import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { GetMyBorrowsQuery, UpdateMyProfileBody } from "../../validations/user/profile/profile-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { getMyBorrowsService } from "../../services/profile-service.js";
+import { getMyBorrowsService, updateMyProfileService } from "../../services/profile-service.js";
 
 export const getMyBorrows = asyncHandler(async (
   req: AuthenticatedRequest<any, any, GetMyBorrowsQuery>,
@@ -31,24 +31,14 @@ export const updateMyProfile = asyncHandler(async (
   req: AuthenticatedRequest<any, UpdateMyProfileBody, any>,
   res: Response
 ): Promise<void> => {
-
-  const updateData = { ...req.body }
-
   const userId = req.user!._id;
 
-  const user = await User.findByIdAndUpdate(
+  const result = await updateMyProfileService({
     userId,
-    { $set: updateData },
-    { new: true, runValidators: true }
-  );
+    updateData: req.body,
+  });
 
-  if (!user) {
-    res.status(404).json({ message: "User not found" })
-    return;
-  };
-
-  res.status(200).json({ message: "Profile updated successfully", user });
-
+  res.status(result.code).json(result);
 });
 
 export const getMyProfile = asyncHandler(async (
@@ -57,7 +47,7 @@ export const getMyProfile = asyncHandler(async (
 ): Promise<void> => {
 
   const userProfile = await User.findById(req.user!._id);
-  
+
   if (!userProfile) {
     res.status(404).json({ message: "user not found" })
   }
