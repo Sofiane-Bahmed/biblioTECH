@@ -10,29 +10,18 @@ import {
   GetBooksQuery,
   SearchBookQuery
 } from "../../validations/common/book/book-types.js";
-import { searchBooksService } from "../../services/communBook-service.js";
+import {
+  getBooksService,
+  searchBooksService
+} from "../../services/communBook-service.js";
 
 export const getBooks = asyncHandler(async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const result = await getBooksService({ req });
 
-  const result = await getPaginatedData({
-    model: Book,
-    query: { copies_available: { $gt: 0 } },
-    req,
-    populate: [
-      { path: 'category', select: 'title' },
-      { path: 'copies_available' }
-    ]
-  });
-
-  if (!result.data.length) {
-    res.status(404).json({ message: 'No books found' });
-    return;
-  }
-
-  res.status(200).json(result);
+  res.status(result.code).json(result);
 });
 
 export const getBook = asyncHandler(async (req: Request, res: Response): Promise<void> => {

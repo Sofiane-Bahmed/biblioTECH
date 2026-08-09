@@ -92,3 +92,33 @@ export const searchBooksService = async ({ query, req }) => {
         data: result,
     };
 };
+
+export const getBooksService = async ({ req }) => {
+    const result = await getPaginatedData({
+        model: Book,
+        query: { copies_available: { $gt: 0 } },
+        req,
+        populate: [
+            { path: "category", select: "title" }
+        ],
+    });
+
+    if (!result || !result.data || !result.data.length) {
+        return {
+            status: true,
+            code: 200,
+            message: "No available books found.",
+            data: {
+                ...result,
+                data: [],
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Books retrieved successfully.",
+        data: result,
+    };
+};
