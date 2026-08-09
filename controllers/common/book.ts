@@ -1,8 +1,5 @@
 import { Request, Response } from "express";
 
-import { Book } from "../../models/book.js"
-
-import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
 
 import {
@@ -11,6 +8,7 @@ import {
   SearchBookQuery
 } from "../../validations/common/book/book-types.js";
 import {
+  getBookByIdService,
   getBooksService,
   searchBooksService
 } from "../../services/communBook-service.js";
@@ -24,17 +22,15 @@ export const getBooks = asyncHandler(async (
   res.status(result.code).json(result);
 });
 
-export const getBook = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const getBook = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { bookId } = req.params as GetBookParams;
 
-  const book = await Book.findById(bookId);
-  if (!book) {
-    res.status(404).json({ message: "Book not found" });
-    return;
-  }
+  const result = await getBookByIdService({ bookId });
 
-  res.status(200).json(book);
-
+  res.status(result.code).json(result);
 });
 
 export const searchBooks = asyncHandler(async (

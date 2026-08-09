@@ -122,3 +122,25 @@ export const getBooksService = async ({ req }) => {
         data: result,
     };
 };
+
+export const getBookByIdService = async ({ bookId }) => {
+    const book = await Book.findById(bookId).populate({
+        path: "category",
+        select: "title",
+    });
+
+    if (!book) {
+        return {
+            status: false,
+            code: 404,
+            message: "Book not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Book details retrieved successfully.",
+        data: { book },
+    };
+};
