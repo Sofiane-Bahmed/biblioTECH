@@ -1,10 +1,5 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
-
-import { User } from "../../models/user.js"
-import { sendWelcomeEmail } from "../../utils/email/welcome.js";
-import { sendPasswordResetEmail } from "../../utils/email/reset-password.js";
 
 import asyncHandler from "../../utils/async-handler.js";
 import {
@@ -14,15 +9,7 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
-import { forgotPasswordService, loginUserService, logoutUserService, refreshTokensService, registerUserService } from "../../services/auth-service.js";
-
-const { sign, verify } = Jwt;
-
-interface cookieOptions {
-  httpOnly: boolean;
-  secure: boolean;
-  sameSite: "lax" | "strict" | "none";
-}
+import { forgotPasswordService, loginUserService, logoutUserService, refreshTokensService, registerUserService, resetPasswordService } from "../../services/auth-service.js";
 
 export const register = asyncHandler(async (
   req: Request,
@@ -151,19 +138,14 @@ export const forgotPassword = asyncHandler(async (
   res.status(result.code).json(result);
 });
 
-export const resetPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const resetPassword = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { token } = req.params as ResetPasswordParams;
   const { password } = req.body as ResetPasswordBody;
 
-  const user = await User.findByResetToken(token);
-  if (!user) {
-    res.status(400).json({ message: "Token is invalid or has expired" });
-    return;
-  }
+  const result = await resetPasswordService({ token, password });
 
-  user.password = password;
-  await user.save();
-
-  res.status(200).json({ message: "Password reset successful!" });
-
+  res.status(result.code).json(result);
 });

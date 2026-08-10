@@ -135,8 +135,6 @@ export const logoutUserService = async ({ refreshToken }) => {
     };
 };
 
-
-
 export const refreshTokensService = async ({ refreshToken }) => {
     // 1. Check for presence of refresh token
     if (!refreshToken) {
@@ -212,50 +210,73 @@ export const refreshTokensService = async ({ refreshToken }) => {
 };
 
 export const forgotPasswordService = async ({ email }) => {
-  const genericSuccessMessage =
-    "If an account with that email exists, a password reset link has been dispatched shortly.";
+    const genericSuccessMessage =
+        "If an account with that email exists, a password reset link has been dispatched shortly.";
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const user = await User.findOne({ email: normalizedEmail });
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
 
-  // Prevent account enumeration by returning a 200 OK even when user does not exist
-  if (!user) {
-    return {
-      status: true,
-      code: 200,
-      message: genericSuccessMessage,
-    };
-  }
+    // Prevent account enumeration by returning a 200 OK even when user does not exist
+    if (!user) {
+        return {
+            status: true,
+            code: 200,
+            message: genericSuccessMessage,
+        };
+    }
 
-  const resetToken = user.generatePasswordResetToken();
+    const resetToken = user.generatePasswordResetToken();
 
-  // Log token in development environment for quick debugging
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`[DEV] Generated reset token for ${normalizedEmail}: ${resetToken}`);
-  }
+    // Log token in development environment for quick debugging
+    if (process.env.NODE_ENV !== "production") {
+        console.log(`[DEV] Generated reset token for ${normalizedEmail}: ${resetToken}`);
+    }
 
-  await user.save();
-
-  try {
-    await sendPasswordResetEmail(user, resetToken);
-  } catch (emailError) {
-    // Rollback token state in database if transport layer fails
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
     await user.save();
 
-    console.error(`Password reset email delivery failed for ${normalizedEmail}:`, emailError);
+    try {
+        await sendPasswordResetEmail(user, resetToken);
+    } catch (emailError) {
+        // Rollback token state in database if transport layer fails
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        console.error(`Password reset email delivery failed for ${normalizedEmail}:`, emailError);
+
+        return {
+            status: false,
+            code: 500,
+            message: "An internal error occurred while dispatching recovery notifications. Please try again later.",
+        };
+    }
 
     return {
-      status: false,
-      code: 500,
-      message: "An internal error occurred while dispatching recovery notifications. Please try again later.",
+        status: true,
+        code: 200,
+        message: genericSuccessMessage,
     };
-  }
+};
 
-  return {
-    status: true,
-    code: 200,
-    message: genericSuccessMessage,
-  };
+export const resetPasswordService = async ({ token, password }) => {
+    // 1. Look up user by reset token and check expiration
+    const user = await User.findByResetToken(token);
+
+    if (!user) {
+        return {
+            status: false,
+            code: 400,
+            message: "Token is invalid or has expired.",
+        };
+    }
+
+    // 2. Update password and persist (pre-save hooks in model handle hashing and token clearance)
+    user.password = password;
+    await user.save();
+
+    return {
+        status: true,
+        code: 200,
+        message: "Password reset successful!",
+    };
 };
