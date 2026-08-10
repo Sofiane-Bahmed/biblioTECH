@@ -14,7 +14,7 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
-import { registerUserService } from "../../services/auth-service.js";
+import { loginUserService, registerUserService } from "../../services/auth-service.js";
 
 const { sign, verify } = Jwt;
 
@@ -33,102 +33,44 @@ export const register = asyncHandler(async (
   res.status(result.code).json(result);
 });
 
-export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-
+export const login = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { email, password } = req.body as LoginBody;
 
-  const user = await User.findOne({ email }).select('+password');
+  const result = await loginUserService({ email, password });
 
-  let isMatch = false;
-  if (user) {
-    isMatch = await user.comparePassword(password);
-  } else {
-    // Fake comparison to mimic bcrypt computation time delay
-    const dummyHash = "$2b$10$Nx7K.1l6QAnA7V83rGgM7.u8jF.uMlz/5S2d/zYwFfH3yWBy7p7O.";
-    await bcrypt.compare(password, dummyHash);
-  }
-
-  if (!user || !isMatch) {
-    res.status(401).json({ message: "Invalid email or password credentials." });
+  if (!result.status || !result.data) {
+    res.status(result.code).json(result);
     return;
   }
 
-  //check if user is suspended
-  if (user.suspension_date && user.suspension_date > new Date()) {
-    res.status(403).json({
-      message: "Your account is suspended",
-      until: user.suspension_date.toString()
-    });
-    return;
-  }
-
-  //check if user is blocked
-  if (user.isBlocked) {
-    res.status(403).json({
-      message: "Your account is blocked. Please contact support for more information."
-    });
-    return;
-  }
-
-  //check outstanding_fines
-  if (user.outstanding_fines > 10.00) {
-    res.status(403).json({
-      success: false,
-      message: "`You have $${user.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`"
-    });
-    return;
-  };
-
-  const accessToken = sign(
-    {
-      _id: user._id,
-      role: user.role
-    },
-    process.env.JWT_ACCESS_SECRET,
-    { expiresIn: '15m' } // Short lived
-  );
-
-  const refreshToken = sign(
-    {
-      _id: user._id
-    },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: '7d' } // Long lived
-  );
-
-  user.refreshToken = refreshToken;
-  user.subscribed = true;
-  await user.save();
+  const { accessToken, refreshToken, user } = result.data;
 
   const baseCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
   };
 
-  res.cookie(
-    'accessToken',
-    accessToken,
-    {
-      ...baseCookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 minutes in milliseconds
-    }
-  );
-
-  res.cookie(
-    'refreshToken',
-    refreshToken,
-    {
-      ...baseCookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds   
-    }
-  );
-
-  res.status(200).json({
-    message: 'Welcome back!',
-    user
+  res.cookie("accessToken", accessToken, {
+    ...baseCookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
+  res.cookie("refreshToken", refreshToken, {
+    ...baseCookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  // Return standardized response envelope without raw tokens in response body
+  res.status(result.code).json({
+    status: result.status,
+    code: result.code,
+    message: result.message,
+    data: { user },
+  });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {

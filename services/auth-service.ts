@@ -1,6 +1,12 @@
-import { User } from "../models/user.js";
 
+import bcrypt from "bcrypt"
+import Jwt from "jsonwebtoken"
+
+import { User } from "../models/user.js";
 import { sendWelcomeEmail } from "../utils/email/welcome.js";
+
+const { sign, verify } = Jwt;
+const DUMMY_HASH = "$2b$10$Nx7K.1l6QAnA7V83rGgM7.u8jF.uMlz/5S2d/zYwFfH3yWBy7p7O.";
 
 export const registerUserService = async (input) => {
     const { fullName, password, email, phone, confirmPassword } = input;
@@ -29,5 +35,81 @@ export const registerUserService = async (input) => {
         code: 201,
         message: "User registered successfully.",
         data: { user: newUser },
+    };
+};
+
+export const loginUserService = async ({ email, password }) => {
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+
+    // 1. Timing-attack resistant credential verification
+    let isMatch = false;
+    if (user) {
+        isMatch = await user.comparePassword(password);
+    } else {
+        // Fake comparison to mimic bcrypt computation delay
+        await bcrypt.compare(password, DUMMY_HASH);
+    }
+
+    if (!user || !isMatch) {
+        return {
+            status: false,
+            code: 401,
+            message: "Invalid email or password credentials.",
+        };
+    }
+
+    // 2. Account status checks
+    if (user.suspension_date && user.suspension_date > new Date()) {
+        return {
+            status: false,
+            code: 403,
+            message: `Your account is suspended until ${user.suspension_date.toString()}.`,
+        };
+    }
+
+    if (user.isBlocked) {
+        return {
+            status: false,
+            code: 403,
+            message: "Your account is blocked. Please contact support for more information.",
+        };
+    }
+
+    if (user.outstanding_fines && user.outstanding_fines > 10.0) {
+        return {
+            status: false,
+            code: 403,
+            message: `You have $${user.outstanding_fines.toFixed(2)} in outstanding fines. Please settle your account balance.`,
+        };
+    }
+
+    // 3. JWT Token Generation
+    const accessToken = sign(
+        { _id: user._id, role: user.role },
+        process.env.JWT_ACCESS_SECRET!,
+        { expiresIn: "15m" }
+    );
+
+    const refreshToken = sign(
+        { _id: user._id },
+        process.env.JWT_REFRESH_SECRET!,
+        { expiresIn: "7d" }
+    );
+
+    // 4. Update refresh token & session state
+    user.refreshToken = refreshToken;
+    user.subscribed = true;
+    await user.save();
+
+    return {
+        status: true,
+        code: 200,
+        message: "Welcome back!",
+        data: {
+            user,
+            accessToken,
+            refreshToken,
+        },
     };
 };
