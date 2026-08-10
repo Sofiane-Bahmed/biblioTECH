@@ -14,6 +14,7 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
+import { registerUserService } from "../../services/auth-service.js";
 
 const { sign, verify } = Jwt;
 
@@ -27,30 +28,9 @@ export const register = asyncHandler(async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const {
-    fullName,
-    password,
-    email,
-    phone,
-    confirmPassword
-  } = req.body as RegisterBody;
+  const result = await registerUserService(req.body);
 
-  // Check if this is the first user to register and assign admin role if so
-  const isFirstUser = (await User.countDocuments()) === 0;
-  const role = isFirstUser ? "admin" : "user";
-
-  const newUser = await User.create({
-    fullName,
-    password,
-    email,
-    phone,
-    role
-  })
-
-  res.status(201).json(newUser);
-
-  await sendWelcomeEmail(newUser);
-
+  res.status(result.code).json(result);
 });
 
 export const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
