@@ -4,6 +4,7 @@ import Jwt from "jsonwebtoken"
 
 import { User } from "../models/user.js";
 import { sendWelcomeEmail } from "../utils/email/welcome.js";
+import { sendPasswordResetEmail } from "../utils/email/reset-password.js";
 
 interface JwtPayload {
     _id: string;
@@ -208,4 +209,53 @@ export const refreshTokensService = async ({ refreshToken }) => {
             refreshToken: newRefreshToken,
         },
     };
+};
+
+export const forgotPasswordService = async ({ email }) => {
+  const genericSuccessMessage =
+    "If an account with that email exists, a password reset link has been dispatched shortly.";
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  // Prevent account enumeration by returning a 200 OK even when user does not exist
+  if (!user) {
+    return {
+      status: true,
+      code: 200,
+      message: genericSuccessMessage,
+    };
+  }
+
+  const resetToken = user.generatePasswordResetToken();
+
+  // Log token in development environment for quick debugging
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[DEV] Generated reset token for ${normalizedEmail}: ${resetToken}`);
+  }
+
+  await user.save();
+
+  try {
+    await sendPasswordResetEmail(user, resetToken);
+  } catch (emailError) {
+    // Rollback token state in database if transport layer fails
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    console.error(`Password reset email delivery failed for ${normalizedEmail}:`, emailError);
+
+    return {
+      status: false,
+      code: 500,
+      message: "An internal error occurred while dispatching recovery notifications. Please try again later.",
+    };
+  }
+
+  return {
+    status: true,
+    code: 200,
+    message: genericSuccessMessage,
+  };
 };

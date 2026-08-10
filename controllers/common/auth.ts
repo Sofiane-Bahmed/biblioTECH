@@ -14,7 +14,7 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
-import { loginUserService, logoutUserService, refreshTokensService, registerUserService } from "../../services/auth-service.js";
+import { forgotPasswordService, loginUserService, logoutUserService, refreshTokensService, registerUserService } from "../../services/auth-service.js";
 
 const { sign, verify } = Jwt;
 
@@ -140,40 +140,15 @@ export const refresh = asyncHandler(async (
   });
 });
 
-export const forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { email } = req.body as ForgotPasswordBody;
 
-  const successResponse = {
-    message: "If an account with that email exists, a password reset link has been dispatched shortly."
-  };
+  const result = await forgotPasswordService({ email });
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    res.status(200).json(successResponse);
-    return;
-  }
-
-  const resetToken = user.generatePasswordResetToken();
-  console.log(`Generated reset token for ${email}: ${resetToken}`); // Log the token for testing purposes
-  await user.save();
-
-  try {
-    await sendPasswordResetEmail(user, resetToken);
-  } catch (emailError) {
-    // Rollback DB states immediately if the transport layer fails 
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save();
-
-    console.error(`Password reset email delivery failed for ${email}:`, emailError);
-    res.status(500).json({
-      message: "An internal error occurred while dispatching recovery notifications. Please try again later."
-    });
-    return;
-  }
-
-  res.status(200).json(successResponse);
-
+  res.status(result.code).json(result);
 });
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
