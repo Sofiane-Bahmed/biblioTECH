@@ -14,7 +14,7 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
-import { loginUserService, registerUserService } from "../../services/auth-service.js";
+import { loginUserService, logoutUserService, registerUserService } from "../../services/auth-service.js";
 
 const { sign, verify } = Jwt;
 
@@ -73,23 +73,24 @@ export const login = asyncHandler(async (
   });
 });
 
-export const logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-
+export const logout = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { refreshToken } = req.cookies;
 
-  // Remove refresh token from the database
-  if (refreshToken) {
-    await User.findOneAndUpdate(
-      { refreshToken: refreshToken },
-      { $set: { refreshToken: null } }
-    );
-  }
+  const result = await logoutUserService({ refreshToken });
 
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const baseCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+  };
 
-  res.status(200).json({ message: 'User logged out successfully' });
+  res.clearCookie("accessToken", baseCookieOptions);
+  res.clearCookie("refreshToken", baseCookieOptions);
 
+  res.status(result.code).json(result);
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response): Promise<void> => {

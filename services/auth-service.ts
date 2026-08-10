@@ -113,3 +113,19 @@ export const loginUserService = async ({ email, password }) => {
         },
     };
 };
+
+export const logoutUserService = async ({ refreshToken }) => {
+    // Clear refresh token reference in database if present
+    if (refreshToken) {
+        await User.findOneAndUpdate(
+            { refreshToken },
+            { $set: { refreshToken: null } }
+        );
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "User logged out successfully.",
+    };
+};
