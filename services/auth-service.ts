@@ -5,6 +5,10 @@ import Jwt from "jsonwebtoken"
 import { User } from "../models/user.js";
 import { sendWelcomeEmail } from "../utils/email/welcome.js";
 
+interface JwtPayload {
+    _id: string;
+}
+
 const { sign, verify } = Jwt;
 const DUMMY_HASH = "$2b$10$Nx7K.1l6QAnA7V83rGgM7.u8jF.uMlz/5S2d/zYwFfH3yWBy7p7O.";
 
@@ -127,5 +131,81 @@ export const logoutUserService = async ({ refreshToken }) => {
         status: true,
         code: 200,
         message: "User logged out successfully.",
+    };
+};
+
+
+
+export const refreshTokensService = async ({ refreshToken }) => {
+    // 1. Check for presence of refresh token
+    if (!refreshToken) {
+        return {
+            status: false,
+            code: 401,
+            message: "No refresh token provided.",
+        };
+    }
+
+    // 2. Verify signature and expiration
+    let decoded: JwtPayload;
+    try {
+        decoded = verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET!
+        ) as JwtPayload;
+    } catch (error) {
+        return {
+            status: false,
+            code: 401,
+            message: "Invalid or expired refresh token.",
+        };
+    }
+
+    // 3. Retrieve user and compare stored refresh token
+    const user = await User.findById(decoded._id).select("+refreshToken");
+
+    if (!user || user.refreshToken !== refreshToken) {
+        // Potential reuse/theft detected: nullify existing token to protect account
+        if (user) {
+            await User.findByIdAndUpdate(user._id, { $set: { refreshToken: null } });
+        }
+        return {
+            status: false,
+            code: 403,
+            message: "Invalid refresh token / Potential token theft detected.",
+        };
+    }
+
+    // 4. Generate new token pair (Token Rotation)
+    const newAccessToken = sign(
+        {
+            _id: user._id,
+            role: user.role,
+        },
+        process.env.JWT_ACCESS_SECRET!,
+        { expiresIn: "15m" }
+    );
+
+    const newRefreshToken = sign(
+        {
+            _id: user._id,
+        },
+        process.env.JWT_REFRESH_SECRET!,
+        { expiresIn: "7d" }
+    );
+
+    // 5. Persist rotated refresh token
+    await User.findByIdAndUpdate(user._id, {
+        $set: { refreshToken: newRefreshToken },
+    });
+
+    return {
+        status: true,
+        code: 200,
+        message: "Token refreshed and rotated successfully.",
+        data: {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+        },
     };
 };

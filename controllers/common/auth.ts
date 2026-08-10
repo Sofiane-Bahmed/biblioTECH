@@ -14,7 +14,7 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
-import { loginUserService, logoutUserService, registerUserService } from "../../services/auth-service.js";
+import { loginUserService, logoutUserService, refreshTokensService, registerUserService } from "../../services/auth-service.js";
 
 const { sign, verify } = Jwt;
 
@@ -93,77 +93,51 @@ export const logout = asyncHandler(async (
   res.status(result.code).json(result);
 });
 
-export const refresh = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-
+export const refresh = asyncHandler(async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { refreshToken } = req.cookies;
-  if (!refreshToken) {
-    res.status(401).json({ message: "No refresh token" });
-    return;
-  }
 
-  let decoded: any;
-  try {
-    decoded = verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-  } catch (error) {
-    res.status(401).json({ message: "Invalid or expired refresh token" });
-    return;
-  }
+  const result = await refreshTokensService({ refreshToken });
 
-  const user = await User
-    .findById(decoded._id)
-    .select('+refreshToken');
-
-  if (!user || user.refreshToken !== refreshToken) {
-    if (user) {
-      await User.findByIdAndUpdate(user._id, { refreshToken: null });
+  if (!result.status || !result.data) {
+    // Clear cookies if token reuse or invalid token was detected
+    if (result.code === 403 || result.code === 401) {
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
     }
-    res.status(403).json({ message: "Invalid refresh token / Potential theft detected" });
+    res.status(result.code).json(result);
     return;
   }
 
-  // Generate new Pair (Rotate refresh token)
-  const newAccessToken = sign(
-    {
-      _id: user._id,
-      role: user.role
-    },
-    process.env.JWT_ACCESS_SECRET,
-    { expiresIn: '15m' }
-  );
+  const {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken
+  } = result.data;
 
-  const newRefreshToken = sign(
-    {
-      _id: user._id
-    },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: '7d' }
-  )
-
-  await User.findByIdAndUpdate(
-    user._id,
-    { refreshToken: newRefreshToken }
-  );
-
-  const cookieOptions: cookieOptions = {
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
-  }
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+  };
 
-  res.cookie(
-    'accessToken',
-    newAccessToken,
-    cookieOptions
-  );
+  res.cookie("accessToken", newAccessToken, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
 
-  res.cookie(
-    'refreshToken',
-    newRefreshToken,
-    cookieOptions
-  );
+  res.cookie("refreshToken", newRefreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
 
-  res.status(200).json({ message: "Token refreshed and rotated successfully" });
-
+  // Return standardized response envelope without exposing raw tokens in response body
+  res.status(result.code).json({
+    status: result.status,
+    code: result.code,
+    message: result.message,
+  });
 });
 
 export const forgotPassword = asyncHandler(async (req: Request, res: Response): Promise<void> => {
