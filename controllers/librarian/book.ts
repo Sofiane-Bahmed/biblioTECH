@@ -1,10 +1,10 @@
 import { Response } from "express";
 
-import { Book } from "../../models/book.js"
 import asyncHandler from "../../utils/async-handler.js";
 import {
   addBookService,
   autoAddBookByIsbnService,
+  deleteBookService,
   updateBookService
 } from "../../services/books-service.js";
 import {
@@ -70,15 +70,9 @@ export const deleteBook = asyncHandler(async (
   req: AuthenticatedRequest<DeleteBookParams, any, any>,
   res: Response
 ): Promise<void> => {
-
   const { bookId } = req.params;
 
-  const book = await Book.findByIdAndDelete(bookId);
-  if (!book) {
-    res.status(404).json({ message: "book not found" });
-    return;
-  }
+  const result = await deleteBookService({ bookId });
 
-  res.status(200).json({ message: "book deleted successfully" });
-
+  res.status(result.code).json(result);
 });

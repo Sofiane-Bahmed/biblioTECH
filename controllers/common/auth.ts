@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import Jwt from "jsonwebtoken"
 
 import asyncHandler from "../../utils/async-handler.js";
 import {
@@ -9,7 +8,14 @@ import {
   ResetPasswordBody,
   ResetPasswordParams
 } from "../../validations/common/auth/auth-types.js";
-import { forgotPasswordService, loginUserService, logoutUserService, refreshTokensService, registerUserService, resetPasswordService } from "../../services/auth-service.js";
+import {
+  forgotPasswordService,
+  loginUserService,
+  logoutUserService,
+  refreshTokensService,
+  registerUserService,
+  resetPasswordService
+} from "../../services/auth-service.js";
 
 export const register = asyncHandler(async (
   req: Request,

@@ -4,6 +4,7 @@ import { UpdateBookBody } from "../validations/librarian/book/book-types.js";
 import { getOrCreateCategories, validateExistingCategories } from "./category-service.js";
 import { fetchBookMetadataByIsbn } from "./googleBooks-service.js";
 import { notifySubscribersAboutNewBook } from "./notification-service.js";
+import { Borrow } from "../models/borrow.js";
 
 export const addBookService = async ({
     title,
@@ -195,5 +196,40 @@ export const updateBookService = async ({
         code: 200,
         message: "Book updated successfully.",
         data: updatedBook,
+    };
+};
+
+export const deleteBookService = async ({ bookId }) => {
+    // 1. Check if book exists
+    const book = await Book.findById(bookId);
+    if (!book) {
+        return {
+            status: false,
+            code: 404,
+            message: "Book not found.",
+        };
+    }
+
+    // 2. Prevent deletion if active borrow records exist
+    const activeBorrows = await Borrow.exists({
+        book: bookId,
+        status: { $in: ["borrowed", "overdue"] },
+    });
+
+    if (activeBorrows) {
+        return {
+            status: false,
+            code: 400,
+            message: "Cannot delete book while active borrow records exist.",
+        };
+    }
+
+    // 3. Delete the book
+    await Book.findByIdAndDelete(bookId);
+
+    return {
+        status: true,
+        code: 200,
+        message: "Book deleted successfully.",
     };
 };
