@@ -1,6 +1,5 @@
 import { Response } from "express";
 
-import { User } from "../../models/user.js"
 import asyncHandler from "../../utils/async-handler.js";
 import {
   BlockUserParams,

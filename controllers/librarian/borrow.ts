@@ -14,6 +14,7 @@ import {
   bypassQueueService,
   cancelBorrowService,
   confirmHandoverService,
+  getUserBorrowingHistoryService,
   payFineInPersonService,
   rejectBorrowRequestService,
   returnBookService
@@ -240,22 +241,9 @@ export const getUserBorrowingHistory = asyncHandler(async (
 ): Promise<void> => {
   const { userId } = req.params;
 
-  const result = await getPaginatedData({
-    model: Borrow,
-    req,
-    query: { user: userId },
-    populate: [
-      { path: "user", select: "fullName email" },
-      { path: "book", select: "title author" }
-    ]
-  });
+  const result = await getUserBorrowingHistoryService({ userId, req });
 
-  if (!result.data.length) {
-    res.status(200).json({ message: "No borrowing history found for this user", data: [] });
-    return;
-  }
-
-  res.status(200).json(result);
+  res.status(result.code).json(result);
 });
 
 

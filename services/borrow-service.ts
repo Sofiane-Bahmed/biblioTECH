@@ -11,6 +11,7 @@ import { sendPickupReadyEmail } from "../utils/email/pickup-ready.js";
 import { sendSuspensionWarningEmail } from "../utils/email/suspension-warning.js";
 import { sendHoldReadyEmail } from "../utils/email/hold-ready-email.js";
 import { calculateLatePenalty } from "./penalty-service.js";
+import { getPaginatedData } from "../utils/paginate.js";
 
 const {
     BORROWS_PER_MONTH,
@@ -773,4 +774,49 @@ export const payFineInPersonService = async ({
         session.endSession();
         throw error;
     }
+};
+
+export const getUserBorrowingHistoryService = async ({
+    userId,
+    req,
+}) => {
+    // 1. Verify user exists
+    const userExists = await User.exists({ _id: userId });
+    if (!userExists) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    // 2. Fetch paginated borrowing records
+    const result = await getPaginatedData({
+        model: Borrow,
+        req,
+        query: { user: userId },
+        populate: [
+            { path: "user", select: "fullName email" },
+            { path: "book", select: "title author" },
+        ],
+    });
+
+    if (!result || !result.data || !result.data.length) {
+        return {
+            status: true,
+            code: 200,
+            message: "No borrowing history found for this user.",
+            data: {
+                ...result,
+                data: [],
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "User borrowing history retrieved successfully.",
+        data: result,
+    };
 };
