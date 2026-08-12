@@ -12,7 +12,7 @@ import {
   UpdateCategoryParams
 } from "../../validations/admin/category/category-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCategoryService, getCategoriesService, getCategoryByIdService } from "../../services/category-service.js";
+import { addCategoryService, getCategoriesService, getCategoryByIdService, updateCategoryService } from "../../services/category-service.js";
 
 export const addCategory = asyncHandler(async (
   req: AuthenticatedRequest<any, AddCategoryBody, any>,
@@ -49,31 +49,14 @@ export const updateCategory = asyncHandler(async (
   req: AuthenticatedRequest<UpdateCategoryParams, UpdateCategoryBody, any>,
   res: Response
 ): Promise<void> => {
-
   const { categoryId } = req.params;
 
-  const updateData = { ...req.body };
-
-  const category = await Category.findByIdAndUpdate(
+  const result = await updateCategoryService({
     categoryId,
-    {
-      $set: updateData
-    },
-    {
-      new: true,
-      runValidators: true
-    }
-  );
-  if (!category) {
-    res.status(404).json({ message: 'Category not found' });
-    return;
-  }
-
-  res.status(200).json({
-    message: 'Category updated successfully',
-    category
+    updateData: req.body,
   });
 
+  res.status(result.code).json(result);
 });
 
 export const deleteCategory = asyncHandler(async (

@@ -116,3 +116,53 @@ export const getCategoriesService = async ({ req }) => {
         data: result,
     };
 };
+
+export const updateCategoryService = async ({
+    categoryId,
+    updateData,
+}) => {
+    // 1. If title is being updated, check for case-insensitive duplicate titles on other documents
+    if (updateData.title) {
+        const normalizedTitle = updateData.title.trim();
+        const duplicateCategory = await Category.findOne({
+            _id: { $ne: categoryId },
+            title: { $regex: `^${normalizedTitle}$`, $options: "i" },
+        });
+
+        if (duplicateCategory) {
+            return {
+                status: false,
+                code: 409,
+                message: "A category with this title already exists.",
+            };
+        }
+
+        updateData.title = normalizedTitle;
+    }
+
+    if (updateData.description) {
+        updateData.description = updateData.description.trim();
+    }
+
+    // 2. Perform update
+    const category = await Category.findByIdAndUpdate(
+        categoryId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+    );
+
+    if (!category) {
+        return {
+            status: false,
+            code: 404,
+            message: "Category not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Category updated successfully.",
+        data: { category },
+    };
+};
