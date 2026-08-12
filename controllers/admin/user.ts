@@ -16,6 +16,7 @@ import {
   blockUserService,
   createStaffService,
   deleteUserService,
+  getUserByIdService,
   getUsersService,
   unblockUserService,
   updateUserRoleService
@@ -68,16 +69,11 @@ export const getUser = asyncHandler(async (
   req: AuthenticatedRequest<GetUserParams, any, any>,
   res: Response
 ): Promise<void> => {
-  const { userId } = req.params
+  const { userId } = req.params;
 
-  const user = await User.findById(userId)
+  const result = await getUserByIdService({ userId });
 
-  if (!user) {
-    res.status(404).json({ message: "user not found" });
-    return;
-  }
-
-  res.status(200).json(user);
+  res.status(result.code).json(result);
 });
 
 export const getUsers = asyncHandler(async (

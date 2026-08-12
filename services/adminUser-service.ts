@@ -352,3 +352,22 @@ export const deleteUserService = async ({ userId }) => {
         message: "User deleted successfully.",
     };
 };
+
+export const getUserByIdService = async ({ userId }) => {
+    const user = await User.findById(userId);
+
+    if (!user) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "User details retrieved successfully.",
+        data: { user },
+    };
+};
