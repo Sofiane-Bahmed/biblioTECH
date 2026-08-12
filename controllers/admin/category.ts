@@ -13,18 +13,17 @@ import {
 } from "../../validations/admin/category/category-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import { getPaginatedData } from "../../utils/paginate.js";
+import { addCategoryService } from "../../services/category-service.js";
 
 export const addCategory = asyncHandler(async (
   req: AuthenticatedRequest<any, AddCategoryBody, any>,
   res: Response
 ): Promise<void> => {
-
   const { title, description } = req.body;
 
-  const newCategory = await Category.create({ title, description });
+  const result = await addCategoryService({ title, description });
 
-  res.status(201).json(newCategory);
-
+  res.status(result.code).json(result);
 });
 
 export const getCategory = asyncHandler(async (

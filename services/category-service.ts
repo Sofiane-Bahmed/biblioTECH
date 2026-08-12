@@ -36,4 +36,37 @@ export const validateExistingCategories = async (
     const categoryIds = foundCategories.map(cat => cat._id as Types.ObjectId);
 
     return { categoryIds, missingCategories };
-}; 
+};
+
+export const addCategoryService = async ({
+    title,
+    description,
+}) => {
+    const normalizedTitle = title.trim();
+
+    // 1. Check for existing category with the same title (case-insensitive)
+    const existingCategory = await Category.findOne({
+        title: { $regex: `^${normalizedTitle}$`, $options: "i" },
+    });
+
+    if (existingCategory) {
+        return {
+            status: false,
+            code: 409,
+            message: "A category with this title already exists.",
+        };
+    }
+
+    // 2. Create category
+    const newCategory = await Category.create({
+        title: normalizedTitle,
+        description: description?.trim(),
+    });
+
+    return {
+        status: true,
+        code: 201,
+        message: "Category added successfully.",
+        data: { category: newCategory },
+    };
+};
