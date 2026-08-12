@@ -851,3 +851,25 @@ export const deleteBorrowService = async ({ borrowId }) => {
         message: "Borrow record deleted successfully.",
     };
 };
+
+export const getBorrowByIdService = async ({ borrowId }) => {
+    const borrow = await Borrow.findById(borrowId)
+        .populate("user", "fullName email")
+        .populate("book", "title author")
+        .lean();
+
+    if (!borrow) {
+        return {
+            status: false,
+            code: 404,
+            message: "Borrow record not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Borrow record details retrieved successfully.",
+        data: { borrow },
+    };
+};

@@ -15,6 +15,7 @@ import {
   cancelBorrowService,
   confirmHandoverService,
   deleteBorrowService,
+  getBorrowByIdService,
   getUserBorrowingHistoryService,
   payFineInPersonService,
   rejectBorrowRequestService,
@@ -210,20 +211,13 @@ export const getBorrow = asyncHandler(async (
 ): Promise<void> => {
   const { borrowId } = req.params;
 
-  const borrow = await Borrow
-    .findById(borrowId)
-    .populate('user', 'fullName email')
-    .populate('book', 'title author');
+  const result = await getBorrowByIdService({ borrowId });
 
-  if (!borrow) {
-    res.status(404).json({ message: "Borrow record not found" });
-    return;
-  }
-  res.status(200).json({ data: borrow });
+  res.status(result.code).json(result);
 });
 
 export const deleteBorrow = asyncHandler(async (
-  req: AuthenticatedRequest<DeleteBorrowParams,any,any>,
+  req: AuthenticatedRequest<DeleteBorrowParams, any, any>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
