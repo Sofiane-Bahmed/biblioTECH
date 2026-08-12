@@ -1,6 +1,5 @@
 import { Response } from "express";
 
-import { Category } from "../../models/category.js"
 import asyncHandler from "../../utils/async-handler.js";
 
 import {
@@ -12,7 +11,7 @@ import {
   UpdateCategoryParams
 } from "../../validations/admin/category/category-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCategoryService, getCategoriesService, getCategoryByIdService, updateCategoryService } from "../../services/category-service.js";
+import { addCategoryService, deleteCategoryService, getCategoriesService, getCategoryByIdService, updateCategoryService } from "../../services/category-service.js";
 
 export const addCategory = asyncHandler(async (
   req: AuthenticatedRequest<any, AddCategoryBody, any>,
@@ -63,15 +62,9 @@ export const deleteCategory = asyncHandler(async (
   req: AuthenticatedRequest<DeleteCategoryParams, any, any>,
   res: Response
 ): Promise<void> => {
-
   const { categoryId } = req.params;
 
-  const category = await Category.findByIdAndDelete(categoryId);
-  if (!category) {
-    res.status(404).json({ message: 'Category not found' });
-    return;
-  }
+  const result = await deleteCategoryService({ categoryId });
 
-  res.status(200).json({ message: 'Category successfully deleted' });
-
-}); 
+  res.status(result.code).json(result);
+});

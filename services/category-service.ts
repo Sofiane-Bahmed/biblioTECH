@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { Category } from "../models/category.js";
 import { getPaginatedData } from "../utils/paginate.js";
+import { Book } from "../models/book.js";
 
 interface CategoryValidationResult {
     categoryIds: Types.ObjectId[];
@@ -121,12 +122,11 @@ export const updateCategoryService = async ({
     categoryId,
     updateData,
 }) => {
-    // 1. If title is being updated, check for case-insensitive duplicate titles on other documents
+    // 1. If title is being updated, check for duplicate titles on other documents
     if (updateData.title) {
-        const normalizedTitle = updateData.title.trim();
         const duplicateCategory = await Category.findOne({
             _id: { $ne: categoryId },
-            title: { $regex: `^${normalizedTitle}$`, $options: "i" },
+            title: { $regex: `^${updateData.title}$`, $options: "i" },
         });
 
         if (duplicateCategory) {
@@ -136,15 +136,8 @@ export const updateCategoryService = async ({
                 message: "A category with this title already exists.",
             };
         }
-
-        updateData.title = normalizedTitle;
     }
 
-    if (updateData.description) {
-        updateData.description = updateData.description.trim();
-    }
-
-    // 2. Perform update
     const category = await Category.findByIdAndUpdate(
         categoryId,
         { $set: updateData },
@@ -164,5 +157,36 @@ export const updateCategoryService = async ({
         code: 200,
         message: "Category updated successfully.",
         data: { category },
+    };
+};
+
+export const deleteCategoryService = async ({ categoryId }) => {
+    // 1. Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+        return {
+            status: false,
+            code: 404,
+            message: "Category not found.",
+        };
+    }
+
+    // 2. Prevent deletion if active books are associated with this category
+    const hasAssociatedBooks = await Book.exists({ category: categoryId });
+    if (hasAssociatedBooks) {
+        return {
+            status: false,
+            code: 400,
+            message: "Cannot delete category while books are assigned to it.",
+        };
+    }
+
+    // 3. Delete category
+    await Category.findByIdAndDelete(categoryId);
+
+    return {
+        status: true,
+        code: 200,
+        message: "Category deleted successfully.",
     };
 };
