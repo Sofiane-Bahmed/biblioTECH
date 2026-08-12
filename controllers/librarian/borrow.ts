@@ -14,6 +14,7 @@ import {
   bypassQueueService,
   cancelBorrowService,
   confirmHandoverService,
+  deleteBorrowService,
   getUserBorrowingHistoryService,
   payFineInPersonService,
   rejectBorrowRequestService,
@@ -222,17 +223,14 @@ export const getBorrow = asyncHandler(async (
 });
 
 export const deleteBorrow = asyncHandler(async (
-  req: AuthenticatedRequest<DeleteBorrowParams>,
+  req: AuthenticatedRequest<DeleteBorrowParams,any,any>,
   res: Response
 ): Promise<void> => {
   const { borrowId } = req.params;
 
-  const borrow = await Borrow.findByIdAndDelete(borrowId);
-  if (!borrow) {
-    res.status(404).json({ message: "Borrow record not found" });
-    return;
-  }
-  res.status(200).json({ message: "Borrow record deleted successfully" });
+  const result = await deleteBorrowService({ borrowId });
+
+  res.status(result.code).json(result);
 });
 
 export const getUserBorrowingHistory = asyncHandler(async (

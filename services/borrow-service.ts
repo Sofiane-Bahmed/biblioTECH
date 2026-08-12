@@ -820,3 +820,34 @@ export const getUserBorrowingHistoryService = async ({
         data: result,
     };
 };
+
+export const deleteBorrowService = async ({ borrowId }) => {
+    // 1. Check if record exists
+    const borrow = await Borrow.findById(borrowId);
+
+    if (!borrow) {
+        return {
+            status: false,
+            code: 404,
+            message: "Borrow record not found.",
+        };
+    }
+
+    // 2. Prevent deletion of active borrows (must be returned or settled first)
+    if (borrow.status === "ACTIVE") {
+        return {
+            status: false,
+            code: 400,
+            message: "Cannot delete an active borrow record. The book must be returned first.",
+        };
+    }
+
+    // 3. Delete borrow record
+    await Borrow.findByIdAndDelete(borrowId);
+
+    return {
+        status: true,
+        code: 200,
+        message: "Borrow record deleted successfully.",
+    };
+};
