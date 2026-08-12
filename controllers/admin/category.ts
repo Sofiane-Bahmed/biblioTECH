@@ -13,7 +13,7 @@ import {
 } from "../../validations/admin/category/category-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import { getPaginatedData } from "../../utils/paginate.js";
-import { addCategoryService } from "../../services/category-service.js";
+import { addCategoryService, getCategoryByIdService } from "../../services/category-service.js";
 
 export const addCategory = asyncHandler(async (
   req: AuthenticatedRequest<any, AddCategoryBody, any>,
@@ -30,13 +30,11 @@ export const getCategory = asyncHandler(async (
   req: AuthenticatedRequest<GetCategoryParams, any, any>,
   res: Response
 ): Promise<void> => {
-
   const { categoryId } = req.params;
 
-  const category = await Category.findById(categoryId);
+  const result = await getCategoryByIdService({ categoryId });
 
-  res.status(200).json(category);
-
+  res.status(result.code).json(result);
 });
 
 export const getCategories = asyncHandler(async (

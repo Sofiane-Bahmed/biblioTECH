@@ -70,3 +70,22 @@ export const addCategoryService = async ({
         data: { category: newCategory },
     };
 };
+
+export const getCategoryByIdService = async ({ categoryId }) => {
+    const category = await Category.findById(categoryId);
+
+    if (!category) {
+        return {
+            status: false,
+            code: 404,
+            message: "Category not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Category details retrieved successfully.",
+        data: { category },
+    };
+};
