@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { Category } from "../models/category.js";
+import { getPaginatedData } from "../utils/paginate.js";
 
 interface CategoryValidationResult {
     categoryIds: Types.ObjectId[];
@@ -87,5 +88,31 @@ export const getCategoryByIdService = async ({ categoryId }) => {
         code: 200,
         message: "Category details retrieved successfully.",
         data: { category },
+    };
+};
+
+export const getCategoriesService = async ({ req }) => {
+    const result = await getPaginatedData({
+        model: Category,
+        req,
+    });
+
+    if (!result || !result.data || !result.data.length) {
+        return {
+            status: true,
+            code: 200,
+            message: "No categories found.",
+            data: {
+                ...result,
+                data: [],
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Categories retrieved successfully.",
+        data: result,
     };
 };

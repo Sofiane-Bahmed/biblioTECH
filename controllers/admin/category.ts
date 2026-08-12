@@ -12,8 +12,7 @@ import {
   UpdateCategoryParams
 } from "../../validations/admin/category/category-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { getPaginatedData } from "../../utils/paginate.js";
-import { addCategoryService, getCategoryByIdService } from "../../services/category-service.js";
+import { addCategoryService, getCategoriesService, getCategoryByIdService } from "../../services/category-service.js";
 
 export const addCategory = asyncHandler(async (
   req: AuthenticatedRequest<any, AddCategoryBody, any>,
@@ -41,18 +40,9 @@ export const getCategories = asyncHandler(async (
   req: AuthenticatedRequest<any, any, getCategoriesQuery>,
   res: Response
 ): Promise<void> => {
+  const result = await getCategoriesService({ req });
 
-  const result = await getPaginatedData({
-    model: Category,
-    req
-  })
-
-  if (!result.data.length) {
-    res.status(404).json({ message: 'No categories found' });
-    return;
-  }
-
-  res.status(200).json(result);
+  res.status(result.code).json(result);
 });
 
 export const updateCategory = asyncHandler(async (
