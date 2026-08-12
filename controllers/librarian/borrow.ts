@@ -16,6 +16,7 @@ import {
   confirmHandoverService,
   deleteBorrowService,
   getBorrowByIdService,
+  getBorrowsService,
   getUserBorrowingHistoryService,
   payFineInPersonService,
   rejectBorrowRequestService,
@@ -171,38 +172,13 @@ export const getBorrows = asyncHandler(async (
 ): Promise<void> => {
   const { status, overdue } = req.query;
 
-  const dbQuery: FilterQuery<IBorrow> = {};
-
-  if (status) {
-    dbQuery.status = status
-  }
-
-  if (overdue) {
-    dbQuery.status = "ACTIVE";
-    dbQuery.due_date = { $lt: new Date() };
-  }
-
-  const result = await getPaginatedData({
-    model: Borrow,
-    query: dbQuery,
-    populate: [
-      { path: 'user', select: 'fullName email' },
-      { path: 'book', select: 'title author' }
-    ],
+  const result = await getBorrowsService({
+    status,
+    overdue,
     req,
   });
 
-  if (!result.data || !result.data.length) {
-    res.status(200)
-      .json({
-        message: "No borrowing history found",
-        data: []
-      });
-    return;
-  }
-
-  res.status(200).json(result);
-
+  res.status(result.code).json(result);
 });
 
 export const getBorrow = asyncHandler(async (

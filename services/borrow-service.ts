@@ -1,6 +1,6 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { FilterQuery, Types } from "mongoose";
 
-import { Borrow } from "../models/borrow.js";
+import { Borrow, IBorrow } from "../models/borrow.js";
 import { User } from "../models/user.js";
 import { Book, IBook } from "../models/book.js";
 import { Reservation } from "../models/reservation.js";
@@ -871,5 +871,52 @@ export const getBorrowByIdService = async ({ borrowId }) => {
         code: 200,
         message: "Borrow record details retrieved successfully.",
         data: { borrow },
+    };
+};
+
+export const getBorrowsService = async ({
+    status,
+    overdue,
+    req,
+}) => {
+    const dbQuery: FilterQuery<IBorrow> = {};
+
+    if (status) {
+        dbQuery.status = status;
+    }
+
+    // If overdue is truthy (e.g., true or "true")
+    if (overdue === true || overdue === "true") {
+        dbQuery.status = "ACTIVE";
+        dbQuery.due_date = { $lt: new Date() };
+    }
+
+    const result = await getPaginatedData({
+        model: Borrow,
+        query: dbQuery,
+        populate: [
+            { path: "user", select: "fullName email" },
+            { path: "book", select: "title author" },
+        ],
+        req,
+    });
+
+    if (!result || !result.data || !result.data.length) {
+        return {
+            status: true,
+            code: 200,
+            message: "No borrowing records found.",
+            data: {
+                ...result,
+                data: [],
+            },
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Borrowing records retrieved successfully.",
+        data: result,
     };
 };
