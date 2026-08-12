@@ -15,6 +15,7 @@ import {
 import {
   blockUserService,
   createStaffService,
+  deleteUserService,
   getUsersService,
   unblockUserService,
   updateUserRoleService
@@ -54,18 +55,13 @@ export const updateUserRole = asyncHandler(async (
 
 export const deleteUser = asyncHandler(async (
   req: AuthenticatedRequest<DeleteUserParams, any, any>,
-  res: Response)
-  : Promise<void> => {
-  const { userId } = req.params
+  res: Response
+): Promise<void> => {
+  const { userId } = req.params;
 
-  const user = await User.findByIdAndDelete(userId);
-  if (!user) {
-    res.status(404).json({ message: "user not found" });
-    return;
-  }
+  const result = await deleteUserService({ userId });
 
-  res.status(200).json({ message: "user deleted successfully" })
-
+  res.status(result.code).json(result);
 });
 
 export const getUser = asyncHandler(async (

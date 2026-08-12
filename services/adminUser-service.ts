@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { User } from "../models/user.js";
 import { AuditLog } from "../models/audit-log.js";
+import { Borrow } from "../models/borrow.js";
 
 export const createStaffService = async ({
     fullName,
@@ -306,4 +307,48 @@ export const unblockUserService = async ({
         session.endSession();
         throw error;
     }
+};
+
+export const deleteUserService = async ({ userId }) => {
+    // 1. Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+        return {
+            status: false,
+            code: 404,
+            message: "User not found.",
+        };
+    }
+
+    // 2. Prevent deletion if active borrow records exist
+    const activeBorrows = await Borrow.exists({
+        user: userId,
+        status: { $in: ["borrowed", "overdue"] },
+    });
+
+    if (activeBorrows) {
+        return {
+            status: false,
+            code: 400,
+            message: "Cannot delete user with active borrowed books.",
+        };
+    }
+
+    // 3. Prevent deletion if outstanding fines remain
+    if (user.outstanding_fines && user.outstanding_fines > 0) {
+        return {
+            status: false,
+            code: 400,
+            message: `Cannot delete user with outstanding fines ($${user.outstanding_fines.toFixed(2)}).`,
+        };
+    }
+
+    // 4. Delete user account
+    await User.findByIdAndDelete(userId);
+
+    return {
+        status: true,
+        code: 200,
+        message: "User deleted successfully.",
+    };
 };
