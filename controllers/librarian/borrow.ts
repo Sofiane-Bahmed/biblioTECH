@@ -1,12 +1,5 @@
 import { Response } from "express";
-import { FilterQuery } from "mongoose";
 
-import {
-  Borrow,
-  IBorrow,
-} from "../../models/borrow.js";
-
-import { getPaginatedData } from "../../utils/paginate.js";
 import asyncHandler from "../../utils/async-handler.js";
 
 import {

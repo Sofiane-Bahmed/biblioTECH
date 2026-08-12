@@ -5,7 +5,7 @@ import { User } from "../../models/user.js"
 import asyncHandler from "../../utils/async-handler.js";
 import { GetMyBorrowsQuery, UpdateMyProfileBody } from "../../validations/user/profile/profile-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { getMyBorrowsService, updateMyProfileService } from "../../services/profile-service.js";
+import { getMyBorrowsService, getMyProfileService, updateMyProfileService } from "../../services/profile-service.js";
 
 export const getMyBorrows = asyncHandler(async (
   req: AuthenticatedRequest<any, any, GetMyBorrowsQuery>,
@@ -42,15 +42,11 @@ export const getMyProfile = asyncHandler(async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
+  const userId = req.user!._id;
 
-  const userProfile = await User.findById(req.user!._id);
+  const result = await getMyProfileService({ userId });
 
-  if (!userProfile) {
-    res.status(404).json({ message: "user not found" })
-  }
-
-  res.status(200).json(userProfile);
-
+  res.status(result.code).json(result);
 });
 
 

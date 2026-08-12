@@ -84,3 +84,24 @@ export const updateMyProfileService = async ({
         data: { user },
     };
 };
+
+export const getMyProfileService = async ({ userId }) => {
+    const userProfile = await User
+        .findById(userId)
+        .lean();
+
+    if (!userProfile) {
+        return {
+            status: false,
+            code: 404,
+            message: "User profile not found.",
+        };
+    }
+
+    return {
+        status: true,
+        code: 200,
+        message: "Profile details retrieved successfully.",
+        data: { profile: userProfile },
+    };
+};
