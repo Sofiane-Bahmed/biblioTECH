@@ -1,8 +1,8 @@
 import { FilterQuery, Types } from "mongoose";
 
-import { Book, IBook } from "../models/book.js";
-import { Category } from "../models/category.js";
-import { getPaginatedData } from "../utils/paginate.js";
+import { Book, IBook } from "../../models/book.js";
+import { Category } from "../../models/category.js";
+import { getPaginatedData } from "../../utils/paginate.js";
 
 const escapeRegex = (text: string) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 

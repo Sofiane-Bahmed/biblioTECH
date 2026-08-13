@@ -11,7 +11,7 @@ import {
   getBookByIdService,
   getBooksService,
   searchBooksService
-} from "../../services/communBook-service.js";
+} from "../../services/commun/book.js";
 
 export const getBooks = asyncHandler(async (
   req: Request,
