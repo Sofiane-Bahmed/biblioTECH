@@ -1,8 +1,8 @@
 import { FilterQuery } from "mongoose";
 
-import { Borrow, IBorrow } from "../models/borrow.js";
-import { User } from "../models/user.js";
-import { getPaginatedData } from "../utils/paginate.js";
+import { Borrow, IBorrow } from "../../models/borrow.js";
+import { User } from "../../models/user.js";
+import { getPaginatedData } from "../../utils/paginate.js";
 
 export const getMyBorrowsService = async ({
     userId,

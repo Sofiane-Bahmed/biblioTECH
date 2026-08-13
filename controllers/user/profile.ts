@@ -1,11 +1,13 @@
 import { Response } from "express";
 
-import { User } from "../../models/user.js"
-
 import asyncHandler from "../../utils/async-handler.js";
 import { GetMyBorrowsQuery, UpdateMyProfileBody } from "../../validations/user/profile/profile-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { getMyBorrowsService, getMyProfileService, updateMyProfileService } from "../../services/profile-service.js";
+import {
+  getMyBorrowsService,
+  getMyProfileService,
+  updateMyProfileService
+} from "../../services/user/profile.js";
 
 export const getMyBorrows = asyncHandler(async (
   req: AuthenticatedRequest<any, any, GetMyBorrowsQuery>,
