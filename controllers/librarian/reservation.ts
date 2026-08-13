@@ -4,7 +4,7 @@ import {
     extendPickupDeadlineService,
     forceQueuePositionService,
     placeStaffHoldService
-} from "../../services/reservation-service.js";
+} from "../../services/librarian/reservation.js";
 import asyncHandler from "../../utils/async-handler.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import {
