@@ -19,7 +19,7 @@ import {
   getUsersService,
   unblockUserService,
   updateUserRoleService
-} from "../../services/adminUser-service.js";
+} from "../../services/admin/user.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 
 export const createStaff = asyncHandler(async (

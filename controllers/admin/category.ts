@@ -11,7 +11,13 @@ import {
   UpdateCategoryParams
 } from "../../validations/admin/category/category-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
-import { addCategoryService, deleteCategoryService, getCategoriesService, getCategoryByIdService, updateCategoryService } from "../../services/category-service.js";
+import {
+  addCategoryService,
+  deleteCategoryService,
+  getCategoriesService,
+  getCategoryByIdService,
+  updateCategoryService
+} from "../../services/admin/category.js";
 
 export const addCategory = asyncHandler(async (
   req: AuthenticatedRequest<any, AddCategoryBody, any>,

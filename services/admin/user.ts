@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
-import { User } from "../models/user.js";
-import { AuditLog } from "../models/audit-log.js";
-import { Borrow } from "../models/borrow.js";
+
+import { User } from "../../models/user.js";
+import { AuditLog } from "../../models/audit-log.js";
+import { Borrow } from "../../models/borrow.js";
 
 export const createStaffService = async ({
     fullName,

@@ -1,7 +1,8 @@
 import { Types } from "mongoose";
-import { Category } from "../models/category.js";
-import { getPaginatedData } from "../utils/paginate.js";
-import { Book } from "../models/book.js";
+
+import { Category } from "../../models/category.js";
+import { getPaginatedData } from "../../utils/paginate.js";
+import { Book } from "../../models/book.js";
 
 interface CategoryValidationResult {
     categoryIds: Types.ObjectId[];
