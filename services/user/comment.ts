@@ -1,9 +1,9 @@
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 
-import { Book } from "../models/book.js";
-import { Comment } from "../models/comment.js";
-import { User } from "../models/user.js";
-import { getPaginatedData } from "../utils/paginate.js";
+import { Book } from "../../models/book.js";
+import { Comment } from "../../models/comment.js";
+import { User } from "../../models/user.js";
+import { getPaginatedData } from "../../utils/paginate.js";
 
 export const addCommentService = async ({
     userId,

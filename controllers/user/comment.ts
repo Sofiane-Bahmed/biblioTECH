@@ -17,7 +17,7 @@ import {
     getBookCommentsService,
     getCommentService,
     updateCommentService
-} from "../../services/comment-services.js";
+} from "../../services/user/comment.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 
 export const addComment = asyncHandler(async (
