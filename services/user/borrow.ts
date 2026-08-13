@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { checkBorrowEligibility, checkCancellationEligibility } from "../borrow-service.js";
+import { checkBorrowEligibility, checkCancellationEligibility } from "../librarian/borrow.js";
 import { Book } from "../../models/book.js";
 import { Borrow } from "../../models/borrow.js";
 import { Reservation } from "../../models/reservation.js";

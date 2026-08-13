@@ -14,7 +14,7 @@ import {
   payFineInPersonService,
   rejectBorrowRequestService,
   returnBookService
-} from "../../services/borrow-service.js";
+} from "../../services/librarian/borrow.js";
 
 import {
   ApproveBorrowBody,
