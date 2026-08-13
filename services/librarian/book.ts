@@ -1,10 +1,16 @@
 import { Types } from "mongoose";
-import { Book } from "../models/book.js";
-import { UpdateBookBody } from "../validations/librarian/book/book-types.js";
-import { getOrCreateCategories, validateExistingCategories } from "./category-service.js";
-import { fetchBookMetadataByIsbn } from "./googleBooks-service.js";
-import { notifySubscribersAboutNewBook } from "./notification-service.js";
-import { Borrow } from "../models/borrow.js";
+
+import { Book } from "../../models/book.js";
+import { UpdateBookBody } from "../../validations/librarian/book/book-types.js";
+import { getOrCreateCategories, validateExistingCategories } from "../../services/admin/category.js";
+import { fetchBookMetadataByIsbn } from "../googleBooks-service.js";
+import { notifySubscribersAboutNewBook } from "../notification-service.js";
+import { Borrow } from "../../models/borrow.js";
+
+interface BookUpdatePayload extends Omit<UpdateBookBody, "category"> {
+    category?: Types.ObjectId[];
+    cover_image?: string;
+}
 
 export const addBookService = async ({
     title,
@@ -142,11 +148,6 @@ export const autoAddBookByIsbnService = async ({
         data: newBook,
     };
 };
-
-interface BookUpdatePayload extends Omit<UpdateBookBody, "category"> {
-    category?: Types.ObjectId[];
-    cover_image?: string;
-}
 
 export const updateBookService = async ({
     bookId,

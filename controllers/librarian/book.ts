@@ -6,7 +6,7 @@ import {
   autoAddBookByIsbnService,
   deleteBookService,
   updateBookService
-} from "../../services/books-service.js";
+} from "../../services/librarian/book.js";
 import {
   AddBookBody,
   AutoImportBookBody,
