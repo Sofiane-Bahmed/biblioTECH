@@ -2,9 +2,9 @@
 import bcrypt from "bcrypt"
 import Jwt from "jsonwebtoken"
 
-import { User } from "../models/user.js";
-import { sendWelcomeEmail } from "../utils/email/welcome.js";
-import { sendPasswordResetEmail } from "../utils/email/reset-password.js";
+import { User } from "../../models/user.js";
+import { sendWelcomeEmail } from "../../utils/email/welcome.js";
+import { sendPasswordResetEmail } from "../../utils/email/reset-password.js";
 
 interface JwtPayload {
     _id: string;
