@@ -12,7 +12,7 @@ import {
   cancelBorrowRequestService,
   renewBorrowService,
   requestBorrowService
-} from "../../services/userBorrow-service.js";
+} from "../../services/user/borrow.js";
 
 export const BorrowRequest = asyncHandler(async (
   req: AuthenticatedRequest<RequestBorrowParams, any, any>,

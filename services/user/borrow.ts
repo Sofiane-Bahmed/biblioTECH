@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 
-import { checkBorrowEligibility, checkCancellationEligibility } from "./borrow-service.js";
-import { Book } from "../models/book.js";
-import { Borrow } from "../models/borrow.js";
-import { Reservation } from "../models/reservation.js";
-import { processNextInLineOrRestock } from "./reservation-service.js";
-import { BORROWING_RULES } from "../constants/library-rules.js";
+import { checkBorrowEligibility, checkCancellationEligibility } from "../borrow-service.js";
+import { Book } from "../../models/book.js";
+import { Borrow } from "../../models/borrow.js";
+import { Reservation } from "../../models/reservation.js";
+import { processNextInLineOrRestock } from "../reservation-service.js";
+import { BORROWING_RULES } from "../../constants/library-rules.js";
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
