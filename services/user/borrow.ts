@@ -1,14 +1,16 @@
 import mongoose from "mongoose";
 
-import { checkBorrowEligibility, checkCancellationEligibility } from "../librarian/borrow.js";
+import {
+    checkBorrowEligibility,
+    checkCancellationEligibility
+} from "../librarian/borrow.js";
 import { Book } from "../../models/book.js";
 import { Borrow } from "../../models/borrow.js";
 import { Reservation } from "../../models/reservation.js";
-import { processNextInLineOrRestock } from "../reservation-service.js";
+import { processNextInLineOrRestock } from "../librarian/reservation.js";
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 
 const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
-
 
 export const requestBorrowService = async ({
     userId,
@@ -226,95 +228,95 @@ export const cancelBorrowRequestService = async ({
 };
 
 export const renewBorrowService = async ({
-  borrowId,
-  userId,
+    borrowId,
+    userId,
 }) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-  try {
-    // 1. Fetch active borrow record within session
-    const borrow = await Borrow.findOne({
-      _id: borrowId,
-      user: userId,
-      status: "ACTIVE",
-    }).session(session);
+    try {
+        // 1. Fetch active borrow record within session
+        const borrow = await Borrow.findOne({
+            _id: borrowId,
+            user: userId,
+            status: "ACTIVE",
+        }).session(session);
 
-    if (!borrow) {
-      await session.abortTransaction();
-      session.endSession();
-      return {
-        status: false,
-        code: 404,
-        message: "Active borrow record not found.",
-      };
+        if (!borrow) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 404,
+                message: "Active borrow record not found.",
+            };
+        }
+
+        // 2. Check if already renewed
+        if (borrow.renewed) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "The maximum number of renewals (1) has been reached for this loan.",
+            };
+        }
+
+        // 3. Check if loan is overdue
+        const currentDate = new Date();
+        if (currentDate > borrow.due_date) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Cannot renew an overdue book. Please return it to the library to settle any late fees.",
+            };
+        }
+
+        // 4. Check if other patrons are waiting on the hold queue
+        const pendingHoldCount = await Reservation.countDocuments({
+            book: borrow.book,
+            status: "PENDING",
+        }).session(session);
+
+        if (pendingHoldCount > 0) {
+            await session.abortTransaction();
+            session.endSession();
+            return {
+                status: false,
+                code: 400,
+                message: "Renewal unavailable. Another patron is currently on the waiting list for this title.",
+            };
+        }
+
+        // 5. Calculate new due date and save
+        const newDueDate = new Date(borrow.due_date);
+        newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
+
+        borrow.renewed = true;
+        borrow.due_date = newDueDate;
+        await borrow.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        // Re-populate for response payload
+        await borrow.populate("book");
+
+        return {
+            status: true,
+            code: 200,
+            message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
+            data: {
+                borrow,
+                newDueDate: borrow.due_date,
+            },
+        };
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
     }
-
-    // 2. Check if already renewed
-    if (borrow.renewed) {
-      await session.abortTransaction();
-      session.endSession();
-      return {
-        status: false,
-        code: 400,
-        message: "The maximum number of renewals (1) has been reached for this loan.",
-      };
-    }
-
-    // 3. Check if loan is overdue
-    const currentDate = new Date();
-    if (currentDate > borrow.due_date) {
-      await session.abortTransaction();
-      session.endSession();
-      return {
-        status: false,
-        code: 400,
-        message: "Cannot renew an overdue book. Please return it to the library to settle any late fees.",
-      };
-    }
-
-    // 4. Check if other patrons are waiting on the hold queue
-    const pendingHoldCount = await Reservation.countDocuments({
-      book: borrow.book,
-      status: "PENDING",
-    }).session(session);
-
-    if (pendingHoldCount > 0) {
-      await session.abortTransaction();
-      session.endSession();
-      return {
-        status: false,
-        code: 400,
-        message: "Renewal unavailable. Another patron is currently on the waiting list for this title.",
-      };
-    }
-
-    // 5. Calculate new due date and save
-    const newDueDate = new Date(borrow.due_date);
-    newDueDate.setDate(newDueDate.getDate() + RENEWAL_DAYS_EXTENSION);
-
-    borrow.renewed = true;
-    borrow.due_date = newDueDate;
-    await borrow.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    // Re-populate for response payload
-    await borrow.populate("book");
-
-    return {
-      status: true,
-      code: 200,
-      message: `Book renewal approved. Due date extended by ${RENEWAL_DAYS_EXTENSION} days.`,
-      data: {
-        borrow,
-        newDueDate: borrow.due_date,
-      },
-    };
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
-  }
 };

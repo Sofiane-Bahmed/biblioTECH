@@ -14,8 +14,13 @@ const { sign, verify } = Jwt;
 const DUMMY_HASH = "$2b$10$Nx7K.1l6QAnA7V83rGgM7.u8jF.uMlz/5S2d/zYwFfH3yWBy7p7O.";
 
 export const registerUserService = async (input) => {
-    const { fullName, password, email, phone, confirmPassword } = input;
-
+    const {
+        fullName,
+        password,
+        email,
+        phone,
+        confirmPassword
+    } = input;
 
     // Assign admin role if first user in database
     const isFirstUser = (await User.countDocuments()) === 0;
