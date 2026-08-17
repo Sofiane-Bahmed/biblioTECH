@@ -15,7 +15,7 @@ import {
   refreshTokensService,
   registerUserService,
   resetPasswordService
-} from "../../services/commun/auth.js";
+} from "../../services/Common/auth.js";
 
 export const register = asyncHandler(async (
   req: Request,
