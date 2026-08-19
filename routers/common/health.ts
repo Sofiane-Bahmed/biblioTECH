@@ -4,7 +4,7 @@ import { getHealthStatus } from "../../controllers/common/health.js"
 
 export const healthRouter: Router = express.Router()
 
-healthRouter.get("/health", getHealthStatus)
+healthRouter.get("/", getHealthStatus)
 
 
 

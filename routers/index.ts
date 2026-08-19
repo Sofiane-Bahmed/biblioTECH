@@ -18,12 +18,14 @@ import { adminstatisticsRouter } from "./admin/analytics.js";
 
 import { authenticate } from "../middlewares/authenticate.js";
 import { authorize } from "../middlewares/authorize.js";
+import { healthRouter } from "./common/health.js";
 
 const router: Router = express.Router();
 
 // 1. PUBLIC ROUTES
 router.use("/auth", authRouter);
 router.use("/books", publicBookRouter);
+router.use("/health", healthRouter);
 
 // 2. PATRON / ALL AUTHENTICATED USERS
 router.use("/user/profile", authenticate, authorize("user", "librarian", "admin"), profileRouter);
