@@ -37,7 +37,7 @@ jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     };
 });
 
-// Dynamic imports after module mocks executed
+// Dynamic imports after module mocks execute
 const { default: app } = await import("../../app.js");
 const { Comment } = await import("../../models/comment.js");
 const { Book } = await import("../../models/book.js");
@@ -61,13 +61,13 @@ describe("💬 User Comment Operations", () => {
             await mongoose.connect(process.env.DBURI!);
         }
 
-        // Cleanup previous state
+        // 1. Isolate environment records
         await User.deleteMany({ email: /comment-test/ });
         await Category.deleteMany({ title: "Comment Category" });
         await Book.deleteMany({ title: "Comment Test Book" });
         await Comment.deleteMany({});
 
-        // 1. Setup Users
+        // 2. Setup Test Entities
         testUser1 = await User.create({
             fullName: "User One",
             email: "user1-comment-test@test.com",
@@ -85,13 +85,11 @@ describe("💬 User Comment Operations", () => {
         user1Token = Jwt.sign({ _id: testUser1._id, role: "user" }, process.env.JWT_ACCESS_SECRET!);
         user2Token = Jwt.sign({ _id: testUser2._id, role: "user" }, process.env.JWT_ACCESS_SECRET!);
 
-        // 2. Setup Category
         testCategory = await Category.create({
             title: "Comment Category",
             description: "Category for comment testing"
         });
 
-        // 3. Setup Book
         testBook = await Book.create({
             title: "Comment Test Book",
             isbn: "4444444444444",
@@ -107,6 +105,10 @@ describe("💬 User Comment Operations", () => {
     });
 
     afterAll(async () => {
+        await User.deleteMany({ email: /comment-test/ });
+        await Category.deleteMany({ title: "Comment Category" });
+        await Book.deleteMany({ title: "Comment Test Book" });
+        await Comment.deleteMany({});
         await mongoose.connection.close();
     });
 
@@ -119,10 +121,12 @@ describe("💬 User Comment Operations", () => {
                 .send({ comment: "This is a great book!" });
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.comment).toBe("This is a great book!");
-            expect(res.body.book).toBe(testBook._id.toString());
+            expect(res.body.status).toBe(true);
+            expect(res.body.message).toBe("Comment posted successfully.");
+            expect(res.body.data.comment).toBe("This is a great book!");
+            expect(res.body.data.book).toBe(testBook._id.toString());
 
-            parentCommentId = res.body._id;
+            parentCommentId = res.body.data._id;
         });
 
         it("Should allow a user to post a reply to a comment", async () => {
@@ -135,16 +139,17 @@ describe("💬 User Comment Operations", () => {
                 });
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.parentComment).toBe(parentCommentId.toString());
+            expect(res.body.status).toBe(true);
+            expect(res.body.data.parentComment).toBe(parentCommentId.toString());
 
-            replyCommentId = res.body._id;
+            replyCommentId = res.body.data._id;
 
-            // Verify parent structural node links the children array element
+            // Verify transactional parent linkage
             const parent = await Comment.findById(parentCommentId);
             expect(parent!.replies).toContainEqual(new mongoose.Types.ObjectId(replyCommentId));
         });
 
-        it("Should fail if the book does not exist", async () => {
+        it("Should fail if target book document does not exist", async () => {
             const fakeId = new mongoose.Types.ObjectId().toString();
             const res = await request(app)
                 .post(`/api/user/comments/book/${fakeId}`)
@@ -152,91 +157,99 @@ describe("💬 User Comment Operations", () => {
                 .send({ comment: "Irrelevant comment" });
 
             expect(res.statusCode).toBe(404);
+            expect(res.body.status).toBe(false);
+            expect(res.body.message).toBe("Book not found.");
         });
     });
 
     // --- GET /api/user/comments/book/:bookId ---
     describe("GET /api/user/comments/book/:bookId", () => {
-        it("Should return parent comments with a paginated layer wrapper", async () => {
+        it("Should return parent comments with paginated metadata", async () => {
             const res = await request(app)
                 .get(`/api/user/comments/book/${testBook._id}`)
                 .set("Cookie", [`accessToken=${user1Token}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.data).toBeDefined();
-            expect(Array.isArray(res.body.data)).toBe(true);
-            // Returns parent nodes only (the reply is deep populated inside the parent array field)
-            expect(res.body.data.length).toBe(1);
+            expect(res.body.status).toBe(true);
+            expect(res.body.data.data).toBeDefined();
+            expect(Array.isArray(res.body.data.data)).toBe(true);
+            expect(res.body.data.data.length).toBe(1);
         });
     });
 
     // --- GET /api/user/comments/:commentId ---
     describe("GET /api/user/comments/:commentId", () => {
-        it("Should return a single comment document with deep population mappings resolved", async () => {
+        it("Should return single comment with deeply populated fields", async () => {
             const res = await request(app)
                 .get(`/api/user/comments/${parentCommentId}`)
                 .set("Cookie", [`accessToken=${user1Token}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.comment).toBe("This is a great book!");
-            expect(res.body.replies.length).toBe(1);
+            expect(res.body.status).toBe(true);
+            expect(res.body.data.comment).toBe("This is a great book!");
+            expect(res.body.data.replies.length).toBe(1);
         });
     });
 
     // --- PUT /api/user/comments/:commentId ---
     describe("PUT /api/user/comments/:commentId", () => {
-        it("Should allow owners to update their own message fields strings", async () => {
+        it("Should allow owners to update comment text content", async () => {
             const res = await request(app)
                 .put(`/api/user/comments/${parentCommentId}`)
                 .set("Cookie", [`accessToken=${user1Token}`])
                 .send({ comment: "Actually, it is a fantastic book!" });
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.comment.comment).toBe("Actually, it is a fantastic book!");
+            expect(res.body.status).toBe(true);
+            expect(res.body.data.comment).toBe("Actually, it is a fantastic book!");
         });
 
-        it("Should prevent editing resource streams belonging to distinct users", async () => {
+        it("Should prevent updates by users who do not own the comment", async () => {
             const res = await request(app)
                 .put(`/api/user/comments/${parentCommentId}`)
                 .set("Cookie", [`accessToken=${user2Token}`])
-                .send({ comment: "Malicious Injection Payload" });
+                .send({ comment: "Unauthorized modification attempt" });
 
             expect(res.statusCode).toBe(404);
+            expect(res.body.status).toBe(false);
             expect(res.body.message).toBe("Comment not found or you are not authorized to edit this resource.");
         });
     });
 
     // --- DELETE /api/user/comments/:commentId ---
     describe("DELETE /api/user/comments/:commentId", () => {
-        it("Should throw a 403 authorization guard barrier for unlinked user interactions", async () => {
+        it("Should reject deletion requests from non-owners or non-admins", async () => {
             const res = await request(app)
                 .delete(`/api/user/comments/${replyCommentId}`)
                 .set("Cookie", [`accessToken=${user1Token}`]);
 
             expect(res.statusCode).toBe(403);
+            expect(res.body.status).toBe(false);
             expect(res.body.message).toBe("Unauthorized: You cannot remove this resource.");
         });
 
-        it("Should fallback to Soft Delete masking algorithms if comments contain active reply blocks", async () => {
+        it("Should soft-delete and mask comments that have active replies", async () => {
             const res = await request(app)
                 .delete(`/api/user/comments/${parentCommentId}`)
                 .set("Cookie", [`accessToken=${user1Token}`]);
 
             expect(res.statusCode).toBe(200);
+            expect(res.body.status).toBe(true);
             expect(res.body.message).toBe("Comment masked successfully.");
 
             const softDeletedParent = await Comment.findById(parentCommentId);
             expect(softDeletedParent!.isDeleted).toBe(true);
             expect(softDeletedParent!.comment).toBe("This comment has been removed.");
-            expect(softDeletedParent!.user).toBeUndefined(); // $unset mechanism verified
+            expect(softDeletedParent!.user).toBeUndefined();
         });
 
-        it("Should run Hard Delete sequence pathways instantly if target logs contain no children nodes", async () => {
+        it("Should hard-delete comments that have no replies and unlink references", async () => {
             const res = await request(app)
                 .delete(`/api/user/comments/${replyCommentId}`)
                 .set("Cookie", [`accessToken=${user2Token}`]);
 
             expect(res.statusCode).toBe(200);
+            expect(res.body.status).toBe(true);
             expect(res.body.message).toBe("Comment permanently erased from ecosystem.");
 
             const hardDeletedReply = await Comment.findById(replyCommentId);
