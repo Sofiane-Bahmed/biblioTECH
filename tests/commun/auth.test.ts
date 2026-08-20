@@ -2,277 +2,251 @@ import request from "supertest";
 import mongoose from "mongoose";
 import { jest } from "@jest/globals";
 
-// Mocking external email services securely without type trapping
 jest.unstable_mockModule("axios", () => ({
-    default: {
-        get: jest.fn(),
-        post: jest.fn(),
-        put: jest.fn(),
-        delete: jest.fn(),
-    }
+  default: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule("resend", () => ({
-    Resend: jest.fn().mockImplementation(() => ({
-        emails: {
-            send: jest.fn().mockImplementation(() =>
-                Promise.resolve({ data: { id: "test-id" }, error: null })
-            ),
-        },
-    })),
+  Resend: jest.fn().mockImplementation(() => ({
+    emails: {
+      send: jest.fn().mockImplementation(() =>
+        Promise.resolve({ data: { id: "test-id" }, error: null })
+      ),
+    },
+  })),
 }));
 
-// Mock Cloudinary storage
-jest.unstable_mockModule("../../config/cloudinary.js", async () => {
-    return {
-        cloudinary: {
-            config: jest.fn(),
-        },
-        storage: {
-            _handleFile: (req: any, file: any, cb: any) => {
-                file.stream.on("data", () => { });
-                file.stream.on("end", () => {
-                    cb(null, {
-                        path: "http://mock-cloudinary.com/image.jpg",
-                        size: 1234
-                    });
-                });
-                file.stream.on("error", (err: Error) => cb(err));
-            },
-            _removeFile: (req: any, file: any, cb: any) => {
-                cb(null);
-            }
-        },
-    };
-});
+jest.unstable_mockModule("../../config/cloudinary.js", async () => ({
+  cloudinary: { config: jest.fn() },
+  storage: {
+    _handleFile: (req: any, file: any, cb: any) => {
+      file.stream.on("data", () => {});
+      file.stream.on("end", () => {
+        cb(null, { path: "http://mock-cloudinary.com/image.jpg", size: 1234 });
+      });
+      file.stream.on("error", (err: Error) => cb(err));
+    },
+    _removeFile: (req: any, file: any, cb: any) => { cb(null); },
+  },
+}));
 
-// Dynamic imports after mocks
 const { default: app } = await import("../../app.js");
 const { User } = await import("../../models/user.js");
 
 jest.setTimeout(15000);
 
-describe("季 Authentication Operations", () => {
-    let accessToken: string;
-    let refreshToken: string;
+describe("🔑 Authentication Operations", () => {
+  let accessToken: string;
+  let refreshToken: string;
 
-    beforeAll(async () => {
-        if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(process.env.DBURI!);
-        }
-        // Purge user records to isolate testing environment states
-        await User.deleteMany({});
+  beforeAll(async () => {
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.DBURI!);
+    }
+    await User.deleteMany({});
+  });
+
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  describe("POST /api/auth/register", () => {
+    it("Should register the first user as an admin", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({
+          fullName: "First Admin",
+          email: "admin@test.com",
+          password: "password123",
+          confirmPassword: "password123",
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.user.role).toBe("admin");
+      expect(res.body.data.user.email).toBe("admin@test.com");
     });
 
-    afterAll(async () => {
-        await mongoose.connection.close();
+    it("Should register subsequent users as regular users", async () => {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({
+          fullName: "Regular User",
+          email: "user@test.com",
+          password: "password123",
+          confirmPassword: "password123",
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.user.role).toBe("user");
+    });
+  });
+
+  describe("POST /api/auth/login", () => {
+    it("Should login successfully and set HTTP-Only cookies", async () => {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({
+          email: "user@test.com",
+          password: "password123",
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe("Welcome back!");
+      expect(res.headers["set-cookie"]).toBeDefined();
+
+      const cookies = (res.headers["set-cookie"] || []) as string[];
+      const accessCookie = cookies.find((c) => c.startsWith("accessToken="));
+      const refreshCookie = cookies.find((c) => c.startsWith("refreshToken="));
+
+      expect(accessCookie).toBeDefined();
+      expect(refreshCookie).toBeDefined();
+
+      accessToken = accessCookie!.split(";")[0].split("=")[1];
+      refreshToken = refreshCookie!.split(";")[0].split("=")[1];
     });
 
-    // --- POST /api/auth/register ---
-    describe("POST /api/auth/register", () => {
-        it("Should register the first user as an admin", async () => {
-            const res = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    fullName: "First Admin",
-                    email: "admin@test.com",
-                    password: "password123",
-                    confirmPassword: "password123"
-                });
-
-            expect(res.statusCode).toBe(201);
-            expect(res.body.role).toBe("admin");
-            expect(res.body.email).toBe("admin@test.com");
+    it("Should fail with incorrect password credentials", async () => {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({
+          email: "user@test.com",
+          password: "wrongpassword",
         });
 
-        it("Should register subsequent users as regular users", async () => {
-            const res = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    fullName: "Regular User",
-                    email: "user@test.com",
-                    password: "password123",
-                    confirmPassword: "password123"
-                });
-
-            expect(res.statusCode).toBe(201);
-            expect(res.body.role).toBe("user");
-        });
+      expect(res.statusCode).toBe(401);
+      expect(res.body.message).toBe("Invalid email or password credentials.");
     });
 
-    // --- POST /api/auth/login ---
-    describe("POST /api/auth/login", () => {
-        it("Should login successfully and set HTTP-Only cookies", async () => {
-            const res = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: "user@test.com",
-                    password: "password123"
-                });
+    it("Should fail for explicitly blocked accounts", async () => {
+      await User.findOneAndUpdate({ email: "user@test.com" }, { isBlocked: true });
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe("Welcome back!");
-            expect(res.headers["set-cookie"]).toBeDefined();
-
-            const cookies = (res.headers["set-cookie"] || []) as string[];
-            const accessCookie = cookies.find(c => c.startsWith("accessToken="));
-            const refreshCookie = cookies.find(c => c.startsWith("refreshToken="));
-
-            expect(accessCookie).toBeDefined();
-            expect(refreshCookie).toBeDefined();
-
-            accessToken = accessCookie!.split(";")[0].split("=")[1];
-            refreshToken = refreshCookie!.split(";")[0].split("=")[1];
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({
+          email: "user@test.com",
+          password: "password123",
         });
 
-        it("Should fail with incorrect password credentials", async () => {
-            const res = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: "user@test.com",
-                    password: "wrongpassword"
-                });
+      expect(res.statusCode).toBe(403);
+      expect(res.body.message).toContain("blocked");
 
-            expect(res.statusCode).toBe(401);
-            expect(res.body.message).toBe("Invalid email or password credentials.");
-        });
+      await User.findOneAndUpdate({ email: "user@test.com" }, { isBlocked: false });
+    });
+  });
 
-        it("Should fail for explicitly blocked accounts", async () => {
-            await User.findOneAndUpdate({ email: "user@test.com" }, { isBlocked: true });
+  describe("POST /api/auth/refresh", () => {
+    it("Should verify, rotate, and reissue cookie structures", async () => {
+      const res = await request(app)
+        .post("/api/auth/refresh")
+        .set("Cookie", [`refreshToken=${refreshToken}`]);
 
-            const res = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: "user@test.com",
-                    password: "password123"
-                });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe("Token refreshed and rotated successfully.");
+      expect(res.headers["set-cookie"]).toBeDefined();
 
-            expect(res.statusCode).toBe(403);
-            expect(res.body.message).toContain("blocked");
-
-            await User.findOneAndUpdate({ email: "user@test.com" }, { isBlocked: false });
-        });
+      const cookies = (res.headers["set-cookie"] || []) as string[];
+      refreshToken = cookies
+        .find((c) => c.startsWith("refreshToken="))!
+        .split(";")[0]
+        .split("=")[1];
     });
 
-    // --- POST /api/auth/refresh ---
-    describe("POST /api/auth/refresh", () => {
-        it("Should verify, rotate, and reissue cookie structures", async () => {
-            const res = await request(app)
-                .post("/api/auth/refresh")
-                .set("Cookie", [`refreshToken=${refreshToken}`]);
+    it("Should reject completely unauthorized or invalid token formats", async () => {
+      const res = await request(app)
+        .post("/api/auth/refresh")
+        .set("Cookie", ["refreshToken=malformed-token-signature"]);
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe("Token refreshed and rotated successfully");
-            expect(res.headers["set-cookie"]).toBeDefined();
+      expect(res.statusCode).toBe(401);
+    });
+  });
 
-            const cookies = (res.headers["set-cookie"] || []) as string[];
-            refreshToken = cookies.find(c => c.startsWith("refreshToken="))!.split(";")[0].split("=")[1];
-        });
+  describe("POST /api/auth/forgot-password & reset-password", () => {
+    let plainResetToken: string;
 
-        it("Should reject completely unauthorized or invalid token formats", async () => {
-            const res = await request(app)
-                .post("/api/auth/refresh")
-                .set("Cookie", ["refreshToken=malformed-token-signature"]);
+    it("Should securely dispatch recovery instructions matching the console log tracking format", async () => {
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
 
-            expect(res.statusCode).toBe(401);
-        });
+      const res = await request(app)
+        .post("/api/auth/forgot-password")
+        .send({ email: "user@test.com" });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe(
+        "If an account with that email exists, a password reset link has been dispatched shortly."
+      );
+
+      const targetedLogCall = consoleSpy.mock.calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("Generated reset token for user@test.com:")
+      );
+
+      expect(targetedLogCall).toBeDefined();
+      const logMessage = targetedLogCall![0] as string;
+      plainResetToken = logMessage
+        .split("Generated reset token for user@test.com: ")[1]
+        .trim();
+
+      consoleSpy.mockRestore();
     });
 
-    // --- Forgot & Reset Password Flow ---
-    describe("POST /api/auth/forgot-password & reset-password", () => {
-        let plainResetToken: string;
+    it("Should modify the password document parameter given a valid plain reset token signature", async () => {
+      const res = await request(app)
+        .patch(`/api/auth/reset-password/${plainResetToken}`)
+        .send({ password: "newpassword123" });
 
-        it("Should securely dispatch recovery instructions matching the console log tracking format", async () => {
-            const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => { });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe("Password reset successful!");
 
-            const res = await request(app)
-                .post("/api/auth/forgot-password")
-                .send({ email: "user@test.com" });
-
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe("If an account with that email exists, a password reset link has been dispatched shortly.");
-
-            // Extract the generated token using a partial matching lookahead regex expression
-            const targetedLogCall = consoleSpy.mock.calls.find(call =>
-                typeof call[0] === "string" && call[0].startsWith("Generated reset token for user@test.com:")
-            );
-
-            expect(targetedLogCall).toBeDefined();
-            const logMessage = targetedLogCall![0] as string;
-            plainResetToken = logMessage.split("Generated reset token for user@test.com: ")[1].trim();
-
-            consoleSpy.mockRestore();
+      const loginRes = await request(app)
+        .post("/api/auth/login")
+        .send({
+          email: "user@test.com",
+          password: "newpassword123",
         });
-
-        it("Should modify the password document parameter given a valid plain reset token signature", async () => {
-            const res = await request(app)
-                .patch(`/api/auth/reset-password/${plainResetToken}`)
-                .send({ password: "newpassword123" });
-
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe("Password reset successful!");
-
-            // Re-authenticate using updated payload keys to assert document change success
-            const loginRes = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: "user@test.com",
-                    password: "newpassword123"
-                });
-            expect(loginRes.statusCode).toBe(200);
-
-            const cookieHeader = loginRes.headers["set-cookie"];
-            const cookies = Array.isArray(cookieHeader)
-                ? cookieHeader
-                : cookieHeader
-                    ? [cookieHeader]
-                    : [];
-
-            const refreshCookie = cookies.find(c => c.startsWith("refreshToken="));
-        });
+      expect(loginRes.statusCode).toBe(200);
     });
+  });
 
-    // --- POST /api/auth/logout ---
-    describe("POST /api/auth/logout", () => {
-        it("Should drop token indexes and clear client runtime cookies", async () => {
-            const email = "user@test.com";
-            const password = "password123";
+  describe("POST /api/auth/logout", () => {
+    it("Should drop token indexes and clear client runtime cookies", async () => {
+      const email = "logout-user@test.com";
+      const password = "password123";
 
-            // Clear any leftover test user to prevent duplicate key errors
-            await User.deleteOne({ email });
+      await User.deleteOne({ email });
 
-            await User.create({
-                fullName: "Test User",
-                email,
-                password,
-                role: "user",
-            });
+      await User.create({
+        fullName: "Logout Test User",
+        email,
+        password,
+        role: "user",
+      });
 
-            // Start the supertest agent
-            const agent = request.agent(app);
+      const agent = request.agent(app);
 
-            const loginRes = await agent
-                .post("/api/auth/login")
-                .send({
-                    email,
-                    password
-                });
+      const loginRes = await agent.post("/api/auth/login").send({
+        email,
+        password,
+      });
 
-            expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.statusCode).toBe(200);
 
-            const logoutRes = await agent.post("/api/auth/logout");
+      const logoutRes = await agent.post("/api/auth/logout");
 
-            expect(logoutRes.statusCode).toBe(200);
-            expect(logoutRes.body.message).toBe("User logged out successfully");
+      expect(logoutRes.statusCode).toBe(200);
+      expect(logoutRes.body.message).toBe("User logged out successfully.");
 
-            // Assert client cookies are cleared
-            const cookies = (logoutRes.headers["set-cookie"] || []) as string[];
-            expect(cookies.find(c => c.startsWith("accessToken=;"))).toBeDefined();
-            expect(cookies.find(c => c.startsWith("refreshToken=;"))).toBeDefined();
+      const cookies = (logoutRes.headers["set-cookie"] || []) as string[];
+      expect(cookies.find((c) => c.startsWith("accessToken=;"))).toBeDefined();
+      expect(cookies.find((c) => c.startsWith("refreshToken=;"))).toBeDefined();
 
-            // Assert database has been updated
-            const user = await User.findOne({ email }).select("+refreshToken");
-            expect(user!.refreshToken).toBeNull();
-        });
+      const user = await User.findOne({ email }).select("+refreshToken");
+      expect(user!.refreshToken).toBeNull();
     });
+  });
 });
