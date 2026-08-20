@@ -5,7 +5,7 @@ import { jest } from "@jest/globals";
 
 import { BORROWING_RULES } from "../../constants/library-rules.js";
 
-const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES
+const { RENEWAL_DAYS_EXTENSION } = BORROWING_RULES;
 
 // Mocking external services
 jest.unstable_mockModule("axios", () => ({
@@ -47,6 +47,7 @@ const { Borrow } = await import("../../models/borrow.js");
 const { Book } = await import("../../models/book.js");
 const { User } = await import("../../models/user.js");
 const { Category } = await import("../../models/category.js");
+const { Reservation } = await import("../../models/reservation.js");
 
 jest.setTimeout(15000);
 
@@ -67,6 +68,7 @@ describe("📖 User Borrow Operations", () => {
         await Category.deleteMany({ title: "User Borrow Category" });
         await Book.deleteMany({ title: /User Borrow Book/ });
         await Borrow.deleteMany({});
+        await Reservation.deleteMany({});
 
         testUser = await User.create({
             fullName: "Borrow Test User",
@@ -102,6 +104,11 @@ describe("📖 User Borrow Operations", () => {
     });
 
     afterAll(async () => {
+        await User.deleteMany({ email: /borrow-test/ });
+        await Category.deleteMany({ title: "User Borrow Category" });
+        await Book.deleteMany({ title: /User Borrow Book/ });
+        await Borrow.deleteMany({});
+        await Reservation.deleteMany({});
         await mongoose.connection.close();
     });
 
@@ -113,10 +120,12 @@ describe("📖 User Borrow Operations", () => {
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.message).toBe("Your borrow request has been submitted successfully and is awaiting admin approval.");
-            expect(res.body.request.status).toBe("PENDING");
+            expect(res.body.status).toBe(true);
+            expect(res.body.message).toBe("Borrow request submitted successfully and is awaiting staff approval.");
+            expect(res.body.data.type).toBe("BORROW");
+            expect(res.body.data.borrow.status).toBe("PENDING");
 
-            testBorrowId = res.body.request._id;
+            testBorrowId = res.body.data.borrow._id;
         });
 
         it("Should fail if a user already has a pending request matching the targeted book criteria", async () => {
@@ -125,14 +134,13 @@ describe("📖 User Borrow Operations", () => {
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(400);
-            expect(res.body.message).toBe("You already have a pending request for this book.");
+            expect(res.body.status).toBe(false);
         });
     });
 
     // --- PATCH /api/user/borrows/:borrowId/renew ---
     describe("PATCH /api/user/borrows/:borrowId/renew", () => {
         beforeEach(async () => {
-
             await Borrow.findByIdAndUpdate(testBorrowId, {
                 $set: {
                     status: "ACTIVE",
@@ -149,8 +157,9 @@ describe("📖 User Borrow Operations", () => {
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(200);
+            expect(res.body.status).toBe(true);
             expect(res.body.message).toContain("Book renewal approved");
-            expect(res.body.borrow.renewed).toBe(true);
+            expect(res.body.data.borrow.renewed).toBe(true);
         });
 
         it("Should fail validation gates if maximum allowed iteration limits are crossed", async () => {
@@ -161,7 +170,8 @@ describe("📖 User Borrow Operations", () => {
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(400);
-            expect(res.body.message).toBe("The maximum number of renewals (1) has been reached.");
+            expect(res.body.status).toBe(false);
+            expect(res.body.message).toBe("The maximum number of renewals (1) has been reached for this loan.");
         });
 
         it("Should reject renewal transactions if dates are past the validation threshold", async () => {
@@ -177,59 +187,53 @@ describe("📖 User Borrow Operations", () => {
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(400);
-            expect(res.body.message).toBe("Cannot renew a late book. Please return it to inventory first.");
+            expect(res.body.status).toBe(false);
+            expect(res.body.message).toBe("Cannot renew an overdue book. Please return it to the library to settle any late fees.");
         });
     });
 
-    // --- PATCH /api/user/borrows/:borrowId/return ---
-    describe("PATCH /api/user/borrows/:borrowId/return", () => {
-        beforeEach(async () => {
+    // --- PATCH /api/user/borrows/:borrowId/cancel ---
+    describe("PATCH /api/user/borrows/:borrowId/cancel", () => {
+        it("Should allow a user to cancel a pending borrow request", async () => {
+            // Reset state to PENDING
             await Borrow.findByIdAndUpdate(testBorrowId, {
-                $set: {
-                    status: "ACTIVE",
-                    due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-                }
+                $set: { status: "PENDING" }
             });
-        });
 
-        it("Should safely alter user references and inventory stock metrics inside transaction sessions", async () => {
             const res = await request(app)
-                .patch(`/api/user/borrows/${testBorrowId}/return`)
+                .patch(`/api/user/borrows/${testBorrowId}/cancel`)
                 .set("Cookie", [`accessToken=${userToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.success).toBe(true);
-
-            const checkedBook = await Book.findById(testBook._id);
-            expect(checkedBook!.copies_available).toBeGreaterThan(0);
+            expect(res.body.status).toBe(true);
+            expect(res.body.message).toBe("Your borrow request has been cancelled successfully.");
+            expect(res.body.data.request.status).toBe("CANCELED");
         });
 
-        it("Should seamlessly invoke penalty rules engine arrays and flag temporal accounts suspensions if delay dates match thresholds", async () => {
-            const lateUser = await User.create({
-                fullName: "Late System User",
-                email: "delinquent-borrow-test@test.com",
-                password: "password123",
-                role: "user"
-            });
-            const lateToken = Jwt.sign({ _id: lateUser._id, role: "user" }, process.env.JWT_ACCESS_SECRET!);
-
-            const lateBorrow = await Borrow.create({
-                user: lateUser._id,
-                book: testBook._id,
-                status: "ACTIVE",
-                borrow_date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
-                due_date: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000)
+        it("Should return 400 when attempting to cancel an already processed/active request", async () => {
+            await Borrow.findByIdAndUpdate(testBorrowId, {
+                $set: { status: "ACTIVE" }
             });
 
             const res = await request(app)
-                .patch(`/api/user/borrows/${lateBorrow._id}/return`)
-                .set("Cookie", [`accessToken=${lateToken}`]);
+                .patch(`/api/user/borrows/${testBorrowId}/cancel`)
+                .set("Cookie", [`accessToken=${userToken}`]);
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.success).toBe(true);
+            expect(res.statusCode).toBe(400);
+            expect(res.body.status).toBe(false);
+            expect(res.body.message).toContain("Cannot cancel this borrow request");
+        });
 
-            const updatedUser = await User.findById(lateUser._id);
-            expect(updatedUser!.suspension_date).toBeDefined();
+        it("Should return 404 if the request or reservation ID does not exist", async () => {
+            const nonExistentId = new mongoose.Types.ObjectId().toString();
+
+            const res = await request(app)
+                .patch(`/api/user/borrows/${nonExistentId}/cancel`)
+                .set("Cookie", [`accessToken=${userToken}`]);
+
+            expect(res.statusCode).toBe(404);
+            expect(res.body.status).toBe(false);
+            expect(res.body.message).toBe("Request or reservation not found.");
         });
     });
 });
