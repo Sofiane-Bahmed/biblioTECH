@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import Jwt from "jsonwebtoken";
 import { jest } from "@jest/globals";
 
-// Mocking external services
+// Mock external services
 jest.unstable_mockModule("axios", () => ({
     default: {
         get: jest.fn(),
@@ -21,14 +21,13 @@ jest.unstable_mockModule("resend", () => ({
     })),
 }));
 
-// Mock Cloudinary storage
 jest.unstable_mockModule("../../config/cloudinary.js", async () => {
     return {
         cloudinary: {
             config: jest.fn(),
         },
         storage: {
-            _handleFile: (req, file, cb) => {
+            _handleFile: (req: any, file: any, cb: any) => {
                 file.stream.on("data", () => { });
                 file.stream.on("end", () => {
                     cb(null, {
@@ -36,36 +35,33 @@ jest.unstable_mockModule("../../config/cloudinary.js", async () => {
                         size: 1234
                     });
                 });
-                file.stream.on("error", (err) => cb(err));
+                file.stream.on("error", (err: any) => cb(err));
             },
-            _removeFile: (req, file, cb) => {
+            _removeFile: (req: any, file: any, cb: any) => {
                 cb(null);
             }
         },
     };
 });
 
-// Dynamic imports after mocks
 const { default: app } = await import("../../app.js");
 const { User } = await import("../../models/user.js");
 
 jest.setTimeout(10000);
 
 describe("🛡️ Admin User Operations", () => {
-    let adminToken;
-    let adminUser;
-    let testUser;
-    let testUserId;
+    let adminToken: string;
+    let adminUser: any;
+    let testUser: any;
+    let testUserId: string;
 
     beforeAll(async () => {
         if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(process.env.DBURI);
+            await mongoose.connect(process.env.DBURI as string);
         }
 
-        // Cleanup
         await User.deleteMany({ email: { $in: ["admin-user@test.com", "test-user@test.com"] } });
 
-        // Setup Admin
         adminUser = await User.create({
             fullName: "Admin User",
             email: "admin-user@test.com",
@@ -75,21 +71,21 @@ describe("🛡️ Admin User Operations", () => {
 
         adminToken = Jwt.sign(
             { _id: adminUser._id, role: "admin" },
-            process.env.JWT_ACCESS_SECRET,
+            process.env.JWT_ACCESS_SECRET as string,
             { expiresIn: "1h" }
         );
 
-        // Setup Test User
         testUser = await User.create({
             fullName: "Test User",
             email: "test-user@test.com",
             password: "password123",
             role: "user"
         });
-        testUserId = testUser._id;
+        testUserId = testUser._id.toString();
     });
 
     afterAll(async () => {
+        await User.deleteMany({ email: { $in: ["admin-user@test.com", "test-user@test.com"] } });
         await mongoose.connection.close();
     });
 
@@ -100,9 +96,9 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.success).toBe(true);
-            expect(res.body.data).toBeDefined();
-            expect(res.body.totalUsers).toBeGreaterThanOrEqual(2);
+            expect(res.body.status).toBe(true);
+            expect(res.body.data.users).toBeDefined();
+            expect(res.body.data.pagination.totalUsers).toBeGreaterThanOrEqual(2);
         });
     });
 
@@ -113,7 +109,8 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.email).toBe("test-user@test.com");
+            expect(res.body.status).toBe(true);
+            expect(res.body.data.user.email).toBe("test-user@test.com");
         });
 
         it("Should return 404 for non-existent user", async () => {
@@ -123,6 +120,7 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(404);
+            expect(res.body.status).toBe(false);
         });
     });
 
@@ -134,9 +132,9 @@ describe("🛡️ Admin User Operations", () => {
                 .send({ role: "admin" });
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.user.role).toBe("admin");
+            expect(res.body.data.role).toBe("admin");
 
-            // Reset for other tests
+            // Reset role for remaining tests
             await User.findByIdAndUpdate(testUserId, { role: "user" });
         });
 
@@ -147,7 +145,7 @@ describe("🛡️ Admin User Operations", () => {
                 .send({ role: "user" });
 
             expect(res.statusCode).toBe(400);
-            expect(res.body.message).toBe("You cannot change your own administrative role");
+            expect(res.body.message).toBe("You cannot change your own administrative role.");
         });
     });
 
@@ -158,7 +156,7 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.blockedUser.isBlocked).toBe(true);
+            expect(res.body.data.isBlocked).toBe(true);
         });
     });
 
@@ -169,7 +167,7 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.user.isBlocked).toBe(false);
+            expect(res.body.data.isBlocked).toBe(false);
         });
     });
 
@@ -180,7 +178,7 @@ describe("🛡️ Admin User Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe("user deleted successfully");
+            expect(res.body.message).toBe("User deleted successfully.");
 
             const check = await User.findById(testUserId);
             expect(check).toBeNull();
@@ -188,19 +186,17 @@ describe("🛡️ Admin User Operations", () => {
     });
 
     describe("Security - Admin Only", () => {
-
         it("Should reject non-admin users", async () => {
-
             const securityCheckUser = await User.create({
                 fullName: "Security Test User",
                 email: "security-test@test.com",
                 password: "password123",
                 role: "user"
             });
-            
+
             const userToken = Jwt.sign(
                 { _id: securityCheckUser._id, role: "user" },
-                process.env.JWT_ACCESS_SECRET
+                process.env.JWT_ACCESS_SECRET as string
             );
 
             const res = await request(app)
