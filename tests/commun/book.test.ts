@@ -10,16 +10,13 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
     let testCategory: any;
 
     beforeAll(async () => {
-        // Safely connect using type assertion for the environment variable string
         if (mongoose.connection.readyState === 0) {
             await mongoose.connect(process.env.DBURI!);
         }
 
-        // Clean collections to maintain clean state machine operations
         await Book.deleteMany({});
         await Category.deleteMany({});
 
-        // Seed a category and a book for testing individual book retrieval
         testCategory = await Category.findOneAndUpdate(
             { title: "Test Category" },
             { title: "Test Category", description: "Test Description" },
@@ -46,6 +43,8 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
     });
 
     afterAll(async () => {
+        await Book.deleteMany({});
+        await Category.deleteMany({});
         await mongoose.connection.close();
     });
 
@@ -56,10 +55,10 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
             .query({ page: 1, limit: 5 });
 
         expect(res.statusCode).toBe(200);
-        expect(res.body).toHaveProperty("success", true);
+        expect(res.body).toHaveProperty("status", true);
         expect(res.body).toHaveProperty("data");
-        expect(Array.isArray(res.body.data)).toBe(true);
-        expect(res.body.data.length).toBeGreaterThan(0);
+        expect(Array.isArray(res.body.data.data)).toBe(true);
+        expect(res.body.data.data.length).toBeGreaterThan(0);
     });
 
     // --- GET /api/books/search ---
@@ -69,11 +68,11 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
             .query({ page: 1, limit: 5, title: "Test" });
 
         expect(res.statusCode).toBe(200);
-        expect(res.body).toHaveProperty("success", true);
-        expect(res.body).toHaveProperty("data");
-        expect(res.body).toHaveProperty("totalItems");
-        expect(res.body).toHaveProperty("totalPages");
-        expect(Array.isArray(res.body.data)).toBe(true);
+        expect(res.body).toHaveProperty("status", true);
+        expect(res.body.data).toHaveProperty("data");
+        expect(res.body.data).toHaveProperty("totalItems");
+        expect(res.body.data).toHaveProperty("totalPages");
+        expect(Array.isArray(res.body.data.data)).toBe(true);
     });
 
     // --- GET /api/books/:bookId ---
@@ -82,8 +81,9 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
             .get(`/api/books/${testBookId}`);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body).toHaveProperty("_id", testBookId);
-        expect(res.body).toHaveProperty("title", "Test Book");
+        expect(res.body.status).toBe(true);
+        expect(res.body.data.book).toHaveProperty("_id", testBookId);
+        expect(res.body.data.book).toHaveProperty("title", "Test Book");
     });
 
     it("GET /api/books/:bookId -> Should return 400 for invalid ID format", async () => {
@@ -101,6 +101,7 @@ describe("📚 Backend Readiness & Quality Assurance - Book Router", () => {
             .get(`/api/books/${nonExistentId}`);
 
         expect(res.statusCode).toBe(404);
-        expect(res.body).toHaveProperty("message", "Book not found");
+        expect(res.body).toHaveProperty("status", false);
+        expect(res.body).toHaveProperty("message", "Book not found.");
     });
 });
