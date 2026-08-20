@@ -1,12 +1,11 @@
 import { Response } from "express";
-
 import asyncHandler from "../../utils/async-handler.js";
 import { GetMyBorrowsQuery, UpdateMyProfileBody } from "../../validations/user/profile/profile-types.js";
 import { AuthenticatedRequest } from "../../types/auth.js";
 import {
   getMyBorrowsService,
   getMyProfileService,
-  updateMyProfileService
+  updateMyProfileService,
 } from "../../services/user/profile.js";
 
 export const getMyBorrows = asyncHandler(async (
@@ -50,7 +49,3 @@ export const getMyProfile = asyncHandler(async (
 
   res.status(result.code).json(result);
 });
-
-
-
-

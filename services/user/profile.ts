@@ -5,103 +5,96 @@ import { User } from "../../models/user.js";
 import { getPaginatedData } from "../../utils/paginate.js";
 
 export const getMyBorrowsService = async ({
-    userId,
-    status,
-    overdue,
-    req,
+  userId,
+  status,
+  overdue,
+  req,
+}: {
+  userId: string;
+  status?: string;
+  overdue?: boolean | string;
+  req: any;
 }) => {
-    const dbQuery: FilterQuery<IBorrow> = { user: userId };
+  const dbQuery: FilterQuery<IBorrow> = { user: userId };
 
-    if (status) {
-        dbQuery.status = status;
-    }
+  if (status) {
+    dbQuery.status = status;
+  }
 
-    // Handle boolean/string query parameters for overdue filtering
-    if (overdue === true || overdue === "true") {
-        dbQuery.status = "ACTIVE";
-        dbQuery.due_date = { $lt: new Date() };
-    }
+  if (overdue === true || overdue === "true") {
+    dbQuery.status = "ACTIVE";
+    dbQuery.due_date = { $lt: new Date() };
+  }
 
-    const result = await getPaginatedData({
-        model: Borrow,
-        query: dbQuery,
-        populate: [
-            {
-                path: "book",
-                select: "title author",
-            },
-        ],
-        req,
-    });
+  const paginatedResult = await getPaginatedData({
+    model: Borrow,
+    query: dbQuery,
+    populate: [
+      {
+        path: "book",
+        select: "title author",
+      },
+    ],
+    req,
+  });
 
-    if (!result || !result.data || !result.data.length) {
-        return {
-            status: true,
-            code: 200,
-            message: "No borrowing history found.",
-            data: {
-                ...result,
-                data: [],
-            },
-        };
-    }
+  const hasData = paginatedResult && paginatedResult.data && paginatedResult.data.length > 0;
 
-    return {
-        status: true,
-        code: 200,
-        message: "User borrow records retrieved successfully.",
-        data: result,
-    };
+  return {
+    status: true,
+    code: 200,
+    message: hasData ? "User borrow records retrieved successfully." : "No borrowing history found.",
+    data: paginatedResult,
+  };
 };
 
 export const updateMyProfileService = async ({
-    userId,
-    updateData,
+  userId,
+  updateData,
+}: {
+  userId: string;
+  updateData: Record<string, any>;
 }) => {
-    // Prevent sensitive/restricted fields from being updated directly
-    delete updateData.role;
-    delete updateData.password;
-    delete updateData.email;
+  // Destructure to sanitize forbidden attributes safely without direct parameter mutation
+  const { role, password, ...allowedUpdates } = updateData;
 
-    const user = await User.findByIdAndUpdate(
-        userId,
-        { $set: updateData },
-        { new: true, runValidators: true }
-    )
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $set: allowedUpdates },
+    { new: true, runValidators: true }
+  ).select("-password");
 
-    if (!user) {
-        return {
-            status: false,
-            code: 404,
-            message: "User not found.",
-        };
-    }
-
+  if (!user) {
     return {
-        status: true,
-        code: 200,
-        message: "Profile updated successfully.",
-        data: { user },
+      status: false,
+      code: 404,
+      message: "User not found.",
     };
+  }
+
+  return {
+    status: true,
+    code: 200,
+    message: "Profile updated successfully.",
+    data: { user },
+  };
 };
 
-export const getMyProfileService = async ({ userId }) => {
-    const userProfile = await User
-        .findById(userId)
-        .lean();
+export const getMyProfileService = async ({ userId }: { userId: string }) => {
+  const userProfile = await User.findById(userId);
 
-    if (!userProfile) {
-        return {
-            status: false,
-            code: 404,
-            message: "User profile not found.",
-        };
-    }
-
+  if (!userProfile) {
     return {
-        status: true,
-        code: 200,
-        message: "Profile details retrieved successfully.",
-        data: { profile: userProfile },
+      status: false,
+      code: 404,
+      message: "User profile not found.",
     };
+  }
+
+  return {
+    status: true,
+    code: 200,
+    message: "Profile details retrieved successfully.",
+    data: { profile: userProfile },
+  };
 };
