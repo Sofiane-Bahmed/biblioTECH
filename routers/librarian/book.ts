@@ -18,7 +18,7 @@ import { uploadBookCover } from "../../middlewares/upload.js";
 export const librarianBookRouter: Router = express.Router();
 
 librarianBookRouter.post("/", uploadBookCover, validate(addBookSchema), addBook);
-librarianBookRouter.get("/auto-import", validate(autoImportBookSchema), autoAddBookByIsbn);
+librarianBookRouter.post("/auto-import", validate(autoImportBookSchema), autoAddBookByIsbn);
 
 librarianBookRouter.put("/:bookId", uploadBookCover, validate(updateBookSchema), updateBook);
 librarianBookRouter.delete("/:bookId", validate(deleteBookSchema), deleteBook);
