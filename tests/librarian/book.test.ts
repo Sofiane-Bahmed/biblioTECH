@@ -69,7 +69,6 @@ describe("📚 Librarian Operations - Book Management", () => {
             await mongoose.connect(process.env.DBURI!);
         }
 
-        // 1. Delete all test users and target books before inserting
         await User.deleteMany({
             email: { $in: ["librarian@test.com", "regular-reader@test.com"] }
         });
@@ -77,7 +76,6 @@ describe("📚 Librarian Operations - Book Management", () => {
             isbn: { $in: ["0486284737", "0486284738", "0486284739"] }
         });
 
-        // 2. Create fresh test users
         librarianUser = await User.create({
             fullName: "Librarian User",
             email: "librarian@test.com",
@@ -107,6 +105,12 @@ describe("📚 Librarian Operations - Book Management", () => {
     });
 
     afterAll(async () => {
+        await User.deleteMany({
+            email: { $in: ["librarian@test.com", "regular-reader@test.com"] }
+        });
+        await Book.deleteMany({
+            isbn: { $in: ["0486284737", "0486284738", "0486284739"] }
+        });
         await mongoose.connection.close();
     });
 
@@ -135,8 +139,7 @@ describe("📚 Librarian Operations - Book Management", () => {
                 },
             };
 
-            // Direct mock assignment that bypasses TypeScript generic constraints
-            mockedAxios.post.mockImplementation(async (url: any) => {
+            mockedAxios.get.mockImplementation(async (url: any) => {
                 if (typeof url === "string" && url.includes("0486284739")) {
                     return mockGoogleResponse as any;
                 }
@@ -151,6 +154,65 @@ describe("📚 Librarian Operations - Book Management", () => {
             expect(res.statusCode).toBe(201);
             expect(res.body.message).toBe("Book auto-discovered and registered successfully!");
             expect(res.body.data).toHaveProperty("title", "Auto Imported Book");
+        });
+    });
+
+    describe("POST /api/librarian/books (Manual Add)", () => {
+        it("Should manually create a new book record with an image upload", async () => {
+            const req = request(app)
+                .post("/api/librarian/books")
+                .set("Cookie", [`accessToken=${librarianToken}`])
+                .field("title", "Manual Book Title")
+                .field("isbn", "0486284737")
+                .field("author", "Manual Author")
+                // Repeated .field for category ensures Multer parses it as an array if needed
+                .field("category", testCategory._id.toString())
+                .field("description", "Manual entry description")
+                .field("copies_available", "5")
+                .field("pages", "300")
+                .field("language", "en")
+                .field("publication_year", "2021")
+                .attach("cover_image", Buffer.from("fake-img"), "cover.jpg");
+
+            const res = await req;
+
+            if (res.statusCode !== 201) {
+                console.log("POST /api/librarian/books Failure Body:", res.body);
+            }
+
+            expect(res.statusCode).toBe(201);
+            expect(res.body.message).toBe("Book added to inventory successfully.");
+            expect(res.body.data).toHaveProperty("title", "Manual Book Title");
+
+            testBookId = res.body.data._id;
+        });
+    });
+
+    describe("PUT /api/librarian/books/:bookId", () => {
+        it("Should update an existing book record", async () => {
+            expect(testBookId).toBeDefined();
+
+            const res = await request(app)
+                .put(`/api/librarian/books/${testBookId}`)
+                .set("Cookie", [`accessToken=${librarianToken}`])
+                .send({ title: "Updated Manual Book Title" });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.message).toBe("Book updated successfully.");
+            expect(res.body.data).toHaveProperty("title", "Updated Manual Book Title");
+        });
+    });
+
+    describe("DELETE /api/librarian/books/:bookId", () => {
+        it("Should delete the book record", async () => {
+            expect(testBookId).toBeDefined();
+
+            const res = await request(app)
+                .delete(`/api/librarian/books/${testBookId}`)
+                .set("Cookie", [`accessToken=${librarianToken}`]);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.message).toBe("Book deleted successfully.");
         });
     });
 });
