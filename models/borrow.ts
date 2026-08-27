@@ -43,7 +43,7 @@ const borrowSchema = new Schema<IBorrow>(
     },
     status: {
       type: String,
-      enum: ["PENDING", "ACTIVE", "REJECTED", "RETURNED", "CANCELED"],
+      enum: ["PENDING", "APPROVED", "ACTIVE", "REJECTED", "RETURNED", "CANCELED", "EXPIRED"],
       default: "PENDING",
       required: true
     },
