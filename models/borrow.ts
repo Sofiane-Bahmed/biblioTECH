@@ -19,10 +19,15 @@ export interface IBorrow {
   borrow_date?: Date;
   due_date?: Date;
   return_date?: Date;
-  issued_by: Types.ObjectId;
-  condition_on_return: BookCondition;
+  issued_by?: Types.ObjectId;
+  condition_on_return?: BookCondition;
   pickup_deadline?: Date;
   renewed: boolean;
+  approvedBy?: Types.ObjectId;
+  rejectedBy?: Types.ObjectId;
+  canceledBy?: Types.ObjectId;
+  handedOverBy?: Types.ObjectId;
+  returnedTo?: Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -82,12 +87,32 @@ const borrowSchema = new Schema<IBorrow>(
     issued_by: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: false, 
+      required: false,
     },
     renewed: {
       type: Boolean,
       default: false,
       required: true
+    },
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    rejectedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    canceledBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    handedOverBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    returnedTo: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {

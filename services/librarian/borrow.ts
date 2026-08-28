@@ -219,6 +219,7 @@ export const bypassQueueService = async ({
                     issued_by: staffId,
                     due_date: dueDate,
                     status: "ACTIVE",
+                    condition_on_return: "GOOD",
                 },
             ],
             { session }
