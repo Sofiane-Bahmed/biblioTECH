@@ -146,6 +146,8 @@ A scheduler runs in the background using `node-cron` every **15 minutes** to kee
 ├── middlewares/        # Express handlers (authenticate, authorize, validation, file upload)
 ├── models/             # Mongoose schemas (Book, User, Borrow, Reservation, AuditLog, etc.)
 ├── routers/            # API Route managers (versioned structure matching roles)
+├── services/           # Business logic layers (segmented by modules and roles)
+├── tests/              # Automated tests (unit and integration tests matching controllers/services roles)
 ├── types/              # TypeScript type definitions and interfaces
 ├── utils/              # Help services (custom exceptions, emails, loggers)
 └── validations/        # Zod input schemas enforcing validation
@@ -156,6 +158,10 @@ A scheduler runs in the background using `node-cron` every **15 minutes** to kee
 ## 🌐 API Endpoint Reference
 
 ### 🔐 Public & Authentication Endpoints (`/api/auth`, `/api/books`)
+
+<details>
+  <summary>Click to view Public & Authentication Endpoints</summary>
+  <br>
 
 | Method | Endpoint | Access | Description | Input Highlights (JSON Body / Query) |
 |:---|:---|:---|:---|:---|
@@ -170,9 +176,15 @@ A scheduler runs in the background using `node-cron` every **15 minutes** to kee
 | **GET** | `/api/books/:bookId` | Public | Fetch book details | Params: `:bookId` |
 | **GET** | `/api/health` | Public | Healthcheck endpoint | None |
 
+</details>
+
 ### 📖 Patron Actions (Authenticated - `/api/user`)
 
 Requires JWT Bearer authentication.
+
+<details>
+  <summary>Click to view Patron Actions</summary>
+  <br>
 
 | Method | Endpoint | Access | Description | Key Details |
 |:---|:---|:---|:---|:---|
@@ -188,9 +200,15 @@ Requires JWT Bearer authentication.
 | **PUT** | `/api/user/comments/:commentId` | User | Edit personal comment | Body: `content`, `rating` |
 | **DELETE** | `/api/user/comments/:commentId` | User | Delete personal comment | Params: `:commentId` |
 
+</details>
+
 ### 🛠 Librarian Operations (Authenticated - `/api/librarian`)
 
 Requires role `librarian` or `admin`.
+
+<details>
+  <summary>Click to view Librarian Operations</summary>
+  <br>
 
 | Method | Endpoint | Access | Description | Key Details |
 |:---|:---|:---|:---|:---|
@@ -213,9 +231,15 @@ Requires role `librarian` or `admin`.
 | **PATCH** | `/api/librarian/reservations/:reservationId/extend` | Staff | Extend pickup hold deadline | Body: `extensionHours`, `reason` |
 | **PATCH** | `/api/librarian/reservations/:reservationId/reorder` | Staff | Reposition user in FIFO queue | Body: `newPosition`, `reason` |
 
+</details>
+
 ### 👑 System Administration (Authenticated - `/api/admin`)
 
 Requires role `admin`.
+
+<details>
+  <summary>Click to view System Administration</summary>
+  <br>
 
 | Method | Endpoint | Access | Description | Key Details |
 |:---|:---|:---|:---|:---|
@@ -233,6 +257,8 @@ Requires role `admin`.
 | **DELETE**| `/api/admin/categories/:categoryId` | Admin | Remove category from system | Params: `:categoryId` |
 | **GET** | `/api/admin/comments` | Admin | Moderation feed of all reviews | Query: pagination parameters |
 | **GET** | `/api/admin/stats` | Admin | Library health & inventory metrics | Analytics dashboard aggregation |
+
+</details>
 
 ---
 
