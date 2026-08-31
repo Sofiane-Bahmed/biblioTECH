@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { jest } from "@jest/globals";
 
 import { User } from "../../models/user.js";
@@ -28,12 +28,12 @@ jest.mock("../../middlewares/validate.js", () => ({
     validate: () => (req: any, res: any, next: any) => next(),
 }));
 
-let mongoServer: MongoMemoryServer;
+let mongoServer: MongoMemoryReplSet;
 let app: express.Application;
 let staffId: mongoose.Types.ObjectId;
 
 beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
+    mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     const uri = mongoServer.getUri();
     await mongoose.connect(uri);
 
