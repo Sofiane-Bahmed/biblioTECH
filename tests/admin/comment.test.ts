@@ -1,6 +1,6 @@
 import express from "express";
 import request from "supertest";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { jest } from "@jest/globals";
 
@@ -51,22 +51,43 @@ describe("GET /api/admin/comments (getComments)", () => {
   });
 
   it("should retrieve comments populated with user, book, and nested reply users", async () => {
-    const user1 = await User.create({ fullName: "Jane Doe", email: "jane@test.com" });
-    const user2 = await User.create({ fullName: "John Smith", email: "john@test.com" });
-    const book = await Book.create({ title: "Clean Code", author: "Robert Martin" });
+    const user1 = await User.create({
+      fullName: "Jane Doe",
+      email: "jane@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const user2 = await User.create({
+      fullName: "John Smith",
+      email: "john@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const book = await Book.create({
+      title: "Clean Code",
+      author: "Robert Martin",
+      copies_available: 1,
+      language: "English",
+      isbn: "1239567840",
+      category: [],
+      publication_year: 2022,
+      pages: 300,
+      cover_image: "http://example.com/image.jpg",
+      description: "description",
+    });
 
     // Create a reply comment first
     const reply = await Comment.create({
       user: user2._id,
       book: book._id,
-      content: "I agree with this point.",
+      comment: "I agree with this point.",
     });
 
     // Create main comment referencing the reply
     await Comment.create({
       user: user1._id,
       book: book._id,
-      content: "Great read!",
+      comment: "Great read!",
       replies: [reply._id],
     });
 
@@ -75,21 +96,60 @@ describe("GET /api/admin/comments (getComments)", () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe(true);
     expect(res.body.message).toBe("Comments retrieved successfully.");
-    expect(res.body.data.data.length).toBeGreaterThan(0);
 
-    const mainComment = res.body.data.data.find((c: any) => c.content === "Great read!");
+    // Match on 'comment' field instead of 'content'
+    const mainComment = res.body.data.data.find(
+      (c: any) => c.comment === "Great read!"
+    );
+
+    expect(mainComment).toBeDefined();
     expect(mainComment.user.fullName).toBe("Jane Doe");
     expect(mainComment.book.title).toBe("Clean Code");
     expect(mainComment.replies[0].user.fullName).toBe("John Smith");
   });
 
   it("should filter comments by bookId", async () => {
-    const user = await User.create({ fullName: "User One", email: "user1@test.com" });
-    const book1 = await Book.create({ title: "Book One", author: "Author A" });
-    const book2 = await Book.create({ title: "Book Two", author: "Author B" });
+    const user = await User.create({
+      fullName: "User One",
+      email: "user1@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const book1 = await Book.create({
+      title: "Book One",
+      author: "Author A",
+      copies_available: 1,
+      language: "English",
+      isbn: "1034567892",
+      category: [],
+      publication_year: 2022,
+      pages: 300,
+      cover_image: "http://example.com/image.jpg",
+      description: "description",
+    });
+    const book2 = await Book.create({
+      title: "Book Two",
+      author: "Author B",
+      copies_available: 1,
+      language: "English",
+      isbn: "1274563890",
+      category: [],
+      publication_year: 2022,
+      pages: 300,
+      cover_image: "http://example.com/image.jpg",
+      description: "description",
+    });
 
-    await Comment.create({ user: user._id, book: book1._id, content: "Comment on Book 1" });
-    await Comment.create({ user: user._id, book: book2._id, content: "Comment on Book 2" });
+    await Comment.create({
+      user: user._id,
+      book: book1._id,
+      comment: "Comment on Book 1",
+    });
+    await Comment.create({
+      user: user._id,
+      book: book2._id,
+      comment: "Comment on Book 2",
+    });
 
     const res = await request(app)
       .get("/api/admin/comments")
@@ -97,16 +157,45 @@ describe("GET /api/admin/comments (getComments)", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.data.length).toBe(1);
-    expect(res.body.data.data[0].content).toBe("Comment on Book 1");
+    expect(res.body.data.data[0].comment).toBe("Comment on Book 1");
   });
 
   it("should filter comments by userId", async () => {
-    const user1 = await User.create({ fullName: "User One", email: "user1@test.com" });
-    const user2 = await User.create({ fullName: "User Two", email: "user2@test.com" });
-    const book = await Book.create({ title: "Shared Book", author: "Author" });
+    const user1 = await User.create({
+      fullName: "User One",
+      email: "user1@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const user2 = await User.create({
+      fullName: "User Two",
+      email: "user2@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const book = await Book.create({
+      title: "Shared Book",
+      author: "Author",
+      copies_available: 1,
+      language: "English",
+      isbn: "8234567190",
+      category: [],
+      publication_year: 2022,
+      pages: 300,
+      cover_image: "http://example.com/image.jpg",
+      description: "description",
+    });
 
-    await Comment.create({ user: user1._id, book: book._id, content: "User 1 Comment" });
-    await Comment.create({ user: user2._id, book: book._id, content: "User 2 Comment" });
+    await Comment.create({
+      user: user1._id,
+      book: book._id,
+      comment: "User 1 Comment",
+    });
+    await Comment.create({
+      user: user2._id,
+      book: book._id,
+      comment: "User 2 Comment",
+    });
 
     const res = await request(app)
       .get("/api/admin/comments")
@@ -114,18 +203,62 @@ describe("GET /api/admin/comments (getComments)", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.data.length).toBe(1);
-    expect(res.body.data.data[0].content).toBe("User 2 Comment");
+    expect(res.body.data.data[0].comment).toBe("User 2 Comment");
   });
 
   it("should filter by both bookId and userId when both query parameters are provided", async () => {
-    const user1 = await User.create({ fullName: "User One", email: "user1@test.com" });
-    const user2 = await User.create({ fullName: "User Two", email: "user2@test.com" });
-    const book1 = await Book.create({ title: "Book One", author: "Author A" });
-    const book2 = await Book.create({ title: "Book Two", author: "Author B" });
+    const user1 = await User.create({
+      fullName: "User One",
+      email: "user1@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const user2 = await User.create({
+      fullName: "User Two",
+      email: "user2@test.com",
+      password: "password123",
+      role: "user",
+    });
+    const book1 = await Book.create({
+      title: "Book One",
+      author: "Author A",
+      copies_available: 1,
+      language: "English",
+      isbn: "1432567890",
+      category: [],
+      publication_year: 2022,
+      pages: 300,
+      cover_image: "http://example.com/image.jpg",
+      description: "description",
+    });
+    const book2 = await Book.create({
+      title: "Book Two",
+      author: "Author B",
+      copies_available: 1,
+      language: "English",
+      isbn: "1234576890",
+      category: [],
+      publication_year: 2022,
+      pages: 300,
+      cover_image: "http://example.com/image.jpg",
+      description: "description",
+    });
 
-    await Comment.create({ user: user1._id, book: book1._id, content: "Target Comment" });
-    await Comment.create({ user: user1._id, book: book2._id, content: "Wrong Book" });
-    await Comment.create({ user: user2._id, book: book1._id, content: "Wrong User" });
+    await Comment.create({
+      user: user1._id,
+      book: book1._id,
+      comment: "Target Comment",
+    });
+    await Comment.create({
+      user: user1._id,
+      book: book2._id,
+      comment: "Wrong Book",
+    });
+    await Comment.create({
+      user: user2._id,
+      book: book1._id,
+      comment: "Wrong User",
+    });
 
     const res = await request(app)
       .get("/api/admin/comments")
@@ -133,6 +266,6 @@ describe("GET /api/admin/comments (getComments)", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.data.length).toBe(1);
-    expect(res.body.data.data[0].content).toBe("Target Comment");
+    expect(res.body.data.data[0].comment).toBe("Target Comment");
   });
 });
