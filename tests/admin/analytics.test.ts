@@ -185,30 +185,35 @@ describe("📊 Admin Analytics Operations", () => {
                 .set("Cookie", [`accessToken=${adminToken}`]);
 
             expect(res.statusCode).toBe(200);
+            expect(res.body.status).toBe(true);
+
+            // Access properties inside res.body.data
+            const { summaryCards, charts, leaderboards } = res.body.data;
 
             // Verify Summary Cards
-            const { summaryCards } = res.body;
             expect(summaryCards.totalBooks).toBe(2);
-            expect(summaryCards.totalUsers).toBe(3); // admin + 2 test users (all subscribed)
-            expect(summaryCards.activeLoans).toBe(2); // The 2 explicit "ACTIVE" loans
-            expect(summaryCards.overdueLoans).toBe(1); // The 1 "ACTIVE" past due_date loan
+            expect(summaryCards.totalUsers).toBe(3); // admin + 2 test users
+            expect(summaryCards.activeLoans).toBe(2);
+            expect(summaryCards.overdueLoans).toBe(1);
             expect(summaryCards.outOfStockAlerts).toBe(1);
 
             // Verify Charts
-            const { charts } = res.body;
             expect(charts.genreDistribution).toBeDefined();
-            const categoryStats = charts.genreDistribution.find((c: any) => c.categoryName === "Stats Category");
+            const categoryStats = charts.genreDistribution.find(
+                (c: any) => c.categoryName === "Stats Category"
+            );
             expect(categoryStats).toBeDefined();
-            expect(categoryStats.borrowCount).toBe(3); // 2 ACTIVE + 1 RETURNED count toward metrics
+            expect(categoryStats.borrowCount).toBe(3);
 
             // Verify Leaderboards
-            const { leaderboards } = res.body;
             expect(leaderboards.powerUsers).toBeDefined();
             expect(leaderboards.powerUsers.length).toBeGreaterThanOrEqual(2);
 
-            const topUser = leaderboards.powerUsers.find((u: any) => u.email === "user1-stats@test.com");
+            const topUser = leaderboards.powerUsers.find(
+                (u: any) => u.email === "user1-stats@test.com"
+            );
             expect(topUser).toBeDefined();
-            expect(topUser.borrowCount).toBe(2); // 1 active + 1 returned
+            expect(topUser.borrowCount).toBe(2);
         });
 
         it("Should reject non-admin access", async () => {
