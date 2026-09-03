@@ -25,6 +25,35 @@ let mongoServer: MongoMemoryServer;
 let app: express.Application;
 let staffId: mongoose.Types.ObjectId;
 
+// Helper utilities to fulfill required Mongoose fields
+const createTestUser = (overrides = {}) => {
+    return User.create({
+        fullName: "John Doe",
+        email: `test-${Date.now()}@example.com`,
+        role: "librarian",
+        password: "Password123!",
+        subscribed: false,
+        outstanding_fines: 0,
+        ...overrides,
+    });
+};
+
+const createTestBook = (overrides = {}) => {
+    return Book.create({
+        title: "Clean Code",
+        author: ["Robert C. Martin"],
+        description: "A handbook of agile software craftsmanship",
+        copies_available: 5,
+        pages: 464,
+        language: "English",
+        publication_year: 2008,
+        cover_image: "https://example.com/clean-code.jpg",
+        isbn: `978-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+        category: [],
+        ...overrides,
+    });
+};
+
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
@@ -56,20 +85,26 @@ afterEach(async () => {
 });
 
 describe("Librarian Reservation Controller & Services", () => {
-
     describe("POST /api/librarian/reservations/manual (placeStaffHold)", () => {
         it("should place a hold on behalf of patron and log audit entry", async () => {
-            const user = await User.create({ email: "patron@test.com", name: "Patron" });
-            const book = await Book.create({ title: "Clean Code", copies_available: 1 });
+            const user = await createTestUser();
+            const book = await createTestBook();
 
             const res = await request(app)
                 .post("/api/librarian/reservations/manual")
-                .send({ userId: user._id.toString(), bookId: book._id.toString(), reason: "Staff assistance" });
+                .send({
+                    userId: user._id.toString(),
+                    bookId: book._id.toString(),
+                    reason: "Staff assistance",
+                });
 
             expect(res.status).toBe(201);
             expect(res.body.status).toBe(true);
 
-            const createdReservation = await Reservation.findOne({ user: user._id, book: book._id });
+            const createdReservation = await Reservation.findOne({
+                user: user._id,
+                book: book._id,
+            });
             expect(createdReservation).not.toBeNull();
             expect(createdReservation?.status).toBe("PENDING");
 
@@ -79,14 +114,22 @@ describe("Librarian Reservation Controller & Services", () => {
         });
 
         it("should reject duplicate active holds for the same book/user", async () => {
-            const user = await User.create({ email: "patron@test.com", name: "Patron" });
-            const book = await Book.create({ title: "Clean Code", copies_available: 1 });
+            const user = await createTestUser({ email: "patron@test.com" });
+            const book = await createTestBook({ copies_available: 1 });
 
-            await Reservation.create({ user: user._id, book: book._id, status: "PENDING" });
+            await Reservation.create({
+                user: user._id,
+                book: book._id,
+                status: "PENDING",
+            });
 
             const res = await request(app)
                 .post("/api/librarian/reservations/manual")
-                .send({ userId: user._id.toString(), bookId: book._id.toString(), reason: "Duplicate attempt" });
+                .send({
+                    userId: user._id.toString(),
+                    bookId: book._id.toString(),
+                    reason: "Duplicate attempt",
+                });
 
             expect(res.status).toBe(400);
             expect(res.body.message).toContain("already has an active hold");
@@ -95,8 +138,8 @@ describe("Librarian Reservation Controller & Services", () => {
 
     describe("PATCH /api/librarian/reservations/:reservationId/extend (extendPickupDeadline)", () => {
         it("should extend pickup deadline for READY_FOR_PICKUP reservation", async () => {
-            const user = await User.create({ email: "patron@test.com", name: "Patron" });
-            const book = await Book.create({ title: "Clean Code", copies_available: 1 });
+            const user = await createTestUser({ email: "patron@test.com" });
+            const book = await createTestBook({ copies_available: 1 });
             const initialExpiry = new Date();
 
             const reservation = await Reservation.create({
@@ -113,19 +156,31 @@ describe("Librarian Reservation Controller & Services", () => {
             expect(res.status).toBe(200);
 
             const updated = await Reservation.findById(reservation._id);
-            const expectedTime = new Date(initialExpiry.getTime() + 24 * 60 * 60 * 1000).getTime();
-            expect(new Date(updated!.expires_at!).getTime()).toBeCloseTo(expectedTime, -2);
+            const expectedTime = new Date(
+                initialExpiry.getTime() + 24 * 60 * 60 * 1000
+            ).getTime();
+            expect(new Date(updated!.expires_at!).getTime()).toBeCloseTo(
+                expectedTime,
+                -2
+            );
         });
 
         it("should fail if reservation is in PENDING status", async () => {
-            const user = await User.create({ email: "patron@test.com", name: "Patron" });
-            const book = await Book.create({ title: "Clean Code", copies_available: 1 });
+            const user = await createTestUser({ email: "patron@test.com" });
+            const book = await createTestBook({ copies_available: 1 });
 
-            const reservation = await Reservation.create({ user: user._id, book: book._id, status: "PENDING" });
+            const reservation = await Reservation.create({
+                user: user._id,
+                book: book._id,
+                status: "PENDING",
+            });
 
             const res = await request(app)
                 .patch(`/api/librarian/reservations/${reservation._id}/extend`)
-                .send({ extensionHours: 24, reason: "Invalid status extension" });
+                .send({
+                    extensionHours: 24,
+                    reason: "Invalid status extension",
+                });
 
             expect(res.status).toBe(400);
             expect(res.body.message).toContain("expected 'READY_FOR_PICKUP'");
@@ -134,13 +189,23 @@ describe("Librarian Reservation Controller & Services", () => {
 
     describe("PATCH /api/librarian/reservations/:reservationId/reorder (forceQueuePosition)", () => {
         it("should bump a reservation to position 1 and adjust timestamps", async () => {
-            const book = await Book.create({ title: "Design Patterns", copies_available: 0 });
-            const u1 = await User.create({ email: "u1@test.com" });
-            const u2 = await User.create({ email: "u2@test.com" });
+            const book = await createTestBook({ copies_available: 0 });
+            const u1 = await createTestUser({ email: "u1@test.com" });
+            const u2 = await createTestUser({ email: "u2@test.com" });
 
             // Create two sequential pending holds
-            const r1 = await Reservation.create({ user: u1._id, book: book._id, status: "PENDING", createdAt: new Date(Date.now() - 20000) });
-            const r2 = await Reservation.create({ user: u2._id, book: book._id, status: "PENDING", createdAt: new Date(Date.now() - 10000) });
+            const r1 = await Reservation.create({
+                user: u1._id,
+                book: book._id,
+                status: "PENDING",
+                createdAt: new Date(Date.now() - 20000),
+            });
+            const r2 = await Reservation.create({
+                user: u2._id,
+                book: book._id,
+                status: "PENDING",
+                createdAt: new Date(Date.now() - 10000),
+            });
 
             // Move r2 (currently #2) to position #1
             const res = await request(app)
@@ -149,7 +214,10 @@ describe("Librarian Reservation Controller & Services", () => {
 
             expect(res.status).toBe(200);
 
-            const holds = await Reservation.find({ book: book._id, status: "PENDING" }).sort({ createdAt: 1 });
+            const holds = await Reservation.find({
+                book: book._id,
+                status: "PENDING",
+            }).sort({ createdAt: 1 });
             expect(holds[0]._id.toString()).toBe(r2._id.toString());
             expect(holds[1]._id.toString()).toBe(r1._id.toString());
         });
@@ -157,10 +225,14 @@ describe("Librarian Reservation Controller & Services", () => {
 
     describe("processNextInLineOrRestock helper", () => {
         it("should transition next pending reservation to READY_FOR_PICKUP", async () => {
-            const user = await User.create({ email: "patron@test.com", name: "Patron" });
-            const book = await Book.create({ title: "Refactoring", copies_available: 0 });
+            const user = await createTestUser({ email: "patron@test.com" });
+            const book = await createTestBook({ copies_available: 0 });
 
-            const res = await Reservation.create({ user: user._id, book: book._id, status: "PENDING" });
+            const res = await Reservation.create({
+                user: user._id,
+                book: book._id,
+                status: "PENDING",
+            });
 
             await processNextInLineOrRestock(book._id);
 
@@ -170,7 +242,7 @@ describe("Librarian Reservation Controller & Services", () => {
         });
 
         it("should increment book copies_available if no pending reservations exist", async () => {
-            const book = await Book.create({ title: "Refactoring", copies_available: 2 });
+            const book = await createTestBook({ copies_available: 2 });
 
             await processNextInLineOrRestock(book._id);
 
